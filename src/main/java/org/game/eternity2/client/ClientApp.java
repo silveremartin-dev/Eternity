@@ -45,10 +45,14 @@ public class ClientApp extends Application implements ClientUI {
 
         // Controls
         connectBtn = new Button("Connect to Server");
+        connectBtn.setTooltip(new Tooltip("Connect to the Eternity server at 127.0.0.1:12345"));
         connectBtn.setOnAction(e -> client.connect());
+
         disconnectBtn = new Button("Disconnect");
+        disconnectBtn.setTooltip(new Tooltip("Disconnect from the server and stop processing jobs"));
         disconnectBtn.setOnAction(e -> client.disconnect());
         disconnectBtn.setDisable(true);
+
         HBox controls = new HBox(10, connectBtn, disconnectBtn);
         controls.setPadding(new Insets(5));
 

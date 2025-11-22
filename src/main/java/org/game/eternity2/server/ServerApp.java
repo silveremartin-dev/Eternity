@@ -44,10 +44,14 @@ public class ServerApp extends Application {
 
         // Controls
         startBtn = new Button("Start Server");
+        startBtn.setTooltip(new Tooltip("Start the server and begin accepting client connections"));
         startBtn.setOnAction(e -> server.startServer());
+
         stopBtn = new Button("Stop Server");
+        stopBtn.setTooltip(new Tooltip("Stop the server and disconnect all clients"));
         stopBtn.setDisable(true);
         stopBtn.setOnAction(e -> server.stopServer());
+
         HBox controls = new HBox(10, startBtn, stopBtn);
         controls.setPadding(new Insets(5));
 
