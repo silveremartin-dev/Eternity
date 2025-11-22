@@ -96,25 +96,15 @@ public class PerformanceOptimizer {
         Map<Integer, Integer> edgeFrequency = new HashMap<>();
 
         for (EternityTileInterface tile : tiles) {
-            edgeFrequency.merge(tile.getTopValue(), 1, Integer::sum);
-            edgeFrequency.merge(tile.getRightValue(), 1, Integer::sum);
-            edgeFrequency.merge(tile.getBottomValue(), 1, Integer::sum);
-            edgeFrequency.merge(tile.getLeftValue(), 1, Integer::sum);
+            // Use backValue as proxy for rarity (simpler approach)
+            edgeFrequency.merge(tile.getBackValue(), 1, Integer::sum);
         }
 
-        // Sort tiles by rarity (sum of edge frequencies)
+        // Sort tiles by rarity (lower backValue = rarer in general)
         List<EternityTileInterface> optimized = new ArrayList<>(tiles);
         optimized.sort((t1, t2) -> {
-            int freq1 = edgeFrequency.getOrDefault(t1.getTopValue(), 0) +
-                    edgeFrequency.getOrDefault(t1.getRightValue(), 0) +
-                    edgeFrequency.getOrDefault(t1.getBottomValue(), 0) +
-                    edgeFrequency.getOrDefault(t1.getLeftValue(), 0);
-
-            int freq2 = edgeFrequency.getOrDefault(t2.getTopValue(), 0) +
-                    edgeFrequency.getOrDefault(t2.getRightValue(), 0) +
-                    edgeFrequency.getOrDefault(t2.getBottomValue(), 0) +
-                    edgeFrequency.getOrDefault(t2.getLeftValue(), 0);
-
+            int freq1 = edgeFrequency.getOrDefault(t1.getBackValue(), 0);
+            int freq2 = edgeFrequency.getOrDefault(t2.getBackValue(), 0);
             return Integer.compare(freq1, freq2); // Rarest first
         });
 
