@@ -1,0 +1,196 @@
+/*
+ *  Copyright 2022 Silvere Martin-Michiellot
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
+package org.game.eternity2.server;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.game.eternity2.elements.EternityBoardInterface;
+import org.game.eternity2.elements.Hint;
+
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+
+/**
+ * Manages job creation, distribution, and tracking.
+ * Ensures no duplicate jobs are dispatched and handles job lifecycle.
+ *
+ * @author Silvere Martin-Michiellot
+ * @version 2.0
+ */
+public class JobManager {
+    private static final Logger logger = LogManager.getLogger(JobManager.class);
+
+    private final Map<String, JobStatus> jobStatuses;
+    private final Queue<Job> pendingJobs;
+    private WorkStrategy currentStrategy;
+
+    public JobManager() {
+        this.jobStatuses = new ConcurrentHashMap<>();
+        this.pendingJobs = new LinkedList<>();
+    }
+
+    /**
+     * Initialize jobs for a puzzle using the specified strategy.
+     *
+     * @param puzzle   The puzzle to solve
+     * @param hints    Pre-placed tiles
+     * @param strategy Work distribution strategy
+     */
+    public void initializeJobs(EternityBoardInterface puzzle, List<Hint> hints, WorkStrategy strategy) {
+        this.currentStrategy = strategy;
+        List<Job> jobs = strategy.generateJobs(puzzle, hints);
+
+        synchronized (pendingJobs) {
+            pendingJobs.clear();
+            jobStatuses.clear();
+
+            for (Job job : jobs) {
+                pendingJobs.offer(job);
+                jobStatuses.put(job.getJobId(), new JobStatus(job));
+            }
+        }
+
+        logger.info("Initialized {} jobs using strategy: {}", jobs.size(), strategy.getName());
+    }
+
+    /**
+     * Get the next available job for a client.
+     *
+     * @param clientId ID of the requesting client
+     * @return Next job or null if none available
+     */
+    public Job getNextJob(String clientId) {
+        synchronized (pendingJobs) {
+            Job job = pendingJobs.poll();
+            if (job != null) {
+                JobStatus status = jobStatuses.get(job.getJobId());
+                status.markDispatched(clientId);
+                logger.info("Dispatched job {} to client {}", job.getJobId(), clientId);
+            }
+            return job;
+        }
+    }
+
+    /**
+     * Mark a job as completed.
+     *
+     * @param jobId  ID of the completed job
+     * @param result Result board (may be null if no solution found)
+     */
+    public void markJobCompleted(String jobId, EternityBoardInterface result) {
+        JobStatus status = jobStatuses.get(jobId);
+        if (status != null) {
+            status.markCompleted(result);
+            logger.info("Job {} completed", jobId);
+        }
+    }
+
+    /**
+     * Mark a job as failed and re-queue it.
+     *
+     * @param jobId ID of the failed job
+     */
+    public void markJobFailed(String jobId) {
+        JobStatus status = jobStatuses.get(jobId);
+        if (status != null) {
+            status.markFailed();
+            synchronized (pendingJobs) {
+                pendingJobs.offer(status.getJob());
+            }
+            logger.warn("Job {} failed, re-queued", jobId);
+        }
+    }
+
+    /**
+     * Get statistics about job progress.
+     *
+     * @return Job statistics
+     */
+    public JobStatistics getStatistics() {
+        int total = jobStatuses.size();
+        int completed = 0;
+        int dispatched = 0;
+        int pending = 0;
+
+        for (JobStatus status : jobStatuses.values()) {
+            switch (status.getState()) {
+                case COMPLETED -> completed++;
+                case DISPATCHED -> dispatched++;
+                case PENDING -> pending++;
+            }
+        }
+
+        return new JobStatistics(total, completed, dispatched, pending);
+    }
+
+    /**
+     * Job status tracking.
+     */
+    private static class JobStatus {
+        private final Job job;
+        private JobState state;
+        private String assignedClientId;
+        private long dispatchedTimestamp;
+        private EternityBoardInterface result;
+
+        public JobStatus(Job job) {
+            this.job = job;
+            this.state = JobState.PENDING;
+        }
+
+        public void markDispatched(String clientId) {
+            this.state = JobState.DISPATCHED;
+            this.assignedClientId = clientId;
+            this.dispatchedTimestamp = System.currentTimeMillis();
+        }
+
+        public void markCompleted(EternityBoardInterface result) {
+            this.state = JobState.COMPLETED;
+            this.result = result;
+        }
+
+        public void markFailed() {
+            this.state = JobState.PENDING;
+            this.assignedClientId = null;
+        }
+
+        public JobState getState() {
+            return state;
+        }
+
+        public Job getJob() {
+            return job;
+        }
+    }
+
+    private enum JobState {
+        PENDING, DISPATCHED, COMPLETED, FAILED
+    }
+
+    /**
+     * Job statistics.
+     */
+    public record JobStatistics(int total, int completed, int dispatched, int pending) {
+        public double getCompletionPercentage() {
+            return total > 0 ? (completed * 100.0 / total) : 0.0;
+        }
+
+        public int getTotalJobs() {
+            return total;
+        }
+    }
+}

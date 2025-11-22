@@ -1,0 +1,1 @@
+java -cp eternity2.jar org.game.eternity2.server.EternityServer

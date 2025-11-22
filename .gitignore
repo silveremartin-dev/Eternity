@@ -1,0 +1,41 @@
+# Build outputs
+target/
+*.class
+*.jar
+*.war
+*.ear
+
+# IDE files
+.idea/
+*.iml
+.vscode/
+.settings/
+.project
+.classpath
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Runtime data
+users.dat
+solutions/
+client_solutions/
+
+# Maven
+.mvn/
+mvnw
+mvnw.cmd
+
+# Temporary files
+*.tmp
+*.bak
+*.swp
+*~
+
+# JavaFX cache
+.cache/
