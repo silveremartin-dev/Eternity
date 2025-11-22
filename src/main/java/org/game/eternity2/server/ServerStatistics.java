@@ -101,23 +101,7 @@ public class ServerStatistics {
         return uptimeSec > 0 ? (double) piecesSolved.get() / uptimeSec : 0.0;
     }
 
-    public long getPacketsSent() {
-        return packetsSent.get();
-    }
-
-    public long getPacketsReceived() {
-        return packetsReceived.get();
-    }
-
     public int getConnectedClients() {
         return activeClients.get();
-    }
-
-    public int getPiecesSolved() {
-        return piecesSolved.get();
-    }
-
-    public long getTotalComputeTimeMs() {
-        return totalComputeTimeMs.get();
     }
 }
