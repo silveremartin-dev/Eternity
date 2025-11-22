@@ -6,6 +6,7 @@ import javafx.geometry.Insets;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
@@ -63,6 +64,33 @@ public class ServerApp extends Application {
         statusBar.setPadding(new Insets(5));
         statusBar.setStyle("-fx-background-color: #f5f5f5;");
 
+        // Configuration Panel
+        Label configTitle = new Label("Game Configuration");
+        configTitle.setStyle("-fx-font-weight: bold; -fx-font-size: 14px;");
+
+        Label sizeLabel = new Label("Board Size:");
+        ComboBox<String> sizeCombo = new ComboBox<>();
+        sizeCombo.getItems().addAll("4x4 (Demo)", "6x6 (Easy)", "12x6 (Medium)", "16x16 (Full)");
+        sizeCombo.getSelectionModel().select(0); // Default 4x4 for quick demo
+
+        Label strategyLabel = new Label("Strategy:");
+        ComboBox<String> strategyCombo = new ComboBox<>();
+        strategyCombo.getItems().addAll("BorderFirst", "Scanline");
+        strategyCombo.getSelectionModel().select(0);
+
+        GridPane configGrid = new GridPane();
+        configGrid.setHgap(10);
+        configGrid.setVgap(5);
+        configGrid.add(sizeLabel, 0, 0);
+        configGrid.add(sizeCombo, 1, 0);
+        configGrid.add(strategyLabel, 0, 1);
+        configGrid.add(strategyCombo, 1, 1);
+
+        VBox configPanel = new VBox(8, configTitle, configGrid);
+        configPanel.setPadding(new Insets(10));
+        configPanel.setStyle(
+                "-fx-background-color: #fff3e0; -fx-border-color: #ff9800; -fx-border-width: 2; -fx-border-radius: 5; -fx-background-radius: 5;");
+
         // Statistics panel
         Label statsTitle = new Label("Server Statistics");
         statsTitle.setStyle("-fx-font-weight: bold; -fx-font-size: 14px;");
@@ -73,6 +101,37 @@ public class ServerApp extends Application {
         statsPanel.setPadding(new Insets(10));
         statsPanel.setStyle(
                 "-fx-background-color: #e8f4f8; -fx-border-color: #4a90e2; -fx-border-width: 2; -fx-border-radius: 5; -fx-background-radius: 5;");
+
+        // Update Start Button Action
+        startBtn.setOnAction(e -> {
+            String selectedSize = sizeCombo.getSelectionModel().getSelectedItem();
+            String selectedStrategy = strategyCombo.getSelectionModel().getSelectedItem();
+
+            int x = 4, y = 4;
+            if (selectedSize.startsWith("6x6")) {
+                x = 6;
+                y = 6;
+            } else if (selectedSize.startsWith("12x6")) {
+                x = 12;
+                y = 6;
+            } else if (selectedSize.startsWith("16x16")) {
+                x = 16;
+                y = 16;
+            }
+
+            server.initializeGame(x, y, selectedStrategy);
+            server.startServer();
+
+            // Disable config while running
+            sizeCombo.setDisable(true);
+            strategyCombo.setDisable(true);
+        });
+
+        stopBtn.setOnAction(e -> {
+            server.stopServer();
+            sizeCombo.setDisable(false);
+            strategyCombo.setDisable(false);
+        });
 
         // Log area
         Label logTitle = new Label("Server Log");
@@ -87,7 +146,7 @@ public class ServerApp extends Application {
         logPanel.setPadding(new Insets(5));
 
         // Layout
-        VBox centerPanel = new VBox(10, statsPanel, logPanel);
+        VBox centerPanel = new VBox(10, configPanel, statsPanel, logPanel);
         centerPanel.setPadding(new Insets(10));
 
         BorderPane root = new BorderPane();

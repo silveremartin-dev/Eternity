@@ -2,8 +2,8 @@ package org.game.eternity2.server;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.game.eternity2.elements.EternityBoardInterface;
 import org.game.eternity2.elements.Hint;
-import org.game.eternity2.elements.size16x16.EternityBoard16x16;
 import org.game.eternity2.server.strategy.BorderFirstStrategy;
 
 import java.io.IOException;
@@ -35,7 +35,8 @@ public class EternityServer {
     private boolean isRunning;
     private ExecutorService clientExecutor;
     private List<ClientHandler> clients;
-    private EternityBoard16x16 masterBoard;
+    private List<ClientHandler> clients;
+    private EternityBoardInterface masterBoard;
     private JobManager jobManager;
     private UserDatabase userDatabase;
     private ServerStatistics statistics;
@@ -43,27 +44,33 @@ public class EternityServer {
     public EternityServer(int port) {
         this.port = port;
         this.clients = new ArrayList<>();
-        this.masterBoard = new EternityBoard16x16();
+        // masterBoard will be initialized in initializeGame
         this.jobManager = new JobManager();
         this.userDatabase = new UserDatabase();
         this.statistics = new ServerStatistics();
-
-        // Initialize jobs
-        initializeJobs();
     }
 
-    private void initializeJobs() {
-        // Create a simple test puzzle
-        EternityBoard16x16 puzzle = new EternityBoard16x16();
-        List<Hint> hints = new ArrayList<>();
+    public void initializeGame(int sizeX, int sizeY, String strategyName) {
+        // Create board using factory
+        this.masterBoard = org.game.eternity2.elements.BoardFactory.createBoard(sizeX, sizeY);
 
-        // Use BorderFirstStrategy
-        WorkStrategy strategy = new BorderFirstStrategy();
+        List<Hint> hints = new ArrayList<>();
+        // Load hints if available (optional implementation)
+
+        // Select strategy
+        WorkStrategy strategy;
+        if ("Scanline".equalsIgnoreCase(strategyName)) {
+            // Fallback or implement ScanlineStrategy
+            strategy = new BorderFirstStrategy(); // Placeholder
+        } else {
+            strategy = new BorderFirstStrategy();
+        }
 
         // Initialize the job manager
-        jobManager.initializeJobs(puzzle, hints, strategy);
+        jobManager.initializeJobs(masterBoard, hints, strategy);
 
-        logger.info("JobManager initialized with {} jobs", jobManager.getStatistics().getTotalJobs());
+        logger.info("Game initialized: {}x{} board, Strategy: {}, Jobs: {}",
+                sizeX, sizeY, strategyName, jobManager.getStatistics().getTotalJobs());
     }
 
     public void startServer() {
@@ -267,8 +274,8 @@ public class EternityServer {
                     if (gui != null) {
                         gui.log(timestamp() + " Result received from " + packet.getUser().getLogin());
                     }
-                    if (packet.getPayload() instanceof EternityBoard16x16) {
-                        EternityBoard16x16 resultBoard = (EternityBoard16x16) packet.getPayload();
+                    if (packet.getPayload() instanceof EternityBoardInterface) {
+                        EternityBoardInterface resultBoard = (EternityBoardInterface) packet.getPayload();
                         synchronized (masterBoard) {
                             if (resultBoard.computeScore() > masterBoard.computeScore()) {
                                 masterBoard = resultBoard;

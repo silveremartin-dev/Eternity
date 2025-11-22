@@ -98,6 +98,32 @@ public class ClientApp extends Application implements ClientUI {
         Scene scene = new Scene(root, 750, 600);
         primaryStage.setScene(scene);
         primaryStage.show();
+
+        // Start statistics poller
+        startStatsPoller();
+    }
+
+    private void startStatsPoller() {
+        java.util.concurrent.ScheduledExecutorService scheduler = java.util.concurrent.Executors
+                .newSingleThreadScheduledExecutor(r -> {
+                    Thread t = new Thread(r);
+                    t.setDaemon(true);
+                    return t;
+                });
+
+        scheduler.scheduleAtFixedRate(() -> {
+            if (client != null && client.isConnected()) {
+                Platform.runLater(() -> {
+                    ClientStatistics stats = client.getStatistics();
+                    statsLabel.setText(String.format(
+                            "Jobs completed: %d\nPieces placed: %d\nBacktracks: %d\nBest Score: %d",
+                            stats.getJobsCompleted(),
+                            stats.getPiecesPlaced(),
+                            stats.getBacktrackCount(),
+                            stats.getBestScore()));
+                });
+            }
+        }, 0, 500, java.util.concurrent.TimeUnit.MILLISECONDS);
     }
 
     @Override
