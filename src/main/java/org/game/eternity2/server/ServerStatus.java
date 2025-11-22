@@ -93,4 +93,24 @@ public class ServerStatus implements Serializable {
     public long getPacketsReceived() {
         return packetsReceived;
     }
+
+    public boolean isRunning() {
+        return serverUp;
+    }
+
+    public int getConnectedClients() {
+        return activeClients;
+    }
+
+    public int getTotalJobs() {
+        return 0; // Will be implemented when JobManager integration is complete
+    }
+
+    public int getCompletedJobs() {
+        return 0; // Will be implemented when JobManager integration is complete
+    }
+
+    public int getPendingJobs() {
+        return 0; // Will be implemented when JobManager integration is complete
+    }
 }
