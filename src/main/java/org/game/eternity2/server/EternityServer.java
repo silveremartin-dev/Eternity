@@ -5,6 +5,8 @@ import org.apache.logging.log4j.Logger;
 import org.game.eternity2.elements.AbstractEternityBoard;
 import org.game.eternity2.elements.Hint;
 import org.game.eternity2.server.strategy.BorderFirstStrategy;
+import org.game.eternity2.server.redis.ConstraintCache;
+import org.game.eternity2.server.redis.RedisConnectionManager;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -17,6 +19,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import io.grpc.Server;
+import io.grpc.ServerBuilder;
+import org.game.eternity2.server.grpc.EternityServiceImpl;
 
 /**
  * The server to be used to dispatch packets between clients.
@@ -41,6 +46,10 @@ public class EternityServer {
     private UserDatabase userDatabase;
     private ServerStatistics statistics;
     private EternityWebSocketServer webSocketServer;
+    private Server grpcServer;
+
+    private RedisConnectionManager redisManager;
+    private ConstraintCache constraintCache;
 
     public EternityServer(int port) {
         this.port = port;
@@ -53,6 +62,15 @@ public class EternityServer {
         // Start WebSocket server on port + 1
         this.webSocketServer = new EternityWebSocketServer(port + 1, this);
         this.webSocketServer.start();
+
+        // Initialize Redis components
+        try {
+            this.redisManager = new RedisConnectionManager("localhost", 6379);
+            this.constraintCache = new ConstraintCache(redisManager);
+            logger.info("Redis connection established and Constraint Cache initialized");
+        } catch (Exception e) {
+            logger.warn("Redis not available. Constraint Cache will be disabled.", e);
+        }
     }
 
     public void initializeGame(int sizeX, int sizeY, String strategyName, List<Hint> hints) {
@@ -75,6 +93,11 @@ public class EternityServer {
         // Initialize the job manager
         jobManager.initializeJobs(masterBoard, hints, strategy);
 
+        // Index board for constraint caching
+        if (constraintCache != null) {
+            constraintCache.indexBoard(masterBoard);
+        }
+
         logger.info("Game initialized: {}x{} board, Strategy: {}, Jobs: {}",
                 sizeX, sizeY, strategyName, jobManager.getStatistics().getTotalJobs());
     }
@@ -84,12 +107,16 @@ public class EternityServer {
             return;
         }
         isRunning = true;
-        clientExecutor = Executors.newCachedThreadPool();
-        new Thread(() -> {
+
+        // Virtual Threads executor - unlimited concurrency with minimal overhead
+        clientExecutor = Executors.newVirtualThreadPerTaskExecutor();
+
+        // Accept loop in Virtual Thread (non-blocking for other work)
+        Thread.ofVirtual().name("server-accept").start(() -> {
             try {
                 serverSocket = new ServerSocket(port);
                 if (gui != null) {
-                    gui.log(timestamp() + " Server started on port " + port);
+                    gui.log(timestamp() + " Server started on port " + port + " (Virtual Threads)");
                     gui.setServerStatus(true);
                 }
                 while (isRunning) {
@@ -99,10 +126,16 @@ public class EternityServer {
                             gui.log(timestamp() + " New connection from " + clientSocket.getInetAddress());
                         }
                         ClientHandler handler = new ClientHandler(clientSocket);
-                        clients.add(handler);
-                        if (gui != null) {
-                            gui.updateClientCount(clients.size());
+
+                        // Thread-safe concurrent update
+                        synchronized (clients) {
+                            clients.add(handler);
+                            if (gui != null) {
+                                gui.updateClientCount(clients.size());
+                            }
                         }
+
+                        // Submit to Virtual Thread pool
                         clientExecutor.submit(handler);
                     } catch (IOException e) {
                         if (isRunning && gui != null) {
@@ -116,7 +149,22 @@ public class EternityServer {
                 }
                 stopServer();
             }
-        }).start();
+        });
+
+        // Start gRPC Server
+        try {
+            int grpcPort = port + 2;
+            grpcServer = ServerBuilder.forPort(grpcPort)
+                    .addService(new EternityServiceImpl(this))
+                    .build()
+                    .start();
+            logger.info("gRPC Server started on port " + grpcPort);
+            if (gui != null) {
+                gui.log(timestamp() + " gRPC Server started on port " + grpcPort);
+            }
+        } catch (IOException e) {
+            logger.error("Failed to start gRPC server", e);
+        }
     }
 
     public void stopServer() {
@@ -129,7 +177,7 @@ public class EternityServer {
                 serverSocket.close();
             }
             if (clientExecutor != null) {
-                clientExecutor.shutdownNow();
+                clientExecutor.close(); // Close Virtual Thread executor (graceful shutdown)
             }
             if (webSocketServer != null) {
                 try {
@@ -138,12 +186,29 @@ public class EternityServer {
                     Thread.currentThread().interrupt();
                 }
             }
-            // Copy list to avoid ConcurrentModificationException
-            List<ClientHandler> clientsCopy = new ArrayList<>(clients);
+
+            if (grpcServer != null) {
+                grpcServer.shutdown();
+                try {
+                    if (!grpcServer.awaitTermination(5, java.util.concurrent.TimeUnit.SECONDS)) {
+                        grpcServer.shutdownNow();
+                    }
+                } catch (InterruptedException e) {
+                    grpcServer.shutdownNow();
+                }
+            }
+
+            // Thread-safe client iteration and cleanup
+            List<ClientHandler> clientsCopy;
+            synchronized (clients) {
+                clientsCopy = new ArrayList<>(clients);
+                clients.clear();
+            }
+
             for (ClientHandler client : clientsCopy) {
                 client.close();
             }
-            clients.clear();
+
             if (gui != null) {
                 gui.updateClientCount(0);
                 gui.log(timestamp() + " Server stopped.");

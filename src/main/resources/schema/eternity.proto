@@ -1,0 +1,37 @@
+syntax = "proto3";
+
+package org.game.eternity2.grpc;
+
+option java_multiple_files = true;
+option java_package = "org.game.eternity2.grpc";
+option java_outer_classname = "EternityProto";
+
+// The Eternity II Service definition.
+service EternityService {
+  // Handshake / Login
+  rpc Login (FlatBufferRequest) returns (FlatBufferResponse) {}
+
+  // Request a new job (batch of positions to solve)
+  rpc GetJob (FlatBufferRequest) returns (FlatBufferResponse) {}
+
+  // Submit a found solution
+  rpc SubmitSolution (FlatBufferRequest) returns (FlatBufferResponse) {}
+
+  // Keep-alive / Heartbeat
+  rpc KeepAlive (FlatBufferRequest) returns (FlatBufferResponse) {}
+  
+  // Bi-directional streaming for real-time job processing (Advanced)
+  rpc StreamJobs (stream FlatBufferRequest) returns (stream FlatBufferResponse) {}
+}
+
+// Wrapper for FlatBuffers data sent from Client to Server
+message FlatBufferRequest {
+  // The raw FlatBuffers bytes (contains Message union: LoginRequest, JobRequest, etc.)
+  bytes payload = 1;
+}
+
+// Wrapper for FlatBuffers data sent from Server to Client
+message FlatBufferResponse {
+  // The raw FlatBuffers bytes (contains Message union: LoginResponse, JobResponse, etc.)
+  bytes payload = 1;
+}

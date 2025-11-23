@@ -291,6 +291,8 @@ public class ServerApp extends Application {
     }
 
     public static void main(String[] args) {
+        // Set log file identifier
+        System.setProperty("appType", "server");
         launch(args);
     }
 }

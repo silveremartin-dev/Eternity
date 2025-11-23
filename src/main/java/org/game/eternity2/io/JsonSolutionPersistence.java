@@ -26,7 +26,7 @@ import java.util.List;
  */
 public class JsonSolutionPersistence {
     private static final Logger logger = LogManager.getLogger(JsonSolutionPersistence.class);
-    private static final String SOLUTIONS_DIR = "solutions";
+    private static final String SOLUTIONS_DIR = "data/solutions";
     private static final DateTimeFormatter TIMESTAMP_FORMAT = DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss");
     private static final Gson gson = new GsonBuilder().setPrettyPrinting().create();
 

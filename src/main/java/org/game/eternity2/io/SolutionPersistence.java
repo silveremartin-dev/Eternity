@@ -23,7 +23,7 @@ import java.util.List;
  */
 public class SolutionPersistence {
     private static final Logger logger = LogManager.getLogger(SolutionPersistence.class);
-    private static final String SOLUTIONS_DIR = "solutions";
+    private static final String SOLUTIONS_DIR = "data/solutions";
     private static final DateTimeFormatter TIMESTAMP_FORMAT = DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss");
 
     public static Path saveSolution(EternityBoardInterface board, int score) {

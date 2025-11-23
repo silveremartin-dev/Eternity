@@ -173,6 +173,8 @@ public class ClientApp extends Application implements ClientUI {
     }
 
     public static void main(String[] args) {
+        // Set log file identifier
+        System.setProperty("appType", "client");
         launch(args);
     }
 }

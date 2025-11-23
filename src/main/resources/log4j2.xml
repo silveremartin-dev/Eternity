@@ -16,18 +16,35 @@
   ~  limitations under the License.
   -->
 
-<Configuration status="WARN" name ="logger">
+<Configuration status="WARN" name="logger">
+    <Properties>
+        <!-- Default to 'app' if no appType is set -->
+        <Property name="appType">${sys:appType:-app}</Property>
+        <Property name="logPattern">%d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n</Property>
+    </Properties>
     <Appenders>
-        <!-- Async Loggers will auto-flush in batches, so switch off immediateFlush. -->
-        <RandomAccessFile name="RandomAccessFile" fileName="JAntsAsynchronousFileLog.log" immediateFlush="false" append="false">
-            <PatternLayout>
-                <Pattern>%d %p %c{1.} [%t] %m %ex%n</Pattern>
-            </PatternLayout>
-        </RandomAccessFile>
+        <!-- Rolling file appender with timestamp in filename -->
+        <!-- Logs go to target/logs which is cleaned with mvn clean -->
+        <RollingFile name="RollingFile" 
+                     fileName="target/logs/${appType}.log"
+                     filePattern="target/logs/${appType}-%d{yyyy-MM-dd-HH-mm-ss}.log">
+            <PatternLayout pattern="${logPattern}"/>
+            <Policies>
+                <OnStartupTriggeringPolicy />
+                <SizeBasedTriggeringPolicy size="10 MB"/>
+            </Policies>
+            <DefaultRolloverStrategy max="20"/>
+        </RollingFile>
+        
+        <!-- Console appender for development -->
+        <Console name="Console" target="SYSTEM_OUT">
+            <PatternLayout pattern="${logPattern}"/>
+        </Console>
     </Appenders>
     <Loggers>
-        <Root level="info" includeLocation="false">
-            <AppenderRef ref="RandomAccessFile"/>
+        <Root level="info">
+            <AppenderRef ref="RollingFile"/>
+            <AppenderRef ref="Console"/>
         </Root>
     </Loggers>
 </Configuration>

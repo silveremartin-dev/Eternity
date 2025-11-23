@@ -1,0 +1,136 @@
+// FlatBuffers schema for Eternity II protocol
+// Compile with: flatc --java -o src/main/java eternity.fbs
+
+namespace org.game.eternity2.proto;
+
+// Basic pattern (0-22 for 16x16)
+table Pattern {
+  id: ubyte;
+}
+
+// Tile with rotation info
+table Tile {
+  tile_id: ushort;
+  top: ubyte;      // Pattern ID for top edge
+  right: ubyte;    // Pattern ID for right edge
+  bottom: ubyte;   // Pattern ID for bottom edge
+  left: ubyte;     // Pattern ID for left edge
+  rotation: ubyte; // 0=0°, 1=90°, 2=180°, 3=270°
+}
+
+// Position on board
+table Position {
+  row: ushort;
+  col: ushort;
+}
+
+// Board state
+table Board {
+  size_x: ushort;
+  size_y: ushort;
+  tiles: [Tile];  // Flat array of tiles (row-major order)
+}
+
+// Hint (pre-placed tile)
+table Hint {
+  position: Position;
+  tile: Tile;
+}
+
+// Job for distributed solving
+table Job {
+  job_id: string;
+  initial_board: Board;
+  positions_to_fill: [Position];
+  timeout_ms: uint;
+  hints: [Hint];
+}
+
+// Solution result
+table Solution {
+  job_id: string;
+  board: Board;
+  score: uint;
+  compute_time_ms: ulong;
+  solver_id: string;
+}
+
+// User authentication
+table User {
+  username: string;
+  password_hash: string;  // Don't send plain passwords
+}
+
+// Request types
+union RequestPayload {
+  LoginRequest,
+  JobRequest,
+  SolutionSubmission,
+  KeepAlive
+}
+
+// Response types
+union ResponsePayload {
+  LoginResponse,
+  JobResponse,
+  AckResponse,
+  ErrorResponse
+}
+
+// Login request
+table LoginRequest {
+  user: User;
+}
+
+// Login response
+table LoginResponse {
+  success: bool;
+  session_token: string;
+  message: string;
+}
+
+// Job request
+table JobRequest {
+  session_token: string;
+}
+
+// Job response
+table JobResponse {
+  job: Job;
+  has_job: bool;
+  queue_length: uint;
+}
+
+// Solution submission
+table SolutionSubmission {
+  session_token: string;
+  solution: Solution;
+}
+
+// Acknowledgement
+table AckResponse {
+  success: bool;
+  message: string;
+}
+
+// Error response
+table ErrorResponse {
+  error_code: int;
+  error_message: string;
+}
+
+// Keep alive
+table KeepAlive {
+  session_token: string;
+  timestamp: ulong;
+}
+
+// Main message wrapper
+table Message {
+  message_id: ulong;
+  timestamp: ulong;
+  request: RequestPayload;
+  response: ResponsePayload;
+}
+
+root_type Message;

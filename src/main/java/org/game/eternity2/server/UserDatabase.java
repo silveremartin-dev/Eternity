@@ -31,7 +31,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class UserDatabase {
     private static final Logger logger = LogManager.getLogger(UserDatabase.class);
-    private static final String DATABASE_FILE = "users.dat";
+    private static final String DATABASE_FILE = "data/users.dat";
 
     private final Map<String, StoredUser> users;
 

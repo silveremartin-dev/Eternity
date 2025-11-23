@@ -35,13 +35,25 @@ public class JobManager {
     private static final Logger logger = LogManager.getLogger(JobManager.class);
 
     private final Map<String, JobStatus> jobStatuses;
-    private final Queue<Job> pendingJobs;
+    private final JobQueue pendingJobs;
     @SuppressWarnings("unused")
     private WorkStrategy currentStrategy;
 
+    /**
+     * Default constructor using in-memory queue.
+     */
     public JobManager() {
+        this(new InMemoryJobQueue());
+    }
+
+    /**
+     * Constructor allowing custom queue implementation (e.g., Redis).
+     * 
+     * @param jobQueue Queue implementation to use
+     */
+    public JobManager(JobQueue jobQueue) {
         this.jobStatuses = new ConcurrentHashMap<>();
-        this.pendingJobs = new LinkedList<>();
+        this.pendingJobs = jobQueue;
     }
 
     /**
@@ -55,14 +67,12 @@ public class JobManager {
         this.currentStrategy = strategy;
         List<Job> jobs = strategy.generateJobs(puzzle, hints);
 
-        synchronized (pendingJobs) {
-            pendingJobs.clear();
-            jobStatuses.clear();
+        pendingJobs.clear();
+        jobStatuses.clear();
 
-            for (Job job : jobs) {
-                pendingJobs.offer(job);
-                jobStatuses.put(job.getJobId(), new JobStatus(job));
-            }
+        for (Job job : jobs) {
+            pendingJobs.offer(job);
+            jobStatuses.put(job.getJobId(), new JobStatus(job));
         }
 
         logger.info("Initialized {} jobs using strategy: {}", jobs.size(), strategy.getName());
@@ -75,15 +85,13 @@ public class JobManager {
      * @return Next job or null if none available
      */
     public Job getNextJob(String clientId) {
-        synchronized (pendingJobs) {
-            Job job = pendingJobs.poll();
-            if (job != null) {
-                JobStatus status = jobStatuses.get(job.getJobId());
-                status.markDispatched(clientId);
-                logger.info("Dispatched job {} to client {}", job.getJobId(), clientId);
-            }
-            return job;
+        Job job = pendingJobs.poll();
+        if (job != null) {
+            JobStatus status = jobStatuses.get(job.getJobId());
+            status.markDispatched(clientId);
+            logger.info("Dispatched job {} to client {}", job.getJobId(), clientId);
         }
+        return job;
     }
 
     /**
@@ -109,9 +117,7 @@ public class JobManager {
         JobStatus status = jobStatuses.get(jobId);
         if (status != null) {
             status.markFailed();
-            synchronized (pendingJobs) {
-                pendingJobs.offer(status.getJob());
-            }
+            pendingJobs.offer(status.getJob());
             logger.warn("Job {} failed, re-queued", jobId);
         }
     }

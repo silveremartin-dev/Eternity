@@ -19,14 +19,14 @@ Thumbs.db
 
 # Logs
 *.log
-logs/
 
 # Runtime data
-users.dat
-solutions/
+data/
+
+# Solutions (user-generated, now in data/solutions/)
 client_solutions/
 
-# Maven
+# Maven wrapper (if using)
 .mvn/
 mvnw
 mvnw.cmd

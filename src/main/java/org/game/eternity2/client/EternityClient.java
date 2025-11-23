@@ -7,6 +7,7 @@ import org.game.eternity2.elements.size16x16.EternityBoard16x16;
 import org.game.eternity2.server.EternityPacket;
 import org.game.eternity2.server.EternityUser;
 import org.game.eternity2.server.Job;
+import org.game.eternity2.client.grpc.EternityGrpcClient;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -15,19 +16,31 @@ import java.net.Socket;
 
 /**
  * Core client logic for connecting to the Eternity server.
+ * Now using Virtual Threads for improved scalability.
+ * Supports both socket and gRPC modes.
  *
  * @author Silvere Martin-Michiellot
- * @version 2.0
+ * @version 2.2 (Virtual Threads + gRPC)
  */
 public class EternityClient {
     private static final Logger logger = LogManager.getLogger(EternityClient.class);
     private static final String DEFAULT_SERVER_IP = "127.0.0.1";
     private static final int DEFAULT_PORT = 12345;
+    private static final int DEFAULT_GRPC_PORT = 12347;
+
+    // Set to true to use gRPC instead of socket
+    private static final boolean USE_GRPC = false;
 
     private ClientUI ui;
+
+    // Socket-based fields
     private Socket socket;
     private ObjectOutputStream out;
     private ObjectInputStream in;
+
+    // gRPC-based fields
+    private EternityGrpcClient grpcClient;
+
     private boolean isConnected;
     private EternityUser user;
     private ClientStatistics statistics;
@@ -37,7 +50,7 @@ public class EternityClient {
         this.user = new EternityUser("User_" + System.currentTimeMillis() % 1000, "password");
         this.statistics = new ClientStatistics();
         // Load stats on startup
-        this.statistics.load(new java.io.File("client-stats.properties"));
+        this.statistics.load(new java.io.File("data/client-stats.properties"));
         this.executor = new JobExecutor(statistics);
     }
 
@@ -46,7 +59,46 @@ public class EternityClient {
     }
 
     public void connect() {
-        new Thread(() -> {
+        if (USE_GRPC) {
+            connectGrpc();
+        } else {
+            connectSocket();
+        }
+    }
+
+    private void connectGrpc() {
+        // Virtual Thread for gRPC client connection
+        Thread.ofVirtual().name("grpc-client-connection").start(() -> {
+            try {
+                if (ui != null)
+                    ui.log("Connecting to gRPC server at " + DEFAULT_SERVER_IP + ":" + DEFAULT_GRPC_PORT + "...");
+
+                grpcClient = new EternityGrpcClient(DEFAULT_SERVER_IP, DEFAULT_GRPC_PORT);
+                isConnected = true;
+
+                if (ui != null) {
+                    ui.setConnected(true);
+                    ui.log("Connected to gRPC server (Virtual Thread).");
+                }
+
+                // TODO: Send login request via gRPC with FlatBuffers
+                // For now just log
+                logger.info("gRPC client connected, ready to send FlatBuffers payloads");
+                if (ui != null)
+                    ui.log("gRPC mode: FlatBuffers serialization active");
+
+            } catch (Exception e) {
+                if (ui != null)
+                    ui.log("gRPC connection failed: " + e.getMessage());
+                logger.error("gRPC connection error", e);
+                disconnect();
+            }
+        });
+    }
+
+    private void connectSocket() {
+        // Virtual Thread for client connection (lightweight, non-blocking)
+        Thread.ofVirtual().name("client-connection").start(() -> {
             try {
                 if (ui != null)
                     ui.log("Connecting to " + DEFAULT_SERVER_IP + ":" + DEFAULT_PORT + "...");
@@ -56,7 +108,7 @@ public class EternityClient {
                 isConnected = true;
                 if (ui != null) {
                     ui.setConnected(true);
-                    ui.log("Connected to server.");
+                    ui.log("Connected to server (Virtual Thread).");
                 }
 
                 // Send login packet
@@ -81,18 +133,20 @@ public class EternityClient {
                     ui.log("Connection failed: " + e.getMessage());
                 disconnect();
             }
-        }).start();
+        });
     }
 
     public void disconnect() {
         isConnected = false;
         // Save stats on disconnect
-        statistics.save(new java.io.File("client-stats.properties"));
+        statistics.save(new java.io.File("data/client-stats.properties"));
 
         try {
             if (socket != null)
                 socket.close();
-        } catch (IOException ignored) {
+            if (grpcClient != null)
+                grpcClient.shutdown();
+        } catch (Exception ignored) {
         }
         if (ui != null) {
             ui.setConnected(false);
@@ -114,7 +168,7 @@ public class EternityClient {
                 break;
 
             case JOB_DISPATCH_NEW:
-                // New job format with JobExecutor
+                // New job format with JobExecutor - process in Virtual Thread
                 if (packet.getPayload() instanceof Job) {
                     Job job = (Job) packet.getPayload();
                     if (ui != null) {
@@ -123,8 +177,8 @@ public class EternityClient {
                         ui.setJobStatus("Processing job...");
                     }
 
-                    // Process job in background thread
-                    new Thread(() -> {
+                    // Process job in Virtual Thread (lightweight background processing)
+                    Thread.ofVirtual().name("job-executor-" + job.getJobId()).start(() -> {
                         try {
                             EternityBoardInterface result = executor.executeJob(job);
 
@@ -149,7 +203,7 @@ public class EternityClient {
                                 ui.log("Error processing job: " + e.getMessage());
                             logger.error("Job execution error", e);
                         }
-                    }).start();
+                    });
                 }
                 break;
 
@@ -162,16 +216,17 @@ public class EternityClient {
                     if (ui != null)
                         ui.setJobStatus("Idle (No jobs available)");
 
-                    // Retry after 5 seconds
-                    new Thread(() -> {
+                    // Retry after 5 seconds in Virtual Thread
+                    Thread.ofVirtual().start(() -> {
                         try {
                             Thread.sleep(5000);
                             if (isConnected) {
                                 sendPacket(new EternityPacket(user, EternityPacket.Command.JOB_REQUEST_NEW, null));
                             }
                         } catch (InterruptedException ignored) {
+                            Thread.currentThread().interrupt();
                         }
-                    }).start();
+                    });
                 }
                 break;
 
