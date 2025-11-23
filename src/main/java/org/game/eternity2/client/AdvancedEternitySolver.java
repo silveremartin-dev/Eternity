@@ -16,9 +16,8 @@
 
 package org.game.eternity2.client;
 
-
+import org.game.eternity2.elements.AbstractEternityBoard;
 import org.game.eternity2.elements.EternityBoardInterface;
-import org.game.eternity2.elements.size16x16.EternityBoard16x16;
 
 /**
  * An algorithm to solve the puzzle.
@@ -27,20 +26,21 @@ import org.game.eternity2.elements.size16x16.EternityBoard16x16;
  * @version 1.0
  */
 
-//brute force solver
+// brute force solver
 public class AdvancedEternitySolver implements EternitySolverInterface {
 
-    public EternityBoardInterface computeTessellation(EternityBoardInterface startingBoard) {
-        //http://www.shortestpath.se/eii/eii_details.html
-        //https://sourceforge.net/projects/eternityii/
+    public AbstractEternityBoard computeTessellation(EternityBoardInterface startingBoard) {
+        // http://www.shortestpath.se/eii/eii_details.html
+        // https://sourceforge.net/projects/eternityii/
         throw new RuntimeException("Not yet implemented.");
-        //can we rotate tiles ?
-        //maintain a list of free tiles and check if there are remaining patterns combinations
-        //start with the border
-        //try to make connected subsets and then connect them
-        //use symetries
-        //are there duplicate tiles ?
+        // can we rotate tiles ?
+        // maintain a list of free tiles and check if there are remaining patterns
+        // combinations
+        // start with the border
+        // try to make connected subsets and then connect them
+        // use symetries
+        // are there duplicate tiles ?
 
-        //better work by putting all tiles on board and swapping them ? faster ?
+        // better work by putting all tiles on board and swapping them ? faster ?
     }
 }

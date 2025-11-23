@@ -89,6 +89,8 @@ public class JobExecutor {
 
         for (int i = 0; i < availableTiles.size(); i++) {
             EternityTileInterface tile = availableTiles.get(i);
+            if (tile == null)
+                continue;
 
             // Try each rotation
             for (int rotation = 0; rotation < 4; rotation++) {
@@ -125,6 +127,8 @@ public class JobExecutor {
     }
 
     private boolean canPlaceTile(EternityBoardInterface board, int row, int col, EternityTileInterface tile) {
+        if (tile == null)
+            return false;
         if (board.isBorder(row, col)) {
             if (!board.areBordersMatchingForBorderTile(row, col, tile)) {
                 return false;

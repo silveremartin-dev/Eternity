@@ -10,8 +10,6 @@ import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 /**
  * JavaFX UI for Eternity server with statistics panel.
@@ -20,7 +18,7 @@ import org.apache.logging.log4j.Logger;
  * @version 2.0
  */
 public class ServerApp extends Application {
-    private static final Logger logger = LogManager.getLogger(ServerApp.class);
+
     private EternityServer server;
     private TextArea logArea;
     private Label statusLabel;
@@ -29,6 +27,10 @@ public class ServerApp extends Application {
     private Label packetsLabel;
     private Button startBtn;
     private Button stopBtn;
+
+    private Button browseBtn;
+    private Label selectedFileLabel;
+    private java.io.File selectedPuzzleFile;
 
     @Override
     public void start(Stage primaryStage) {
@@ -39,19 +41,29 @@ public class ServerApp extends Application {
         MenuBar menuBar = new MenuBar();
         Menu helpMenu = new Menu("Help");
         MenuItem aboutItem = new MenuItem("About");
-        aboutItem.setOnAction(e -> showAlert("About", "Eternity Server v2.0\\nDistributed Puzzle Solver"));
+        aboutItem.setOnAction(e -> showAlert("About", "Eternity Server v2.0\nDistributed Puzzle Solver"));
         helpMenu.getItems().add(aboutItem);
         menuBar.getMenus().add(helpMenu);
+
+        Menu toolsMenu = new Menu("Tools");
+        MenuItem designerItem = new MenuItem("Puzzle Designer");
+        designerItem.setOnAction(e -> new PuzzleDesigner().show());
+        toolsMenu.getItems().add(designerItem);
+        menuBar.getMenus().add(toolsMenu);
 
         // Controls
         startBtn = new Button("Start Server");
         startBtn.setTooltip(new Tooltip("Start the server and begin accepting client connections"));
-        startBtn.setOnAction(e -> server.startServer());
 
         stopBtn = new Button("Stop Server");
         stopBtn.setTooltip(new Tooltip("Stop the server and disconnect all clients"));
         stopBtn.setDisable(true);
-        stopBtn.setOnAction(e -> server.stopServer());
+        stopBtn.setOnAction(e -> {
+            server.stopServer();
+            // Re-enable controls will be handled in updateStatus or here?
+            // Actually updateStatus handles start/stop buttons.
+            // We need to handle config controls here.
+        });
 
         HBox controls = new HBox(10, startBtn, stopBtn);
         controls.setPadding(new Insets(5));
@@ -70,8 +82,33 @@ public class ServerApp extends Application {
 
         Label sizeLabel = new Label("Board Size:");
         ComboBox<String> sizeCombo = new ComboBox<>();
-        sizeCombo.getItems().addAll("4x4 (Demo)", "6x6 (Easy)", "12x6 (Medium)", "16x16 (Full)");
+        sizeCombo.getItems().addAll("4x4 (Demo)", "6x6 (Easy)", "12x6 (Medium)", "16x16 (Full)", "Custom (Load File)");
         sizeCombo.getSelectionModel().select(0); // Default 4x4 for quick demo
+
+        browseBtn = new Button("Browse...");
+        browseBtn.setDisable(true);
+        selectedFileLabel = new Label("No file selected");
+
+        sizeCombo.setOnAction(e -> {
+            boolean isCustom = "Custom (Load File)".equals(sizeCombo.getValue());
+            browseBtn.setDisable(!isCustom);
+            if (!isCustom) {
+                selectedFileLabel.setText("No file selected");
+                selectedPuzzleFile = null;
+            }
+        });
+
+        browseBtn.setOnAction(e -> {
+            javafx.stage.FileChooser fileChooser = new javafx.stage.FileChooser();
+            fileChooser.setTitle("Open Puzzle File");
+            fileChooser.setInitialDirectory(new java.io.File("."));
+            fileChooser.getExtensionFilters()
+                    .add(new javafx.stage.FileChooser.ExtensionFilter("Puzzle Files", "*.puzzle"));
+            selectedPuzzleFile = fileChooser.showOpenDialog(primaryStage);
+            if (selectedPuzzleFile != null) {
+                selectedFileLabel.setText(selectedPuzzleFile.getName());
+            }
+        });
 
         Label strategyLabel = new Label("Strategy:");
         ComboBox<String> strategyCombo = new ComboBox<>();
@@ -83,6 +120,8 @@ public class ServerApp extends Application {
         configGrid.setVgap(5);
         configGrid.add(sizeLabel, 0, 0);
         configGrid.add(sizeCombo, 1, 0);
+        configGrid.add(browseBtn, 2, 0);
+        configGrid.add(selectedFileLabel, 3, 0);
         configGrid.add(strategyLabel, 0, 1);
         configGrid.add(strategyCombo, 1, 1);
 
@@ -108,22 +147,53 @@ public class ServerApp extends Application {
             String selectedStrategy = strategyCombo.getSelectionModel().getSelectedItem();
 
             int x = 4, y = 4;
-            if (selectedSize.startsWith("6x6")) {
-                x = 6;
-                y = 6;
-            } else if (selectedSize.startsWith("12x6")) {
-                x = 12;
-                y = 6;
-            } else if (selectedSize.startsWith("16x16")) {
-                x = 16;
-                y = 16;
+            java.util.List<org.game.eternity2.elements.Hint> hints = new java.util.ArrayList<>();
+
+            if ("Custom (Load File)".equals(selectedSize)) {
+                if (selectedPuzzleFile == null || !selectedPuzzleFile.exists()) {
+                    showAlert("Error", "Please select a valid puzzle file.");
+                    return;
+                }
+                // Parse file
+                try (java.util.Scanner scanner = new java.util.Scanner(selectedPuzzleFile)) {
+                    while (scanner.hasNextLine()) {
+                        String line = scanner.nextLine();
+                        if (line.startsWith("DIM=")) {
+                            String[] parts = line.substring(4).split("x");
+                            x = Integer.parseInt(parts[0]);
+                            y = Integer.parseInt(parts[1]);
+                        } else if (line.startsWith("HINT_")) {
+                            String[] parts = line.split("=")[1].split(",");
+                            int row = Integer.parseInt(parts[0]);
+                            int col = Integer.parseInt(parts[1]);
+                            int id = Integer.parseInt(parts[2]);
+                            int rot = Integer.parseInt(parts[3]);
+                            hints.add(new org.game.eternity2.elements.Hint(row, col, id, rot));
+                        }
+                    }
+                } catch (Exception ex) {
+                    showAlert("Error", "Failed to load puzzle file: " + ex.getMessage());
+                    return;
+                }
+            } else {
+                if (selectedSize.startsWith("6x6")) {
+                    x = 6;
+                    y = 6;
+                } else if (selectedSize.startsWith("12x6")) {
+                    x = 12;
+                    y = 6;
+                } else if (selectedSize.startsWith("16x16")) {
+                    x = 16;
+                    y = 16;
+                }
             }
 
-            server.initializeGame(x, y, selectedStrategy);
+            server.initializeGame(x, y, selectedStrategy, hints);
             server.startServer();
 
             // Disable config while running
             sizeCombo.setDisable(true);
+            browseBtn.setDisable(true);
             strategyCombo.setDisable(true);
         });
 
@@ -131,6 +201,8 @@ public class ServerApp extends Application {
             server.stopServer();
             sizeCombo.setDisable(false);
             strategyCombo.setDisable(false);
+            boolean isCustom = "Custom (Load File)".equals(sizeCombo.getValue());
+            browseBtn.setDisable(!isCustom);
         });
 
         // Log area
@@ -154,16 +226,34 @@ public class ServerApp extends Application {
         root.setCenter(centerPanel);
         root.setBottom(new VBox(controls, statusBar));
 
+        // Splash Screen
+        Stage splashStage = new Stage();
+        javafx.scene.image.Image splashImage = new javafx.scene.image.Image(
+                getClass().getResourceAsStream("/images/splash.png"));
+        javafx.scene.image.ImageView splashView = new javafx.scene.image.ImageView(splashImage);
+        Scene splashScene = new Scene(new javafx.scene.layout.StackPane(splashView));
+        splashStage.setScene(splashScene);
+        splashStage.initStyle(javafx.stage.StageStyle.UNDECORATED);
+        splashStage.show();
+
+        // Main Scene
         Scene scene = new Scene(root, 750, 600);
         primaryStage.setScene(scene);
-        primaryStage.show();
+
+        // Delay showing main stage
+        javafx.animation.PauseTransition pause = new javafx.animation.PauseTransition(javafx.util.Duration.seconds(3));
+        pause.setOnFinished(e -> {
+            splashStage.close();
+            primaryStage.show();
+        });
+        pause.play();
 
         // Wire server callbacks
         server.setGui(new ServerUI() {
             @Override
             public void log(String msg) {
                 Platform.runLater(() -> {
-                    logArea.appendText(msg + "\\n");
+                    logArea.appendText(msg + System.lineSeparator());
                     logArea.setScrollTop(Double.MAX_VALUE);
                 });
             }

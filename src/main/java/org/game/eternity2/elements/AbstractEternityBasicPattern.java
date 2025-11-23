@@ -16,7 +16,6 @@
 
 package org.game.eternity2.elements;
 
-
 import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
@@ -26,19 +25,14 @@ import java.io.File;
 import java.io.IOException;
 
 /**
- * A class to store a pattern as it is found on top, bottom, left and right of each Eternity II game tile.
- *
- * @author Silvere Martin-Michiellot
- * @version 1.0
+ * A class to store a pattern as it is found on top, bottom, left and right of
+ * an Eternity II tile.
  */
+public class AbstractEternityBasicPattern implements EternityBasicPatternInterface {
 
-public class AbstractEternityBasicPattern implements EternityBasicPatternInterface, Cloneable {
-
-    private final int value;
-
-    private BufferedImage image;
-
-    private final int maxValue;
+    protected int value;
+    protected BufferedImage image;
+    protected int maxValue;
 
     protected AbstractEternityBasicPattern(int value, String path, int maxValue) {
 
@@ -50,7 +44,8 @@ public class AbstractEternityBasicPattern implements EternityBasicPatternInterfa
                 image = null;
             }
             this.maxValue = maxValue;
-        } else throw new IllegalArgumentException("Value must be an integer between 0 and " + maxValue + ".");
+        } else
+            throw new IllegalArgumentException("Value must be an integer between 0 and " + maxValue + ".");
 
     }
 
@@ -58,14 +53,14 @@ public class AbstractEternityBasicPattern implements EternityBasicPatternInterfa
     public int getValue() {
         return value;
     }
-    
+
     @Override
     public Image getImage() {
         return image;
     }
 
     @Override
-    //deep copy
+    // deep copy
     public Object clone() {
         AbstractEternityBasicPattern result;
         try {
@@ -83,10 +78,27 @@ public class AbstractEternityBasicPattern implements EternityBasicPatternInterfa
     }
 
     private static BufferedImage deepCopy(BufferedImage bi) {
+        if (bi == null)
+            return null;
         ColorModel cm = bi.getColorModel();
         boolean isAlphaPremultiplied = cm.isAlphaPremultiplied();
         WritableRaster raster = bi.copyData(null);
         return new BufferedImage(cm, raster, isAlphaPremultiplied, null);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o)
+            return true;
+        if (o == null || getClass() != o.getClass())
+            return false;
+        AbstractEternityBasicPattern that = (AbstractEternityBasicPattern) o;
+        return value == that.value;
+    }
+
+    @Override
+    public int hashCode() {
+        return value;
     }
 
 }

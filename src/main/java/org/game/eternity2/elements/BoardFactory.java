@@ -25,7 +25,7 @@ public class BoardFactory {
      * @return Board instance
      * @throws IllegalArgumentException if size not supported
      */
-    public static EternityBoardInterface createBoard(int sizeX, int sizeY) {
+    public static AbstractEternityBoard createBoard(int sizeX, int sizeY) {
         logger.info("Creating board: {}x{}", sizeX, sizeY);
 
         // Square boards
@@ -56,7 +56,7 @@ public class BoardFactory {
      * @param size Size of the board (width = height)
      * @return Board instance
      */
-    public static EternityBoardInterface createSquareBoard(int size) {
+    public static AbstractEternityBoard createSquareBoard(int size) {
         return createBoard(size, size);
     }
 

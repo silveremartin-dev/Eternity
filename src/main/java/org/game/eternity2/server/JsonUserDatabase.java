@@ -162,6 +162,7 @@ public class JsonUserDatabase {
     /**
      * Database container for JSON serialization.
      */
+    @SuppressWarnings("unused")
     private static class DatabaseData {
         String version;
         Map<String, UserData> users;
@@ -170,6 +171,7 @@ public class JsonUserDatabase {
     /**
      * User data for JSON serialization.
      */
+    @SuppressWarnings("unused")
     private static class UserData {
         String username;
         String passwordHash;

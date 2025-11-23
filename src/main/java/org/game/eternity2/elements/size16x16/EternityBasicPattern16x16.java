@@ -16,7 +16,6 @@
 
 package org.game.eternity2.elements.size16x16;
 
-
 import org.game.eternity2.elements.AbstractEternityBasicPattern;
 
 /**
@@ -29,7 +28,7 @@ import org.game.eternity2.elements.AbstractEternityBasicPattern;
 public class EternityBasicPattern16x16 extends AbstractEternityBasicPattern {
 
     protected EternityBasicPattern16x16(int value, String path) {
-        super(value, path, 4);
+        super(value, path, 22);
     }
 
 }

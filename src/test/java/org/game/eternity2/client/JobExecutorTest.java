@@ -3,7 +3,7 @@ package org.game.eternity2.client;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.game.eternity2.elements.size16x16.EternityBoard16x16;
-import org.game.eternity2.elements.Hint;
+
 import org.game.eternity2.server.Job;
 
 import java.util.ArrayList;

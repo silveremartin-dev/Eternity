@@ -16,7 +16,7 @@
 
 package org.game.eternity2.io;
 
-import org.game.eternity2.elements.EternityBoardInterface;
+import org.game.eternity2.elements.AbstractEternityBoard;
 import org.game.eternity2.elements.size16x16.EternityBoard16x16;
 import org.game.eternity2.server.EternityUser;
 import org.jetbrains.annotations.NotNull;
@@ -107,12 +107,13 @@ public class RankedEternityBoards {
         }
     }
 
+    @SuppressWarnings("unused")
     private class RankedEternityBoard implements Serializable {
 
         @Serial
         private static final long serialVersionUID = 1L;
 
-        private EternityBoardInterface eternityBoard;
+        private AbstractEternityBoard eternityBoard;
         private EternityUser user;
         private Date date;
         private int score;
@@ -120,7 +121,7 @@ public class RankedEternityBoards {
         public RankedEternityBoard() {
         }
 
-        public EternityBoardInterface getEternityBoard() {
+        public AbstractEternityBoard getEternityBoard() {
             return eternityBoard;
         }
 

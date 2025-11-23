@@ -43,6 +43,12 @@ public class ClientApp extends Application implements ClientUI {
         helpMenu.getItems().add(aboutItem);
         menuBar.getMenus().add(helpMenu);
 
+        Menu toolsMenu = new Menu("Tools");
+        MenuItem settingsItem = new MenuItem("Settings");
+        settingsItem.setOnAction(e -> showAlert("Settings", "Configuration file located at: client-config.properties"));
+        toolsMenu.getItems().add(settingsItem);
+        menuBar.getMenus().add(toolsMenu);
+
         // Controls
         connectBtn = new Button("Connect to Server");
         connectBtn.setTooltip(new Tooltip("Connect to the Eternity server at 127.0.0.1:12345"));
@@ -116,11 +122,14 @@ public class ClientApp extends Application implements ClientUI {
                 Platform.runLater(() -> {
                     ClientStatistics stats = client.getStatistics();
                     statsLabel.setText(String.format(
-                            "Jobs completed: %d\nPieces placed: %d\nBacktracks: %d\nBest Score: %d",
+                            "SESSION:\nJobs: %d | Pieces: %d\nBacktracks: %d | Best: %d\n\nTOTAL:\nJobs: %d | Pieces: %d\nBacktracks: %d",
                             stats.getJobsCompleted(),
                             stats.getPiecesPlaced(),
                             stats.getBacktrackCount(),
-                            stats.getBestScore()));
+                            stats.getBestScore(),
+                            stats.getTotalJobsCompleted(),
+                            stats.getTotalPiecesPlaced(),
+                            stats.getTotalBacktrackCount()));
                 });
             }
         }, 0, 500, java.util.concurrent.TimeUnit.MILLISECONDS);
@@ -129,7 +138,7 @@ public class ClientApp extends Application implements ClientUI {
     @Override
     public void log(String msg) {
         Platform.runLater(() -> {
-            logArea.appendText(msg + "\\n");
+            logArea.appendText(msg + System.lineSeparator());
             logArea.setScrollTop(Double.MAX_VALUE);
         });
         logger.info(msg);

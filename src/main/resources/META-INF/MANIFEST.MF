@@ -5,8 +5,8 @@ SplashScreen-Image: images/splash.png
 Name: org/game/eternity
 Sealed: true
 Specification-Title: "Java Eternity II Server and Client Classes" 
-Specification-Version: "1.0"
+Specification-Version: "2.0"
 Specification-Vendor: "Independent Developer"
 Implementation-Title: "org.game.eternity2"
-Implementation-Version: "1.0"
+Implementation-Version: "2.0"
 Implementation-Vendor: "Independent Developer"

@@ -2,10 +2,10 @@ package org.game.eternity2.io;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.google.gson.JsonObject;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.game.eternity2.elements.EternityBoardInterface;
+import org.game.eternity2.elements.AbstractEternityBoard;
 import org.game.eternity2.elements.EternityTileInterface;
 
 import java.io.IOException;
@@ -37,7 +37,7 @@ public class JsonSolutionPersistence {
      * @param score The board's score
      * @return Path to saved file
      */
-    public static Path saveSolution(EternityBoardInterface board, int score) {
+    public static Path saveSolution(AbstractEternityBoard board, int score) {
         try {
             Path solutionsPath = Paths.get(SOLUTIONS_DIR);
             if (!Files.exists(solutionsPath)) {
@@ -63,7 +63,7 @@ public class JsonSolutionPersistence {
                         tileData.row = row;
                         tileData.col = col;
                         tileData.tileId = tile.getBackValue();
-                        tileData.rotation = 0; // TODO: track rotation
+                        tileData.rotation = tile.getRotation();
                         data.tiles.add(tileData);
                     }
                 }

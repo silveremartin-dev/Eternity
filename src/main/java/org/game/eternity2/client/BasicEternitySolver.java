@@ -16,8 +16,10 @@
 
 package org.game.eternity2.client;
 
-
+import org.game.eternity2.elements.AbstractEternityBoard;
 import org.game.eternity2.elements.EternityBoardInterface;
+
+import java.util.List;
 
 /**
  * An algorithm to solve the puzzle.
@@ -26,10 +28,49 @@ import org.game.eternity2.elements.EternityBoardInterface;
  * @version 1.0
  */
 
-//brute force solver
+// brute force solver
 public class BasicEternitySolver implements EternitySolverInterface {
 
-    public EternityBoardInterface computeTessellation(EternityBoardInterface startingBoard) {
-        throw new RuntimeException("Not yet implemented.");
+    public AbstractEternityBoard computeTessellation(EternityBoardInterface startingBoard) {
+        List<org.game.eternity2.elements.EternityTileInterface> missingTiles = new java.util.ArrayList<>(
+                startingBoard.getMissingTiles());
+        return solve(startingBoard, missingTiles);
+    }
+
+    private AbstractEternityBoard solve(EternityBoardInterface board,
+            java.util.List<org.game.eternity2.elements.EternityTileInterface> tiles) {
+        int[] nextPos = findNextEmpty(board);
+        if (nextPos == null)
+            return (AbstractEternityBoard) board;
+        int x = nextPos[0];
+        int y = nextPos[1];
+
+        for (int i = 0; i < tiles.size(); i++) {
+            org.game.eternity2.elements.EternityTileInterface tile = tiles.get(i);
+            for (int r = 0; r < 4; r++) {
+                if (board.setTileAt(x, y, tile)) {
+                    java.util.List<org.game.eternity2.elements.EternityTileInterface> remaining = new java.util.ArrayList<>(
+                            tiles);
+                    remaining.remove(i);
+                    AbstractEternityBoard result = solve(board, remaining);
+                    if (result != null)
+                        return result;
+                    board.setTileAt(x, y, null);
+                }
+                tile.rotateClockwise();
+            }
+        }
+        return null;
+    }
+
+    private int[] findNextEmpty(EternityBoardInterface board) {
+        for (int y = 0; y < board.getYBoardSize(); y++) {
+            for (int x = 0; x < board.getXBoardSize(); x++) {
+                if (board.getTileAt(x, y) == null) {
+                    return new int[] { x, y };
+                }
+            }
+        }
+        return null;
     }
 }

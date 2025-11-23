@@ -16,7 +16,6 @@
 
 package org.game.eternity2.io;
 
-
 import jakarta.xml.bind.JAXBContext;
 import jakarta.xml.bind.JAXBException;
 import jakarta.xml.bind.Unmarshaller;
@@ -52,11 +51,12 @@ public abstract class AbstractEternityTilesReader {
         }
     }
 
-    //should throw an exception:
-    // if the number (:backValue) on the tile is less than 0 or greater than the getXBoardSize()*getYBoardSize()
+    // should throw an exception:
+    // if the number (:backValue) on the tile is less than 0 or greater than the
+    // getXBoardSize()*getYBoardSize()
     // if there is any duplicate number
     // if the top, right, bottom or left don't correspond to any pattern value
-    public abstract <E extends AbstractEternityTile> @NotNull Set<E> getTiles();
+    public abstract @NotNull Set<? extends AbstractEternityTile> getTiles();
 
     public final EternityXMLGameTiles getEternityXMLGameTiles() {
         return eternityXMLGameTiles;
@@ -81,7 +81,7 @@ public abstract class AbstractEternityTilesReader {
             this.eternityXMLTiles = eternityXMLTiles;
         }
 
-        //Setters and Getters
+        // Setters and Getters
         public List<EternityXMLTile> getEternityXMLTiles() {
             return eternityXMLTiles;
         }
@@ -123,7 +123,7 @@ public abstract class AbstractEternityTilesReader {
             this.left = left;
         }
 
-        //Setters and Getters
+        // Setters and Getters
         public Integer getNumber() {
             return number;
         }
@@ -146,7 +146,8 @@ public abstract class AbstractEternityTilesReader {
 
         @Override
         public String toString() {
-            return "EternityXMLTile [number=" + number + ", top=" + top + ", right = " + right + ", bottom = " + bottom + ", left = " + left + "]";
+            return "EternityXMLTile [number=" + number + ", top=" + top + ", right = " + right + ", bottom = " + bottom
+                    + ", left = " + left + "]";
         }
     }
 

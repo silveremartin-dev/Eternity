@@ -16,7 +16,6 @@
 
 package org.game.eternity2.io;
 
-
 import jakarta.xml.bind.JAXBContext;
 import jakarta.xml.bind.JAXBException;
 import jakarta.xml.bind.Unmarshaller;
@@ -30,7 +29,8 @@ import java.io.Serializable;
 import java.util.List;
 
 /**
- * A way to read a (possibly partial) solution to the Eternity II puzzles from a file.
+ * A way to read a (possibly partial) solution to the Eternity II puzzles from a
+ * file.
  *
  * @author Silvere Martin-Michiellot
  * @version 1.0
@@ -51,12 +51,13 @@ public abstract class AbstractEternityBoardReader {
         }
     }
 
-    //should throw an exception:
-    // if the number (:backValue) on the tile is less than 0 or greater than the getXBoardSize()*getYBoardSize()
+    // should throw an exception:
+    // if the number (:backValue) on the tile is less than 0 or greater than the
+    // getXBoardSize()*getYBoardSize()
     // if there is any duplicate number
     // if rotation is not between 0 and 3
     // if xPosition or xPosition is not a valid position on the board
-    public abstract <E extends AbstractEternityBoard> E getBoard();
+    public abstract @NotNull AbstractEternityBoard getBoard();
 
     public final EternityXMLGameBoard getEternityXMLGameBoard() {
         return eternityXMLGameBoard;
@@ -86,7 +87,7 @@ public abstract class AbstractEternityBoardReader {
             this.eternityXMLTiles = eternityXMLTiles;
         }
 
-        //Setters and Getters
+        // Setters and Getters
         public Integer getXBoardSize() {
             return xBoardSize;
         }
@@ -109,7 +110,8 @@ public abstract class AbstractEternityBoardReader {
 
         @Override
         public String toString() {
-            return "EternityXMLGameBoard [xBoardSize=" + xBoardSize + ", yBoardSize=" + yBoardSize + ", eternityXMLTile=" + eternityXMLTiles.toString() + "]";
+            return "EternityXMLGameBoard [xBoardSize=" + xBoardSize + ", yBoardSize=" + yBoardSize
+                    + ", eternityXMLTile=" + eternityXMLTiles.toString() + "]";
         }
     }
 
@@ -141,7 +143,7 @@ public abstract class AbstractEternityBoardReader {
             this.rotation = rotation;
         }
 
-        //Setters and Getters
+        // Setters and Getters
         public Integer getNumber() {
             return number;
         }
@@ -160,7 +162,8 @@ public abstract class AbstractEternityBoardReader {
 
         @Override
         public String toString() {
-            return "EternityXMLTile [number=" + number + ", xPosition=" + xPosition + ", yPosition = " + yPosition + ", rotation = " + rotation + "]";
+            return "EternityXMLTile [number=" + number + ", xPosition=" + xPosition + ", yPosition = " + yPosition
+                    + ", rotation = " + rotation + "]";
         }
     }
 

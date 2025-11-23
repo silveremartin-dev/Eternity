@@ -18,7 +18,7 @@ package org.game.eternity2.server;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.game.eternity2.elements.EternityBoardInterface;
+import org.game.eternity2.elements.AbstractEternityBoard;
 import org.game.eternity2.elements.Hint;
 
 import java.util.*;
@@ -36,6 +36,7 @@ public class JobManager {
 
     private final Map<String, JobStatus> jobStatuses;
     private final Queue<Job> pendingJobs;
+    @SuppressWarnings("unused")
     private WorkStrategy currentStrategy;
 
     public JobManager() {
@@ -50,7 +51,7 @@ public class JobManager {
      * @param hints    Pre-placed tiles
      * @param strategy Work distribution strategy
      */
-    public void initializeJobs(EternityBoardInterface puzzle, List<Hint> hints, WorkStrategy strategy) {
+    public void initializeJobs(AbstractEternityBoard puzzle, List<Hint> hints, WorkStrategy strategy) {
         this.currentStrategy = strategy;
         List<Job> jobs = strategy.generateJobs(puzzle, hints);
 
@@ -91,7 +92,7 @@ public class JobManager {
      * @param jobId  ID of the completed job
      * @param result Result board (may be null if no solution found)
      */
-    public void markJobCompleted(String jobId, EternityBoardInterface result) {
+    public void markJobCompleted(String jobId, AbstractEternityBoard result) {
         JobStatus status = jobStatuses.get(jobId);
         if (status != null) {
             status.markCompleted(result);
@@ -125,16 +126,18 @@ public class JobManager {
         int completed = 0;
         int dispatched = 0;
         int pending = 0;
+        int failed = 0;
 
         for (JobStatus status : jobStatuses.values()) {
             switch (status.getState()) {
                 case COMPLETED -> completed++;
                 case DISPATCHED -> dispatched++;
                 case PENDING -> pending++;
+                case FAILED -> failed++;
             }
         }
 
-        return new JobStatistics(total, completed, dispatched, pending);
+        return new JobStatistics(total, completed, dispatched, pending, failed);
     }
 
     /**
@@ -143,9 +146,12 @@ public class JobManager {
     private static class JobStatus {
         private final Job job;
         private JobState state;
+        @SuppressWarnings("unused")
         private String assignedClientId;
+        @SuppressWarnings("unused")
         private long dispatchedTimestamp;
-        private EternityBoardInterface result;
+        @SuppressWarnings("unused")
+        private AbstractEternityBoard result;
 
         public JobStatus(Job job) {
             this.job = job;
@@ -158,7 +164,7 @@ public class JobManager {
             this.dispatchedTimestamp = System.currentTimeMillis();
         }
 
-        public void markCompleted(EternityBoardInterface result) {
+        public void markCompleted(AbstractEternityBoard result) {
             this.state = JobState.COMPLETED;
             this.result = result;
         }
@@ -184,7 +190,7 @@ public class JobManager {
     /**
      * Job statistics.
      */
-    public record JobStatistics(int total, int completed, int dispatched, int pending) {
+    public record JobStatistics(int total, int completed, int dispatched, int pending, int failed) {
         public double getCompletionPercentage() {
             return total > 0 ? (completed * 100.0 / total) : 0.0;
         }

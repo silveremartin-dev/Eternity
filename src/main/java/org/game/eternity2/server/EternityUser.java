@@ -18,7 +18,7 @@
 
 package org.game.eternity2.server;
 
-import org.game.eternity2.elements.EternityBoardInterface;
+import org.game.eternity2.elements.AbstractEternityBoard;
 import org.game.eternity2.elements.EternityTileInterface;
 import org.jetbrains.annotations.NotNull;
 
@@ -42,7 +42,7 @@ public class EternityUser implements java.io.Serializable {
     private List<EternityPacket> computedPackets;
     private List<EternityTileInterface> computedTiles;
     private List<Integer> bestScores;
-    private List<EternityBoardInterface> bestSolutions;
+    private List<AbstractEternityBoard> bestSolutions;
     private String hardwareArchitecture;
     private String operatingSystem;
     private String operatingSystemVersion;
@@ -129,11 +129,11 @@ public class EternityUser implements java.io.Serializable {
             throw new IllegalArgumentException("You cannot set a null best scores array.");
     }
 
-    public List<EternityBoardInterface> getBestSolutions() {
+    public List<AbstractEternityBoard> getBestSolutions() {
         return bestSolutions;
     }
 
-    public void setBestSolutions(@NotNull List<EternityBoardInterface> bestSolutions) {
+    public void setBestSolutions(@NotNull List<AbstractEternityBoard> bestSolutions) {
         if (bestSolutions != null) {
             this.bestSolutions = bestSolutions;
         } else

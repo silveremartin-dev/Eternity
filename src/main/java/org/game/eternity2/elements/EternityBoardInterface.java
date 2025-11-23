@@ -4,8 +4,7 @@ import org.game.eternity2.EternityGameElementInterface;
 import org.jetbrains.annotations.NotNull;
 
 import java.awt.*;
-import java.awt.image.BufferedImage;
-import java.io.IOException;
+
 import java.io.Serializable;
 import java.util.Set;
 

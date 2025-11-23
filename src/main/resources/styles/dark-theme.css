@@ -3,6 +3,7 @@
 .root {
     -fx-base: #1e1e1e;
     -fx-background: #252526;
+    background: #252526;
     -fx-control-inner-background: #3c3c3c;
     -fx-accent: #0e639c;
     -fx-focus-color: #1e90ff;
@@ -10,114 +11,156 @@
 }
 
 /* Text colors */
-.label, .text {
+.label,
+.text {
     -fx-text-fill: #cccccc;
+    color: #cccccc;
 }
 
 .label:disabled {
     -fx-opacity: 0.6;
+    opacity: 0.6;
 }
 
 /* Buttons */
 .button {
     -fx-background-color: #0e639c;
+    background-color: #0e639c;
     -fx-text-fill: white;
+    color: white;
     -fx-background-radius: 3;
+    border-radius: 3px;
     -fx-padding: 8 16 8 16;
+    padding: 8px 16px 8px 16px;
     -fx-font-weight: bold;
+    font-weight: bold;
 }
 
 .button:hover {
     -fx-background-color: #1177bb;
+    background-color: #1177bb;
     -fx-cursor: hand;
+    cursor: pointer;
 }
 
 .button:pressed {
     -fx-background-color: #0d5689;
+    background-color: #0d5689;
 }
 
 .button:disabled {
     -fx-opacity: 0.5;
+    opacity: 0.5;
 }
 
 /* Text areas */
 .text-area {
     -fx-background-color: #1e1e1e;
+    background-color: #1e1e1e;
     -fx-text-fill: #d4d4d4;
+    color: #d4d4d4;
     -fx-font-family: 'Consolas', 'Monaco', monospace;
+    font-family: 'Consolas', 'Monaco', monospace;
 }
 
 .text-area .content {
     -fx-background-color: #1e1e1e;
+    background-color: #1e1e1e;
 }
 
 .text-area .scroll-pane {
     -fx-background-color: #1e1e1e;
+    background-color: #1e1e1e;
 }
 
 /* Scroll bars */
 .scroll-bar {
     -fx-background-color: #3c3c3c;
+    background-color: #3c3c3c;
 }
 
 .scroll-bar .thumb {
     -fx-background-color: #686868;
+    background-color: #686868;
     -fx-background-radius: 5;
+    border-radius: 5px;
 }
 
 .scroll-bar .thumb:hover {
     -fx-background-color: #9e9e9e;
+    background-color: #9e9e9e;
 }
 
 /* Menu bar */
 .menu-bar {
     -fx-background-color: #2d2d30;
+    background-color: #2d2d30;
 }
 
 .menu-item {
     -fx-background-color: #2d2d30;
+    background-color: #2d2d30;
 }
 
 .menu-item:focused {
     -fx-background-color: #094771;
+    background-color: #094771;
 }
 
 .menu-item .label {
     -fx-text-fill: #cccccc;
+    color: #cccccc;
 }
 
 /* Tooltips */
 .tooltip {
     -fx-background-color: #2d2d30;
+    background-color: #2d2d30;
     -fx-text-fill: #cccccc;
+    color: #cccccc;
     -fx-background-radius: 4;
+    border-radius: 4px;
     -fx-border-color: #454545;
+    border-color: #454545;
     -fx-border-width: 1;
+    border-width: 1px;
     -fx-font-size: 12px;
+    font-size: 12px;
     -fx-padding: 6;
+    padding: 6px;
 }
 
 /* Status indicators */
 .status-running {
     -fx-text-fill: #4ec9b0;
+    color: #4ec9b0;
 }
 
 .status-stopped {
     -fx-text-fill: #f48771;
+    color: #f48771;
 }
 
 /* Statistics panels */
 .stats-panel {
     -fx-background-color: #2d2d30;
+    background-color: #2d2d30;
     -fx-border-color: #454545;
+    border-color: #454545;
     -fx-border-width: 1;
+    border-width: 1px;
     -fx-border-radius: 5;
+    border-radius: 5px;
     -fx-background-radius: 5;
     -fx-padding: 10;
+    padding: 10px;
 }
 
 .stats-title {
     -fx-font-weight: bold;
+    font-weight: bold;
     -fx-font-size: 14px;
+    font-size: 14px;
     -fx-text-fill: #4ec9b0;
+    color: #4ec9b0;
 }

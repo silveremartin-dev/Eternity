@@ -2,7 +2,7 @@ package org.game.eternity2.server;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.game.eternity2.elements.EternityBoardInterface;
+import org.game.eternity2.elements.AbstractEternityBoard;
 import org.game.eternity2.elements.Hint;
 import org.game.eternity2.server.strategy.BorderFirstStrategy;
 
@@ -35,11 +35,12 @@ public class EternityServer {
     private boolean isRunning;
     private ExecutorService clientExecutor;
     private List<ClientHandler> clients;
-    private List<ClientHandler> clients;
-    private EternityBoardInterface masterBoard;
+
+    private AbstractEternityBoard masterBoard;
     private JobManager jobManager;
     private UserDatabase userDatabase;
     private ServerStatistics statistics;
+    private EternityWebSocketServer webSocketServer;
 
     public EternityServer(int port) {
         this.port = port;
@@ -48,14 +49,19 @@ public class EternityServer {
         this.jobManager = new JobManager();
         this.userDatabase = new UserDatabase();
         this.statistics = new ServerStatistics();
+
+        // Start WebSocket server on port + 1
+        this.webSocketServer = new EternityWebSocketServer(port + 1, this);
+        this.webSocketServer.start();
     }
 
-    public void initializeGame(int sizeX, int sizeY, String strategyName) {
+    public void initializeGame(int sizeX, int sizeY, String strategyName, List<Hint> hints) {
         // Create board using factory
         this.masterBoard = org.game.eternity2.elements.BoardFactory.createBoard(sizeX, sizeY);
 
-        List<Hint> hints = new ArrayList<>();
-        // Load hints if available (optional implementation)
+        if (hints == null) {
+            hints = new ArrayList<>();
+        }
 
         // Select strategy
         WorkStrategy strategy;
@@ -125,6 +131,13 @@ public class EternityServer {
             if (clientExecutor != null) {
                 clientExecutor.shutdownNow();
             }
+            if (webSocketServer != null) {
+                try {
+                    webSocketServer.stop();
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+            }
             // Copy list to avoid ConcurrentModificationException
             List<ClientHandler> clientsCopy = new ArrayList<>(clients);
             for (ClientHandler client : clientsCopy) {
@@ -192,7 +205,7 @@ public class EternityServer {
 
         private void processPacket(EternityPacket packet) throws IOException {
             statistics.incrementPacketsReceived();
-            String clientId = socket.getInetAddress().toString();
+
             String packetIdShort = packet.getPacketId().substring(0, 8);
 
             if (gui != null) {
@@ -259,23 +272,8 @@ public class EternityServer {
                     if (gui != null) {
                         gui.log(timestamp() + " Job requested by " + packet.getUser().getLogin());
                     }
-                    Job job = jobManager.getNextJob(clientId);
-                    if (job != null) {
-                        sendPacket(new EternityPacket(packet.getUser(),
-                                EternityPacket.Command.JOB_DISPATCH_NEW, job));
-                    } else {
-                        // No jobs available, send empty board for old clients
-                        sendPacket(new EternityPacket(packet.getUser(),
-                                EternityPacket.Command.JOB_DISPATCH, masterBoard.clone()));
-                    }
-                    break;
-
-                case RESULT_SUBMISSION:
-                    if (gui != null) {
-                        gui.log(timestamp() + " Result received from " + packet.getUser().getLogin());
-                    }
-                    if (packet.getPayload() instanceof EternityBoardInterface) {
-                        EternityBoardInterface resultBoard = (EternityBoardInterface) packet.getPayload();
+                    if (packet.getPayload() instanceof AbstractEternityBoard) {
+                        AbstractEternityBoard resultBoard = (AbstractEternityBoard) packet.getPayload();
                         synchronized (masterBoard) {
                             if (resultBoard.computeScore() > masterBoard.computeScore()) {
                                 masterBoard = resultBoard;
@@ -321,6 +319,7 @@ public class EternityServer {
         }
 
         public void sendPacket(EternityPacket packet) throws IOException {
+            statistics.incrementPacketsSent();
             out.writeObject(packet);
             out.flush();
         }

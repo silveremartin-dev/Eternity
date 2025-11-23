@@ -18,21 +18,35 @@ package org.game.eternity2.client;
 
 import org.game.eternity2.elements.EternityBoardInterface;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.util.Properties;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Tracks client statistics for monitoring and display.
+ * Supports session vs total statistics and persistence.
  *
  * @author Silvere Martin-Michiellot
- * @version 2.0
+ * @version 2.1
  */
 public class ClientStatistics {
+    // Session stats
     private final AtomicInteger jobsCompleted = new AtomicInteger(0);
     private final AtomicInteger piecesPlaced = new AtomicInteger(0);
     private final AtomicLong backtrackCount = new AtomicLong(0);
     private final AtomicInteger bestScore = new AtomicInteger(0);
     private final AtomicLong computeTimeMs = new AtomicLong(0);
+
+    // Total stats (persistent)
+    private final AtomicLong totalJobsCompleted = new AtomicLong(0);
+    private final AtomicLong totalPiecesPlaced = new AtomicLong(0);
+    private final AtomicLong totalBacktrackCount = new AtomicLong(0);
+    private final AtomicLong totalComputeTimeMs = new AtomicLong(0);
+
     private EternityBoardInterface bestBoard;
     private final long startTime;
 
@@ -42,18 +56,22 @@ public class ClientStatistics {
 
     public void incrementJobsCompleted() {
         jobsCompleted.incrementAndGet();
+        totalJobsCompleted.incrementAndGet();
     }
 
     public void incrementPiecesPlaced(int count) {
         piecesPlaced.addAndGet(count);
+        totalPiecesPlaced.addAndGet(count);
     }
 
     public void incrementBacktrackCount() {
         backtrackCount.incrementAndGet();
+        totalBacktrackCount.incrementAndGet();
     }
 
     public void addComputeTime(long milliseconds) {
         computeTimeMs.addAndGet(milliseconds);
+        totalComputeTimeMs.addAndGet(milliseconds);
     }
 
     public synchronized void updateBestBoard(EternityBoardInterface board) {
@@ -64,6 +82,7 @@ public class ClientStatistics {
         }
     }
 
+    // Session Getters
     public int getJobsCompleted() {
         return jobsCompleted.get();
     }
@@ -95,5 +114,52 @@ public class ClientStatistics {
     public double getPiecesPerSecond() {
         long uptimeSec = getUptimeMs() / 1000;
         return uptimeSec > 0 ? (double) piecesPlaced.get() / uptimeSec : 0.0;
+    }
+
+    // Total Getters
+    public long getTotalJobsCompleted() {
+        return totalJobsCompleted.get();
+    }
+
+    public long getTotalPiecesPlaced() {
+        return totalPiecesPlaced.get();
+    }
+
+    public long getTotalBacktrackCount() {
+        return totalBacktrackCount.get();
+    }
+
+    public long getTotalComputeTimeMs() {
+        return totalComputeTimeMs.get();
+    }
+
+    // Persistence
+    public void save(File file) {
+        Properties props = new Properties();
+        props.setProperty("totalJobsCompleted", String.valueOf(totalJobsCompleted.get()));
+        props.setProperty("totalPiecesPlaced", String.valueOf(totalPiecesPlaced.get()));
+        props.setProperty("totalBacktrackCount", String.valueOf(totalBacktrackCount.get()));
+        props.setProperty("totalComputeTimeMs", String.valueOf(totalComputeTimeMs.get()));
+
+        try (FileOutputStream out = new FileOutputStream(file)) {
+            props.store(out, "Eternity Client Statistics");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void load(File file) {
+        if (!file.exists())
+            return;
+        Properties props = new Properties();
+        try (FileInputStream in = new FileInputStream(file)) {
+            props.load(in);
+            totalJobsCompleted.set(Long.parseLong(props.getProperty("totalJobsCompleted", "0")));
+            totalPiecesPlaced.set(Long.parseLong(props.getProperty("totalPiecesPlaced", "0")));
+            totalBacktrackCount.set(Long.parseLong(props.getProperty("totalBacktrackCount", "0")));
+            totalComputeTimeMs.set(Long.parseLong(props.getProperty("totalComputeTimeMs", "0")));
+        } catch (IOException | NumberFormatException e) {
+            e.printStackTrace();
+        }
     }
 }

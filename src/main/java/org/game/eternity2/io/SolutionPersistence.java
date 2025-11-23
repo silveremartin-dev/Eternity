@@ -2,6 +2,7 @@ package org.game.eternity2.io;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
 import org.game.eternity2.elements.EternityBoardInterface;
 import org.game.eternity2.elements.EternityTileInterface;
 

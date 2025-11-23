@@ -151,6 +151,7 @@ public class UserDatabase {
     private static class StoredUser implements Serializable {
         private static final long serialVersionUID = 1L;
 
+        @SuppressWarnings("unused")
         String login;
         String password;
 

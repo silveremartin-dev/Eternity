@@ -41,49 +41,45 @@ public class BorderFirstStrategy implements WorkStrategy {
 
         // For now, create a simple job that fills positions row by row
         // Starting with borders (top row, bottom row, left column, right column)
-        List<Job.Position> positions = new ArrayList<>();
+        // Split into two jobs: Border and Interior
+        List<Job.Position> borderPositions = new ArrayList<>();
+        List<Job.Position> interiorPositions = new ArrayList<>();
 
         // Top row
         for (int col = 0; col < size; col++) {
-            if (!isHintPosition(0, col, hints)) {
-                positions.add(new Job.Position(0, col));
-            }
+            if (!isHintPosition(0, col, hints))
+                borderPositions.add(new Job.Position(0, col));
         }
-
         // Bottom row
         for (int col = 0; col < size; col++) {
-            if (!isHintPosition(size - 1, col, hints)) {
-                positions.add(new Job.Position(size - 1, col));
-            }
+            if (!isHintPosition(size - 1, col, hints))
+                borderPositions.add(new Job.Position(size - 1, col));
         }
-
-        // Left column (excluding corners already added)
+        // Left column
         for (int row = 1; row < size - 1; row++) {
-            if (!isHintPosition(row, 0, hints)) {
-                positions.add(new Job.Position(row, 0));
-            }
+            if (!isHintPosition(row, 0, hints))
+                borderPositions.add(new Job.Position(row, 0));
         }
-
-        // Right column (excluding corners already added)
+        // Right column
         for (int row = 1; row < size - 1; row++) {
-            if (!isHintPosition(row, size - 1, hints)) {
-                positions.add(new Job.Position(row, size - 1));
-            }
+            if (!isHintPosition(row, size - 1, hints))
+                borderPositions.add(new Job.Position(row, size - 1));
         }
 
-        // Interior positions
+        // Interior
         for (int row = 1; row < size - 1; row++) {
             for (int col = 1; col < size - 1; col++) {
                 if (!isHintPosition(row, col, hints)) {
-                    positions.add(new Job.Position(row, col));
+                    interiorPositions.add(new Job.Position(row, col));
                 }
             }
         }
 
-        // Create a single job for now (in production, this would be split into multiple
-        // jobs)
-        String jobId = "BORDER_" + UUID.randomUUID().toString().substring(0, 8);
-        jobs.add(new Job(jobId, puzzle, positions, getName()));
+        String jobId1 = "BORDER_" + UUID.randomUUID().toString().substring(0, 8);
+        jobs.add(new Job(jobId1, puzzle, borderPositions, getName()));
+
+        String jobId2 = "INTERIOR_" + UUID.randomUUID().toString().substring(0, 8);
+        jobs.add(new Job(jobId2, puzzle, interiorPositions, getName()));
 
         return jobs;
     }

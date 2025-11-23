@@ -16,7 +16,6 @@
 
 package org.game.eternity2.elements;
 
-
 import org.jetbrains.annotations.NotNull;
 
 import java.awt.*;
@@ -39,7 +38,11 @@ public class AbstractEternityTile implements EternityTileInterface {
 
     private final int maxValue;
 
-    protected AbstractEternityTile(int backValue, @NotNull final AbstractEternityBasicPattern top, @NotNull final AbstractEternityBasicPattern right, @NotNull final AbstractEternityBasicPattern bottom, @NotNull final AbstractEternityBasicPattern left, int maxValue) {
+    private int rotation = 0;
+
+    protected AbstractEternityTile(int backValue, @NotNull final AbstractEternityBasicPattern top,
+            @NotNull final AbstractEternityBasicPattern right, @NotNull final AbstractEternityBasicPattern bottom,
+            @NotNull final AbstractEternityBasicPattern left, int maxValue) {
 
         if ((top != null) && (right != null) && (bottom != null) && (left != null)) {
             if ((backValue >= 0) && (backValue <= maxValue)) {
@@ -49,14 +52,21 @@ public class AbstractEternityTile implements EternityTileInterface {
                 this.bottom = bottom;
                 this.left = left;
                 this.maxValue = maxValue;
-            } else throw new IllegalArgumentException("Back value must be an integer between 1 and " + maxValue + ".");
-        } else throw new IllegalArgumentException("All four patterns must be non null.");
+            } else
+                throw new IllegalArgumentException("Back value must be an integer between 1 and " + maxValue + ".");
+        } else
+            throw new IllegalArgumentException("All four patterns must be non null.");
 
     }
 
     @Override
     public int getBackValue() {
         return backValue;
+    }
+
+    @Override
+    public int getRotation() {
+        return rotation;
     }
 
     @Override
@@ -79,7 +89,7 @@ public class AbstractEternityTile implements EternityTileInterface {
         return left;
     }
 
-    //always return null
+    // always return null
     @Override
     public Image getImage() {
         return null;
@@ -93,6 +103,7 @@ public class AbstractEternityTile implements EternityTileInterface {
         right = bottom;
         bottom = left;
         left = tempPattern;
+        rotation = (rotation + 1) % 4;
     }
 
     @Override
@@ -103,13 +114,18 @@ public class AbstractEternityTile implements EternityTileInterface {
         left = bottom;
         bottom = right;
         right = tempPattern;
+        rotation = (rotation + 3) % 4;
     }
 
     @Override
-    //two tiles are equal is, regardless of the backValue, and regardless of rotation, they share the same pattern in same order, that is : they can show the same front face
-    //because the tiles are still not the same because of the backValue they shouldn"t be treated as one tile for set purposes, that is why we don't override hashcode()
+    // two tiles are equal is, regardless of the backValue, and regardless of
+    // rotation, they share the same pattern in same order, that is : they can show
+    // the same front face
+    // because the tiles are still not the same because of the backValue they
+    // shouldn"t be treated as one tile for set purposes, that is why we don't
+    // override hashcode()
     public boolean equals(Object o) {
-        if(o == null) {
+        if (o == null) {
             return false;
         }
         if (o == this) {
@@ -119,14 +135,17 @@ public class AbstractEternityTile implements EternityTileInterface {
             return false;
         }
         AbstractEternityTile that = (AbstractEternityTile) o;
-        String thisFaceValue = top.toString()+","+left.toString()+","+bottom.toString()+","+right.toString()+top.toString()+","+left.toString()+","+bottom.toString();
-        String thatFaceValue = that.top.toString()+", "+that.left.toString()+", "+that.bottom.toString()+", "+that.right.toString();
+        String thisFaceValue = top.toString() + "," + left.toString() + "," + bottom.toString() + "," + right.toString()
+                + top.toString() + "," + left.toString() + "," + bottom.toString();
+        String thatFaceValue = that.top.toString() + ", " + that.left.toString() + ", " + that.bottom.toString() + ", "
+                + that.right.toString();
         return thisFaceValue.contains(thatFaceValue);
     }
 
     @Override
     public String toString() {
-        return String.valueOf(backValue)+", "+top.toString()+", "+left.toString()+", "+bottom.toString()+", "+right.toString();
+        return String.valueOf(backValue) + ", " + top.toString() + ", " + left.toString() + ", " + bottom.toString()
+                + ", " + right.toString();
     }
 
     @Override
@@ -139,8 +158,10 @@ public class AbstractEternityTile implements EternityTileInterface {
             result.left = left;
             result.bottom = bottom;
             result.right = right;
+            result.rotation = rotation;
         } catch (CloneNotSupportedException e) {
             result = new AbstractEternityTile(backValue, top, left, bottom, right, maxValue);
+            result.rotation = rotation;
         }
         return result;
     }
