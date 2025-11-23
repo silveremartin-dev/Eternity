@@ -3,38 +3,87 @@
 ## Problème Actuel
 Les dépendances TornadoVM ne sont pas disponibles via le repo Maven public spécifié. Actuellement, le code utilise un **CPU fallback** dans `EternityKernel.java`.
 
-## Solution 1: Installation Système (Recommandé pour développement)
+## 📱 Votre GPU Intel UHD Graphics
 
-### Prérequis
-- **SDK requis**: CUDA (NVIDIA) OU OpenCL (AMD/Intel/NVIDIA)
-- **JDK**: Java 21 (déjà installé)
-- **Git**: Pour cloner le repo
+**Bonne nouvelle** : Intel UHD Graphics supporte OpenCL ! Votre GPU (pilote 27.20.100.9079) peut fonctionner avec TornadoVM.
 
-### Étapes d'installation
+### Installer OpenCL pour Intel GPU (Windows)
 
-```bash
-# 1. Cloner TornadoVM
-git clone https://github.com/beehive-lab/TornadoVM
-cd TornadoVM
+#### Pré-vérification : Votre GPU est-il compatible ?
 
-# 2. Installer avec le backend approprié
-# Pour OpenCL (compatible avec plus de GPUs):
-./bin/tornadovm-installer --jdk /path/to/jdk-21 --backend opencl
+```powershell
+# Dans PowerShell, vérifier les GPUs détectés
+Get-WmiObject Win32_VideoController | Select-Object Name, DriverVersion
 
-# Pour CUDA (NVIDIA uniquement):
-./bin/tornadovm-installer --jdk /path/to/jdk-21 --backend ptx
-
-# 3. Sourcer les variables d'environnement
-source setvars.sh
-
-# 4. Vérifier l'installation
-tornado --version
-tornado --devices
+# Vous devriez voir : Intel UHD Graphics
 ```
 
-### Activation dans le projet
+#### Option 1 : Intel OpenCL Runtime (Windows natif - RECOMMANDÉ)
 
-Une fois TornadoVM installé localement:
+```powershell
+# 1. Télécharger Intel OpenCL Runtime
+# URL: https://www.intel.com/content/www/us/en/developer/articles/tool/opencl-drivers.html
+# Ou directement le package CPU Runtime
+# URL: https://github.com/intel/compute-runtime/releases
+
+# 2. Installer le runtime
+# Double-cliquer sur le fichier .exe téléchargé
+
+# 3. Vérifier l'installation OpenCL
+# Télécharger GPU Caps Viewer ou clinfo
+# URL GPU Caps Viewer: https://www.geeks3d.com/dl/getfile.php?id=394
+
+# Ou utiliser clinfo (via chocolatey):
+choco install opencl-intel-cpu-runtime
+clinfo
+```
+
+#### Option 2 : Via WSL2 (Plus simple pour TornadoVM)
+
+**Important**: TornadoVM est conçu pour **Linux/Mac uniquement**. Les scripts d'installation (`tornadovm-installer`, `source`) sont des scripts **bash**, incompatibles avec PowerShell Windows.
+
+### Options pour Windows
+
+#### Option A: WSL2 (Windows Subsystem for Linux) - Recommandé
+```bash
+# 1. Installer WSL2 (si pas déjà fait)
+# Dans PowerShell Admin:
+wsl --install
+
+# 2. Redémarrer Windows
+
+# 3. Dans WSL Ubuntu:
+wsl
+
+# 4. Installer les prérequis dans WSL
+sudo apt update
+sudo apt install build-essential cmake git openjdk-21-jdk
+
+# 5. Cloner et installer TornadoVM dans WSL
+git clone https://github.com/beehive-lab/TornadoVM
+cd TornadoVM
+./bin/tornadovm-installer --jdk /usr/lib/jvm/java-21-openjdk-amd64 --backend opencl
+
+# 6. Sourcer l'environnement (dans WSL)
+source setvars.sh
+
+# 7. Tester
+tornado --version
+```
+
+**Limitation**: Pas de support GPU dans WSL2 par défaut (sauf avec WSL2 GPU support pour CUDA).
+
+#### Option B: Dual-boot Linux - Pour production
+
+#### Option C: VM Linux avec GPU passthrough - Complexe
+
+### Solution Simple: Gardez le CPU Fallback
+
+**Recommandation forte**: Pour votre cas d'usage Windows, **gardez le CPU fallback actuel**. Il fonctionne parfaitement et évite toute la complexité TornadoVM sur Windows.
+
+### Activation dans le projet (Linux uniquement)
+
+**Si vous êtes sur Linux** ou avez réussi l'installation dans WSL2:
 
 1. **Décommenter dans pom.xml** (lignes 131-141):
 ```xml
@@ -47,34 +96,44 @@ Une fois TornadoVM installé localement:
 
 2. **Ajouter annotation dans EternityKernel.java**:
 ```java
-@Parallel
-for (int i = 0; i < candidates.length / 4; i++) {
-    // ...
+import uk.ac.manchester.tornado.api.annotations.Parallel;
+
+public static void checkCandidates(...) {
+    @Parallel
+    for (int i = 0; i < candidates.length / 4; i++) {
+        // ...
+    }
 }
 ```
 
-3. **Run avec TornadoVM**:
+3. **Compiler et exécuter avec TornadoVM**:
 ```bash
-tornado --jvm="-Dtornado.load.api.implementation=uk.ac.manchester.tornado.runtime.TornadoVMBackendType" \
-        --printKernel \
-        -jar target/eternity-1.0-SNAPSHOT.jar
+# Dans l'environnement TornadoVM (après source setvars.sh)
+mvn clean package
+tornado --printKernel -jar target/eternity-1.0-SNAPSHOT.jar
 ```
 
-## Solution 2: Skip TornadoVM (Mode actuel)
+## ✅ Recommandation pour Windows: CPU Fallback
 
-Le CPU fallback fonctionne très bien. **Recommandation**: Gardez cette approche jusqu'à ce que:
-- TornadoVM soit disponible via Maven Central
-- Vous ayez un GPU dédié pour les tests
-- Les performances CPU deviennent un vrai bottleneck
+Le CPU fallback actuel est **totalement fonctionnel** et **suffisant** pour votre usage. 
 
-## Benchmark CPU vs GPU (À faire si activé)
+**Pourquoi ne PAS installer TornadoVM sur Windows:**
+1. ❌ Scripts incompatibles avec PowerShell
+2. ❌ WSL2 complexe et sans vrai support GPU
+3. ❌ Temps d'installation vs gain minimal
+4. ✅ Le CPU moderne (multi-core) est déjà très performant pour ce problème
+5. ✅ L'architecture est **prête** pour GPU si besoin futur
+
+**Si vraiment besoin de GPU:** Utilisez une machine Linux ou un serveur cloud (AWS/GCP avec GPU).
+
+## Benchmark (Optionnel)
 
 ```bash
-# Test CPU
+# Tester les performances actuelles (CPU)
 java -jar target/eternity-1.0-SNAPSHOT.jar --benchmark
 
-# Test GPU (avec TornadoVM)
-tornado -jar target/eternity-1.0-SNAPSHOT.jar --benchmark
+# Comparer avec des metrics
+# (À implémenter si nécessaire)
 ```
 
 ## Statut Actuel
