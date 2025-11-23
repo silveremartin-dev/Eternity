@@ -14,18 +14,19 @@
     - [~] Refactorer job dispatch
     - [~] Error handling ShutdownOnFailure
     - [~] Tests unitaires
-- [ ] 1.3 JVM Configuration (Optional)
+- [ ] 1.3 JVM Configuration (Optional - Low Priority)
     - [ ] Configurer ZGC/Shenandoah
     - [ ] Tuning GC
     - [ ] JVM flags
     - [ ] Benchmarks
 
+### Feature 2: gRPC Services
 - [x] 2.2 gRPC Services
     - [x] Définir eternity.proto
     - [x] Générer gRPC stubs (via protobuf-maven-plugin)
     - [x] Implémenter Service Serveur
     - [x] Implémenter Client gRPC
-- [ ] 2.3 Migration Protocole
+- [ ] 2.3 Migration Protocole (Low Priority)
     - [ ] Wrapper compatibilité
     - [ ] Migration progressive
     - [ ] Benchmarks
@@ -46,12 +47,12 @@
     - [x] Cache implementation (Redis Sets)
     - [x] Indexing logic (4 rotations)
 
-## [x] Phase 2: GPU Acceleration (TornadoVM)
-- [/] 5.1 TornadoVM Setup
+## Phase 2: GPU Acceleration (TornadoVM)
+- [~] 5.1 TornadoVM Setup (Deferred - See TORNADOVM_SETUP.md)
     - [x] Add TornadoVM dependencies to pom.xml (Disabled due to resolution issues)
     - [x] Verify build (Success without TornadoVM)
-    - [ ] Configure backend (Deferred)
-    - [ ] Hello World Kernel test (Deferred)
+    - [ ] Configure backend (Requires system install)
+    - [ ] Hello World Kernel test (Requires system install)
 - [x] 5.2 Kernel "Parallel Check"
     - [x] Implement EternityKernel (CPU version first)
     - [x] Input: int[] constraints, int[] candidates
@@ -60,7 +61,6 @@
 - [x] 5.3 Solver Integration
     - [x] Implement AdvancedEternitySolver with Kernel
     - [x] Batch candidate evaluation logic
-    - [ ] GPU Resource Limits (Preparation)
 
 ## Phase 3: Kubernetes Infrastructure
 - [x] 6.1 Containerization
@@ -70,10 +70,10 @@
 - [x] 6.2 Kubernetes Manifests
     - [x] Redis StatefulSet & Service
     - [x] Eternity Server Deployment & Service
-    - [ ] ConfigMaps & Secrets
-- [ ] 6.3 Scaling & Operations
-    - [ ] Horizontal Pod Autoscaler (HPA)
-    - [ ] GPU Resource Limits (Preparation)
+    - [ ] ConfigMaps & Secrets (Optional)
+- [x] 6.3 Scaling & Operations
+    - [x] Horizontal Pod Autoscaler (HPA)
+    - [ ] GPU Resource Limits (Future - when TornadoVM active)
 
 ## Completed (Archive)
 - [x] Project assessment
