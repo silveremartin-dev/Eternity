@@ -1,0 +1,72 @@
+# Eternity II - Local Deployment (Windows PowerShell)
+
+$ErrorActionPreference = "Stop"
+
+Write-Host "🚀 Eternity II - Local Deployment" -ForegroundColor Cyan
+Write-Host "==================================" -ForegroundColor Cyan
+Write-Host ""
+
+# Vérifier Java
+try {
+    $javaVersion = java -version 2>&1 | Select-String "version" | ForEach-Object { $_ -replace '.*"(\d+).*', '$1' }
+    if ([int]$javaVersion -lt 21) {
+        Write-Host "❌ Java 21+ required (found: $javaVersion)" -ForegroundColor Red
+        exit 1
+    }
+    Write-Host "✅ Java $javaVersion detected" -ForegroundColor Green
+} catch {
+    Write-Host "❌ Java not found. Please install Java 21" -ForegroundColor Red
+    exit 1
+}
+
+# Vérifier Maven
+try {
+    $null = mvn -version
+    Write-Host "✅ Maven detected" -ForegroundColor Green
+} catch {
+    Write-Host "❌ Maven not found. Please install Maven 3.9+" -ForegroundColor Red
+    exit 1
+}
+
+# Option: Avec ou sans Redis
+Write-Host ""
+$useRedis = Read-Host "Deploy with Redis? (y/N)"
+if ($useRedis -eq "y" -or $useRedis -eq "Y") {
+    Write-Host ""
+    Write-Host "🔧 Starting Redis..." -ForegroundColor Yellow
+    
+    try {
+        docker-compose up -d
+        Write-Host "✅ Redis started on localhost:6379" -ForegroundColor Green
+        Start-Sleep -Seconds 2
+    } catch {
+        Write-Host "❌ Docker not found or failed. Install Docker or run without Redis" -ForegroundColor Red
+        exit 1
+    }
+}
+
+# Build
+Write-Host ""
+Write-Host "🔨 Building project..." -ForegroundColor Yellow
+mvn clean package -DskipTests
+
+if ($LASTEXITCODE -eq 0) {
+    Write-Host "✅ Build successful" -ForegroundColor Green
+} else {
+    Write-Host "❌ Build failed" -ForegroundColor Red
+    exit 1
+}
+
+# Run
+Write-Host ""
+Write-Host "🚀 Starting Eternity Server..." -ForegroundColor Cyan
+Write-Host "   - HTTP: http://localhost:8080" -ForegroundColor White
+Write-Host "   - gRPC: localhost:50051" -ForegroundColor White
+if ($useRedis -eq "y" -or $useRedis -eq "Y") {
+    Write-Host "   - Redis: localhost:6379" -ForegroundColor White
+}
+Write-Host ""
+Write-Host "Press Ctrl+C to stop" -ForegroundColor Yellow
+Write-Host ""
+
+java -jar target/eternity-1.0-SNAPSHOT.jar
