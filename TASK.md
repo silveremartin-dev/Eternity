@@ -1,93 +1,68 @@
-# Task List - Architecture Haute Performance
+# Eternity II - Project Roadmap (Comprehensive)
 
-## Phase 1: Fondations (4 semaines)
+## 🎯 Macro Objectives
+- **Core**: Solve Eternity II (and custom puzzles) using a distributed client-server architecture.
+- **Server**: Java 21 (Virtual Threads), Fault-tolerant, Secure, Scalable.
+- **Clients**: Multi-language (Java, JS/Web), Secure connection.
+- **Features**: Puzzle Editor, Hints, Automated Verification, Statistics, Dynamic Config.
+- **Quality**: CI/CD, Testing, I18n, Logging, Javadoc, Benchmarking.
 
-### Feature 1: Virtual Threads Migration
-- [x] 1.1 Thread Pool Refactoring
-    - [x] Remplacer CachedThreadPool par VirtualThreads
-    - [x] Migrer EternityServer
-    - [x] Migrer ClientHandler
-    - [x] Migrer JobExecutor
-    - [x] Tests de charge (build successful)
-- [~] 1.2 Structured Concurrency (SKIPPED - requires Java 25)
-    - [~] Implémenter StructuredTaskScope
-    - [~] Refactorer job dispatch
-    - [~] Error handling ShutdownOnFailure
-    - [~] Tests unitaires
-- [ ] 1.3 JVM Configuration (Optional - Low Priority)
-    - [ ] Configurer ZGC/Shenandoah
-    - [ ] Tuning GC
-    - [ ] JVM flags
-    - [ ] Benchmarks
+---
 
-### Feature 2: gRPC Services
-- [x] 2.2 gRPC Services
-    - [x] Définir eternity.proto
-    - [x] Générer gRPC stubs (via protobuf-maven-plugin)
-    - [x] Implémenter Service Serveur
-    - [x] Implémenter Client gRPC
-- [ ] 2.3 Migration Protocole (Low Priority)
-    - [ ] Wrapper compatibilité
-    - [ ] Migration progressive
-    - [ ] Benchmarks
-    - [ ] Rollback plan
+## Phase 1: Foundations (Completed) ✅
+- [x] **Concurrency**: Virtual Threads migration.
+- [x] **Communication**: gRPC + FlatBuffers.
+- [x] **Distribution**: Redis Job Queue & Constraint Cache.
 
-### Feature 3: Redis Cluster
-- [x] 3.1 Setup Redis
-    - [x] Docker Compose dev
-    - [x] Config Lettuce
-    - [x] Connection pooling
-- [x] 3.2 Job Queue Redis
-    - [x] Créer RedisJobQueue (LPUSH/BRPOP)
-    - [x] Migrer JobManager
-    - [ ] Result queue
-    - [ ] Distributed locking
-    - [ ] Tests Testcontainers
-- [x] 3.3 Constraint Cache
-    - [x] Cache implementation (Redis Sets)
-    - [x] Indexing logic (4 rotations)
+## Phase 5: Data & Configuration (Next) 🗄️
+- [ ] **8.1 Database Migration (Replace Properties)**
+    - [ ] **Solution**: PostgreSQL (Relational data: Users, Puzzles, Solutions).
+    - [ ] Schema: `Users`, `Puzzles` (blob/json), `Solutions` (steps), `Config`.
+    - [ ] Migration: Port existing properties to DB.
+- [ ] **8.2 Dynamic Configuration**
+    - [ ] Store config in DB (hot-reloadable).
+    - [ ] API to update config without restart.
 
-## Phase 2: GPU Acceleration (TornadoVM)
-- [~] 5.1 TornadoVM Setup (Architecture ready, deferred to GPU cluster deployment)
-    - [x] Add TornadoVM dependencies to pom.xml (Commented out)
-    - [x] Verify build (Success with CPU fallback)
-    - [~] Configure backend (Decision: CPU on local, GPU on cloud/cluster)
-    - [~] Hello World Kernel test (Deferred to GPU hardware)
-- [x] 5.2 Kernel "Parallel Check"
-    - [x] Implement EternityKernel (CPU version fully functional)
-    - [x] Input: int[] constraints, int[] candidates
-    - [x] Output: int[] results
-    - [x] Optimize memory transfer (Using flat arrays)
-    - [x] Architecture GPU-ready (@Parallel annotation ready)
-- [x] 5.3 Solver Integration
-    - [x] Implement AdvancedEternitySolver with Kernel
-    - [x] Batch candidate evaluation logic
+---
 
-**Strategy**: CPU on local dev, GPU on dedicated hardware (AWS/GCP with NVIDIA Tesla/A100)
+## Phase 6: Core Refactoring & Optimization ⚡
+- [ ] **9.1 Data Structure Optimization**
+    - [ ] Refactor `Piece`/`Board` from Objects to **Primitive Arrays/Bitmasks**.
+    - [ ] **Format**: `int` based (id + 4 edges + rotation + status).
+    - [ ] Import data from `TheSil/edge_puzzle`.
+- [ ] **9.2 Puzzle Editor & Generator**
+    - [ ] Create/Import custom puzzles (size X*Y).
+    - [ ] Editor UI (JavaFX & Web).
+    - [ ] Hint system generator.
 
-## Phase 3: Kubernetes Infrastructure
-- [x] 6.1 Containerization
-    - [x] Create Dockerfile (Multi-stage build)
-    - [x] Create .dockerignore
-    - [x] Build and verify local image
-- [x] 6.2 Kubernetes Manifests
-    - [x] Redis StatefulSet & Service
-    - [x] Eternity Server Deployment & Service
-    - [ ] ConfigMaps & Secrets (Optional)
-- [x] 6.3 Scaling & Operations
-    - [x] Horizontal Pod Autoscaler (HPA)
-    - [~] GPU Resource Limits (Deferred to GPU cluster)
+---
 
-## Completed (Archive)
-- [x] Project assessment
-- [x] Architecture review
-- [x] Final architecture design
-- [x] CI/CD workflow
-- [x] Complete documentation set
-- [x] GPU scalability architecture
+## Phase 7: Security & Web Client 🔒
+- [ ] **10.1 Security Hardening**
+    - [ ] **TLS/SSL**: Enforce HTTPS/gRPCs (Certificates).
+    - [ ] **Auth**: JWT Authentication for clients.
+    - [ ] Secure headers & input validation.
+- [ ] **10.2 Web Client (JS/TS)**
+    - [ ] **Tech**: React/Vue + gRPC-Web.
+    - [ ] Responsive UI (Mobile/Desktop).
+    - [ ] Visualization of solving progress.
 
-## Next Steps (Future Work)
-- [ ] Deploy to cloud GPU cluster (AWS/GCP)
-- [ ] Performance benchmarks (CPU baseline)
-- [ ] Integration tests (Testcontainers)
-- [ ] Monitoring stack (Prometheus/Grafana)
+---
+
+## Phase 8: Quality & Industrialization 🏭
+- [ ] **11.1 Internationalization (I18n)**
+    - [ ] Support: FR, EN, ES, DE.
+    - [ ] Resource bundles for Server/Client messages.
+- [ ] **11.2 CI/CD Pipeline**
+    - [ ] Automated Tests (Unit, Integration, Headless).
+    - [ ] Quality Gates (SonarQube, Checkstyle).
+    - [ ] Auto-deploy to Staging.
+- [ ] **11.3 Documentation & Standards**
+    - [ ] Javadoc complete.
+    - [ ] Logging standards (Structured Logging).
+
+---
+
+## Backlog / Future
+- [ ] GPU Cluster Deployment (TornadoVM).
+- [ ] AI/ML Hints generation.
