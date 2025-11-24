@@ -3,6 +3,7 @@
 ## 🎯 Quick Links
 
 **Start Here:** [QUICKSTART.md](QUICKSTART.md) - Lancement en 3 minutes  
+**Deployment:** [DEPLOYMENT.md](DEPLOYMENT.md) - Guide de déploiement complet (local, K8s, cloud)  
 **Complete Guide:** [PROJECT_SUMMARY.md](PROJECT_SUMMARY.md) - Vue d'ensemble  
 **Task List:** [TASK.md](TASK.md) - Progrès du projet  
 
