@@ -1,0 +1,104 @@
+{
+    "name": "Eternity II - Official 16x16",
+    "description": "The original Eternity II puzzle - 256 pieces, 22 patterns",
+    "width": 16,
+    "height": 16,
+    "patterns": 22,
+    "patternNames": [
+        "Border (Grey)",
+        "Yellow Star",
+        "Blue Diamond",
+        "Red Flower",
+        "Green Leaf",
+        "Purple Crown",
+        "Orange Sun",
+        "Cyan Moon",
+        "Pink Heart",
+        "Brown Tree",
+        "Navy Anchor",
+        "Lime Clover",
+        "Coral Shell",
+        "Gold Key",
+        "Silver Bell",
+        "Maroon Shield",
+        "Olive Branch",
+        "Teal Wave",
+        "Fuchsia Bow",
+        "Salmon Fish",
+        "Khaki Castle",
+        "Plum Grape",
+        "Indigo Cross"
+    ],
+    "pieces": [
+        {
+            "id": 1,
+            "top": 0,
+            "right": 1,
+            "bottom": 5,
+            "left": 0,
+            "type": "corner"
+        },
+        {
+            "id": 2,
+            "top": 0,
+            "right": 2,
+            "bottom": 6,
+            "left": 1,
+            "type": "edge"
+        },
+        {
+            "id": 3,
+            "top": 0,
+            "right": 3,
+            "bottom": 7,
+            "left": 2,
+            "type": "edge"
+        },
+        {
+            "id": 4,
+            "top": 0,
+            "right": 0,
+            "bottom": 8,
+            "left": 3,
+            "type": "corner"
+        }
+    ],
+    "note": "Full 256 pieces available from TheSil/edge_puzzle format",
+    "hints": [
+        {
+            "x": 0,
+            "y": 0,
+            "pieceId": 139,
+            "rotation": 0,
+            "source": "Official Eternity II hint #1"
+        },
+        {
+            "x": 2,
+            "y": 7,
+            "pieceId": 208,
+            "rotation": 0,
+            "source": "Official Eternity II hint #2"
+        },
+        {
+            "x": 2,
+            "y": 2,
+            "pieceId": 249,
+            "rotation": 3,
+            "source": "Official Eternity II hint #3"
+        },
+        {
+            "x": 5,
+            "y": 6,
+            "pieceId": 255,
+            "rotation": 2,
+            "source": "Official Eternity II hint #4"
+        }
+    ],
+    "solution": null,
+    "solutionStatus": "UNSOLVED",
+    "bestKnownScore": {
+        "matches": 467,
+        "possible": 480,
+        "percentage": 97.29
+    }
+}
