@@ -1,7 +1,10 @@
-# TornadoVM Setup - Guide
+# TornadoVM Setup Guide
 
-## Problème Actuel
-Les dépendances TornadoVM ne sont pas disponibles via le repo Maven public spécifié. Actuellement, le code utilise un **CPU fallback** dans `EternityKernel.java`.
+**Authors:** Gemini AI Assistant, Silvère
+
+## Current Situation
+
+TornadoVM dependencies are not available via public Maven repo. The code uses a **CPU fallback** in `EternityKernel.java`.
 
 ## 📱 Votre GPU Intel UHD Graphics
 
@@ -45,6 +48,7 @@ clinfo
 ### Options pour Windows
 
 #### Option A: WSL2 (Windows Subsystem for Linux) - Recommandé
+
 ```bash
 # 1. Installer WSL2 (si pas déjà fait)
 # Dans PowerShell Admin:
@@ -86,6 +90,7 @@ tornado --version
 **Si vous êtes sur Linux** ou avez réussi l'installation dans WSL2:
 
 1. **Décommenter dans pom.xml** (lignes 131-141):
+
 ```xml
 <dependency>
     <groupId>uk.ac.manchester.tornado</groupId>
@@ -95,6 +100,7 @@ tornado --version
 ```
 
 2. **Ajouter annotation dans EternityKernel.java**:
+
 ```java
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 
@@ -107,6 +113,7 @@ public static void checkCandidates(...) {
 ```
 
 3. **Compiler et exécuter avec TornadoVM**:
+
 ```bash
 # Dans l'environnement TornadoVM (après source setvars.sh)
 mvn clean package
@@ -115,9 +122,10 @@ tornado --printKernel -jar target/eternity-1.0-SNAPSHOT.jar
 
 ## ✅ Recommandation pour Windows: CPU Fallback
 
-Le CPU fallback actuel est **totalement fonctionnel** et **suffisant** pour votre usage. 
+Le CPU fallback actuel est **totalement fonctionnel** et **suffisant** pour votre usage.
 
 **Pourquoi ne PAS installer TornadoVM sur Windows:**
+
 1. ❌ Scripts incompatibles avec PowerShell
 2. ❌ WSL2 complexe et sans vrai support GPU
 3. ❌ Temps d'installation vs gain minimal
@@ -137,6 +145,7 @@ java -jar target/eternity-1.0-SNAPSHOT.jar --benchmark
 ```
 
 ## Statut Actuel
+
 - ✅ Architecture prête pour GPU
 - ✅ CPU fallback fonctionnel
 - ⏸️ TornadoVM en attente (dépendances non résolues)

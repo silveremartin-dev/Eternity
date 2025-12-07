@@ -1,11 +1,14 @@
-# Eternity II - Guide de Démarrage Rapide
+# Eternity II - Quick Start Guide
 
-## 🚀 Lancement en 3 minutes
+**Authors:** Gemini AI Assistant, Silvère
 
-### Prérequis
-- ✅ Java 21 installé
-- ✅ Maven installé
-- ✅ Docker installé (optionnel pour Redis)
+## 🚀 Get started in 3 minutes
+
+### Prerequisites
+
+- ✅ Java 21 installed
+- ✅ Maven installed
+- ✅ Docker installed (optional, for Redis)
 
 ### Option 1 : Mode Simple (Sans Redis)
 
@@ -63,6 +66,7 @@ kubectl port-forward svc/eternity-server 8080:8080
 ## 🧪 Vérifier que tout fonctionne
 
 ### Test 1 : Le serveur répond
+
 ```bash
 # Le serveur doit afficher au démarrage :
 # "EternityServer started on port 8080"
@@ -70,6 +74,7 @@ kubectl port-forward svc/eternity-server 8080:8080
 ```
 
 ### Test 2 : Redis (si activé)
+
 ```bash
 # Se connecter à Redis
 docker exec -it eternity-redis-1 redis-cli
@@ -83,6 +88,7 @@ PONG
 ```
 
 ### Test 3 : gRPC (optionnel)
+
 ```bash
 # Avec grpcurl installé :
 grpcurl -plaintext localhost:50051 list
@@ -111,6 +117,7 @@ java -jar target/eternity-1.0-SNAPSHOT.jar
 ### Fichier de configuration (optionnel)
 
 Créer `application.properties` :
+
 ```properties
 server.port=8080
 redis.host=localhost
@@ -159,6 +166,7 @@ kubectl logs -f deployment/eternity-server
 ## 🐛 Troubleshooting
 
 ### Problème : "Port already in use"
+
 ```bash
 # Trouver le processus sur le port 8080
 netstat -ano | findstr :8080
@@ -171,6 +179,7 @@ java -Dserver.port=9000 -jar target/eternity-1.0-SNAPSHOT.jar
 ```
 
 ### Problème : "Cannot connect to Redis"
+
 ```bash
 # Vérifier Redis
 docker ps | grep redis
@@ -183,6 +192,7 @@ docker logs eternity-redis-1
 ```
 
 ### Problème : "Build failed"
+
 ```bash
 # Nettoyer Maven
 mvn clean
@@ -199,18 +209,21 @@ java -version  # Doit être 21
 ## 🎯 Prochaines Étapes
 
 ### Pour tester localement
+
 1. ✅ Lancer le serveur (voir ci-dessus)
 2. ✅ Ouvrir l'interface JavaFX (si disponible)
 3. ✅ Lancer un solving job
 4. ✅ Observer les logs
 
 ### Pour déployer en production
+
 1. 📖 Lire `PROJECT_SUMMARY.md`
 2. 🔧 Configurer les Secrets (Redis password, etc.)
 3. ☁️ Choisir un provider cloud (AWS/GCP/Azure)
 4. 🚀 Suivre le guide Kubernetes
 
 ### Pour activer le GPU (futur)
+
 1. 📖 Lire `TORNADOVM_SETUP.md`
 2. 🖥️ Provisionner une VM avec GPU (NVIDIA)
 3. 🔧 Installer CUDA + TornadoVM

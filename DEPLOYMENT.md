@@ -1,6 +1,8 @@
 # Eternity II - Deployment Guide
 
-## 📋 Table des matières
+**Authors:** Gemini AI Assistant, Silvère
+
+## 📋 Table of Contents
 
 - [Déploiement Local](#déploiement-local)
 - [Déploiement Kubernetes Local](#déploiement-kubernetes-local)
@@ -12,6 +14,7 @@
 ## 🚀 Déploiement Local
 
 ### Prérequis
+
 - Java 21+
 - Maven 3.9+
 - Docker (optionnel, pour Redis)
@@ -19,12 +22,14 @@
 ### Scripts automatisés
 
 **Linux/Mac/WSL:**
+
 ```bash
 chmod +x scripts/deploy-local.sh
 ./scripts/deploy-local.sh
 ```
 
 **Windows:**
+
 ```powershell
 .\scripts\deploy-local.ps1
 ```
@@ -32,12 +37,14 @@ chmod +x scripts/deploy-local.sh
 ### Manuel
 
 **Sans Redis:**
+
 ```bash
 mvn clean package
 java -jar target/eternity-1.0-SNAPSHOT.jar
 ```
 
 **Avec Redis:**
+
 ```bash
 docker-compose up -d
 mvn clean package
@@ -49,18 +56,21 @@ java -jar target/eternity-1.0-SNAPSHOT.jar
 ## 🎛️ Déploiement Kubernetes Local
 
 ### Prérequis
+
 - Docker Desktop avec Kubernetes activé
 - kubectl configuré
 
 ### Scripts automatisés
 
 **Linux/Mac:**
+
 ```bash
 chmod +x scripts/deploy-k8s-local.sh
 ./scripts/deploy-k8s-local.sh
 ```
 
 **Windows:**
+
 ```powershell
 .\scripts\deploy-k8s-local.ps1
 ```
@@ -110,6 +120,7 @@ kubectl logs -f deployment/eternity-server
 **Étapes:**
 
 1. **Configurer le script `scripts/deploy-cloud.sh`:**
+
    ```bash
    # Modifier ces variables:
    DOCKER_REGISTRY="your-registry.io"
@@ -117,8 +128,9 @@ kubectl logs -f deployment/eternity-server
    ```
 
 2. **Configurer l'authentification:**
-   
+
    **AWS (ECR + EKS):**
+
    ```bash
    # Login ECR
    aws ecr get-login-password --region us-east-1 | \
@@ -129,6 +141,7 @@ kubectl logs -f deployment/eternity-server
    ```
 
    **GCP (GCR + GKE):**
+
    ```bash
    # Login GCR
    gcloud auth configure-docker
@@ -138,6 +151,7 @@ kubectl logs -f deployment/eternity-server
    ```
 
    **Azure (ACR + AKS):**
+
    ```bash
    # Login ACR
    az acr login --name yourregistry
@@ -147,6 +161,7 @@ kubectl logs -f deployment/eternity-server
    ```
 
 3. **Déployer:**
+
    ```bash
    chmod +x scripts/deploy-cloud.sh
    ./scripts/deploy-cloud.sh
@@ -157,6 +172,7 @@ kubectl logs -f deployment/eternity-server
 **Manifests avec GPU:**
 
 Créer `k8s/eternity-gpu.yaml`:
+
 ```yaml
 apiVersion: apps/v1
 kind: Deployment
@@ -191,6 +207,7 @@ spec:
 ```
 
 **Déployer avec GPU:**
+
 ```bash
 # Installer GPU operator (une fois par cluster)
 kubectl apply -f https://raw.githubusercontent.com/NVIDIA/gpu-operator/master/deployments/gpu-operator.yaml
@@ -206,6 +223,7 @@ kubectl apply -f k8s/eternity-gpu.yaml
 ### Variables d'environnement
 
 **Fichier `.env` (local):**
+
 ```bash
 SERVER_PORT=8080
 GRPC_PORT=50051
@@ -236,11 +254,13 @@ stringData:
 ```
 
 **Appliquer:**
+
 ```bash
 kubectl apply -f k8s/config.yaml
 ```
 
 **Référencer dans Deployment:**
+
 ```yaml
 spec:
   containers:
@@ -259,6 +279,7 @@ spec:
 ### GitHub Actions (déjà configuré)
 
 Le fichier `.github/workflows/ci-cd.yml` gère:
+
 - ✅ Build automatique sur push
 - ✅ Tests
 - ✅ Build Docker image
@@ -267,6 +288,7 @@ Le fichier `.github/workflows/ci-cd.yml` gère:
 **Activer le push vers registry:**
 
 Ajouter des secrets GitHub:
+
 - `DOCKER_USERNAME`
 - `DOCKER_PASSWORD`
 - Ou `AWS_ACCESS_KEY_ID` + `AWS_SECRET_ACCESS_KEY` pour ECR
@@ -276,6 +298,7 @@ Ajouter des secrets GitHub:
 ## 🐛 Troubleshooting
 
 ### Problème: Image pull failed
+
 ```bash
 # Vérifier que l'image existe
 docker images | grep eternity-server
@@ -285,6 +308,7 @@ docker build -t eternity-server:latest .
 ```
 
 ### Problème: Pods en CrashLoopBackOff
+
 ```bash
 # Voir les logs
 kubectl logs deployment/eternity-server
@@ -294,6 +318,7 @@ kubectl describe pod <pod-name>
 ```
 
 ### Problème: HPA ne scale pas
+
 ```bash
 # Vérifier metrics-server
 kubectl get apiservice v1beta1.metrics.k8s.io -o yaml

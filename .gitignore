@@ -39,3 +39,6 @@ mvnw.cmd
 
 # JavaFX cache
 .cache/
+
+# Javadoc
+javadoc/

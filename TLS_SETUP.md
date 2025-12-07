@@ -1,5 +1,7 @@
 # TLS/SSL Setup Guide
 
+**Authors:** Gemini AI Assistant, Silvère
+
 ## Overview
 
 This guide explains how to enable TLS/SSL for secure communication in the Eternity II server.

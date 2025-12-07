@@ -1,5 +1,6 @@
 # Eternity II - System Architecture
 
+**Authors:** Gemini AI Assistant, Silvère  
 **Version:** 3.0 - High Performance Cloud-Native  
 **Stack:** Java 21 + Virtual Threads + gRPC + FlatBuffers + Kubernetes + GPU-Ready
 

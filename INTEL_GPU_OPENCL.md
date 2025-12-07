@@ -1,6 +1,8 @@
 # Intel OpenCL GPU Check - Windows
 
-## Vérifier si OpenCL est installé
+**Authors:** Gemini AI Assistant, Silvère
+
+## Check if OpenCL is installed
 
 ```powershell
 # Option 1: Avec GPU Caps Viewer (Interface graphique)
@@ -34,6 +36,7 @@ tornado --printKernel uk.ac.manchester.tornado.benchmarks.BenchmarkRunner vector
 ## Résultat attendu
 
 Si OpenCL est correctement installé, `clinfo` devrait montrer :
+
 - **Platform**: Intel(R) OpenCL HD Graphics
 - **Device**: Intel(R) UHD Graphics
 - **OpenCL Version**: 3.0 ou supérieur
@@ -42,14 +45,18 @@ Si OpenCL est correctement installé, `clinfo` devrait montrer :
 ## Problèmes courants
 
 ### "No OpenCL devices found"
+
 **Solution** : Installer Intel OpenCL Runtime
-- URL : https://www.intel.com/content/www/us/en/developer/articles/tool/opencl-drivers.html
+
+- URL : <https://www.intel.com/content/www/us/en/developer/articles/tool/opencl-drivers.html>
 - Ou via Windows Update (pilote Intel récent)
 
 ### "clinfo: command not found"
+
 **Solution** : Installer via `choco install opencl-intel-cpu-runtime`
 
 ### Performance GPU < CPU
+
 **Normal** : Intel UHD Graphics est un GPU intégré (iGPU). Pour un vrai gain, il faudrait un GPU dédié (NVIDIA/AMD).
 Avec Intel UHD, le gain sera **minime** voire négatif vs CPU multi-core.
 

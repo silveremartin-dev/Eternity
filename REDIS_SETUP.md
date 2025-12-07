@@ -1,5 +1,7 @@
 # Redis Setup for Eternity II
 
+**Authors:** Gemini AI Assistant, Silvère
+
 ## Quick Start
 
 ### Option 1: Docker Compose (Recommended)
@@ -11,15 +13,18 @@ docker-compose up -d
 ```
 
 This will start:
+
 - **Redis** on port `6379` (with data persistence)
-- **Redis Commander** UI on port `8081` (http://localhost:8081)
+- **Redis Commander** UI on port `8081` (<http://localhost:8081>)
 
 To stop:
+
 ```bash
 docker-compose down
 ```
 
 To view logs:
+
 ```bash
 docker-compose logs -f redis
 ```
@@ -27,6 +32,7 @@ docker-compose logs -f redis
 ### Option 2: Manual Redis Installation
 
 If you don't have Docker, install Redis manually:
+
 - **Windows**: Use WSL2 or download Redis for Windows
 - **macOS**: `brew install redis` then `redis-server`
 - **Linux**: `sudo apt install redis-server` or equivalent
@@ -48,6 +54,7 @@ Jobs are stored in Redis list: `eternity:jobs:pending`
 ### Redis CLI Commands
 
 Monitor the queue:
+
 ```bash
 # Connect to Redis
 redis-cli

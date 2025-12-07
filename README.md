@@ -1,227 +1,89 @@
-# Eternity II - High Performance Architecture
+# Eternity II Distributed Solver
 
-## 🎯 Quick Links
-
-**Start Here:** [QUICKSTART.md](QUICKSTART.md) - Lancement en 3 minutes  
-**Deployment:** [DEPLOYMENT.md](DEPLOYMENT.md) - Guide de déploiement complet (local, K8s, cloud)  
-**Complete Guide:** [PROJECT_SUMMARY.md](PROJECT_SUMMARY.md) - Vue d'ensemble  
-**Task List:** [TASK.md](TASK.md) - Progrès du projet  
+**Authors:** Gemini AI Assistant, Silvère  
+**Version:** 3.0  
+**License:** MIT
 
 ---
 
-## 🚀 TL;DR
+## Overview
+
+High-performance distributed solver for the Eternity II puzzle using modern Java technologies.
+
+## Features
+
+- **Java 21** with Virtual Threads
+- **gRPC + FlatBuffers** for zero-copy communication
+- **PostgreSQL + Redis** for data and caching
+- **Prometheus Metrics** for monitoring
+- **JWT Authentication** for security
+- **Internationalization** (EN, FR, DE, ES)
+- **JavaFX Puzzle Editor**
+- **Web Client** (HTML/CSS/JS)
+
+## Quick Start
 
 ```bash
-# Setup minimal
-mvn clean package
-java -jar target/eternity-1.0-SNAPSHOT.jar
+# Build
+mvn clean package -DskipTests
 
-# Avec Redis
+# Start services
 docker-compose up -d
+
+# Run server
 java -jar target/eternity-1.0-SNAPSHOT.jar
 
-# Kubernetes
-docker build -t eternity-server:latest .
-kubectl apply -f k8s/
+# Generate Javadoc
+mvn javadoc:javadoc
 ```
 
----
-
-## 📋 Architecture Overview
+## Project Structure
 
 ```
-Client (JavaFX/gRPC) 
-    ↓
-Server (Virtual Threads + gRPC)
-    ↓
-Redis (Job Queue + Cache) [Optional]
-    ↓
-Solver (AdvancedEternitySolver)
-    ↓
-Kernel (EternityKernel - CPU/GPU ready)
+eternity/
+├── src/main/java/         # Java source code
+├── src/main/resources/    # Config, i18n, schemas
+├── web-client/            # Browser client
+├── k8s/                   # Kubernetes manifests
+├── scripts/               # Deployment scripts
+├── javadoc/               # Generated API docs
+└── data/                  # Solutions and user data
 ```
 
-**Technologies:** Java 21, Virtual Threads, gRPC, Protocol Buffers, FlatBuffers, Redis (Lettuce), Docker, Kubernetes
+## Documentation
+
+| Document | Description |
+|----------|-------------|
+| [ARCHITECTURE.md](ARCHITECTURE.md) | System architecture |
+| [QUICKSTART.md](QUICKSTART.md) | Getting started guide |
+| [DEPLOYMENT.md](DEPLOYMENT.md) | Deployment options |
+| [TLS_SETUP.md](TLS_SETUP.md) | TLS/SSL configuration |
+| [BENCHMARKING.md](BENCHMARKING.md) | Performance testing |
+
+## Environment Variables
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `DB_URL` | `jdbc:postgresql://localhost:5432/eternity` | Database |
+| `REDIS_HOST` | `localhost` | Redis server |
+| `JWT_SECRET` | auto-generated | JWT signing key |
+| `ETERNITY_LANG` | `en` | Language (en/fr/de/es) |
+
+## Performance
+
+- **Kernel:** 10.18M candidates/sec (CPU baseline)
+- **Target:** >100M candidates/sec (GPU)
+
+## Tech Stack
+
+- Java 21 (Virtual Threads, ZGC)
+- gRPC + FlatBuffers
+- PostgreSQL + HikariCP + Flyway
+- Redis (Lettuce client)
+- Prometheus + Micrometer
+- JavaFX 19
+- Kubernetes + Docker
 
 ---
 
-## 🎮 Features
-
-### Current (Production-Ready)
-- ✅ **High Concurrency**: Virtual Threads (100+ clients)
-- ✅ **Fast RPC**: gRPC + Protocol Buffers
-- ✅ **Zero-Copy**: FlatBuffers serialization
-- ✅ **Distributed**: Redis job queue & constraint cache
-- ✅ **Scalable**: Kubernetes with auto-scaling (HPA)
-- ✅ **GPU-Ready**: Architecture prepared for TornadoVM
-
-### Performance (CPU Mode)
-- **Throughput**: 100-200 jobs/min (local), 1000+ (cluster)
-- **Latency**: TBD (benchmarks needed)
-- **Concurrency**: 100+ simultaneous clients
-- **Memory**: ~512MB per instance
-
----
-
-## 📚 Documentation
-
-### Getting Started
-- **[QUICKSTART.md](QUICKSTART.md)** - Lancement rapide (3 min)
-- **[README.md](README.md)** - Guide complet
-
-### Architecture & Design
-- **[PROJECT_SUMMARY.md](PROJECT_SUMMARY.md)** - Résumé complet
-- **[ARCHITECTURE_FINAL.md](ARCHITECTURE_FINAL.md)** - Design détaillé
-- **[TASK.md](TASK.md)** - Liste des tâches
-
-### Setup Guides
-- **[REDIS_SETUP.md](REDIS_SETUP.md)** - Configuration Redis
-- **[TORNADOVM_SETUP.md](TORNADOVM_SETUP.md)** - GPU (Linux/Cloud)
-- **[INTEL_GPU_OPENCL.md](INTEL_GPU_OPENCL.md)** - Intel GPU (référence)
-
-### DevOps
-- **[docker-compose.yml](docker-compose.yml)** - Dev environment
-- **[Dockerfile](Dockerfile)** - Multi-stage build
-- **[k8s/](k8s/)** - Kubernetes manifests
-
----
-
-## 🔧 Configuration
-
-### Environment Variables
-```bash
-SERVER_PORT=8080        # Server port
-GRPC_PORT=50051         # gRPC port
-REDIS_HOST=localhost    # Redis host
-REDIS_PORT=6379         # Redis port
-```
-
-### Docker Compose (Development)
-```yaml
-services:
-  redis:
-    image: redis:7.2-alpine
-    ports: ["6379:6379"]
-  eternity:
-    build: .
-    ports: ["8080:8080", "50051:50051"]
-    environment:
-      REDIS_HOST: redis
-```
-
----
-
-## 🚢 Deployment
-
-### Local Development
-```bash
-# Step 1: Build
-mvn clean package
-
-# Step 2: Run
-java -jar target/eternity-1.0-SNAPSHOT.jar
-```
-
-### Kubernetes (Local/Cloud)
-```bash
-# Step 1: Build image
-docker build -t eternity-server:latest .
-
-# Step 2: Deploy
-kubectl apply -f k8s/redis.yaml
-kubectl apply -f k8s/eternity.yaml
-kubectl apply -f k8s/hpa.yaml
-
-# Step 3: Verify
-kubectl get pods
-kubectl get hpa
-```
-
-### GPU Cluster (Future)
-1. Provision VM with **NVIDIA GPU** (Tesla/A100)
-2. Install **CUDA + TornadoVM**
-3. Uncomment TornadoVM in `pom.xml`
-4. Add `@Parallel` in `EternityKernel.java`
-5. Deploy with GPU limits
-
----
-
-## 🧪 Testing
-
-```bash
-# Unit tests
-mvn test
-
-# Integration tests
-mvn verify
-
-# Load tests (TODO)
-# jmeter -n -t load-test.jmx
-```
-
----
-
-## 📊 Performance Metrics
-
-| Environment | Hardware | Throughput | Latency |
-|-------------|----------|------------|---------|
-| **Local (CPU)** | i5/i7, 16GB | 100-200 jobs/min | TBD |
-| **K8s (10 replicas)** | CPU cluster | 1000-2000 jobs/min | TBD |
-| **GPU** | NVIDIA A100 | 5000+ jobs/min (est.) | TBD |
-
----
-
-## 🗺️ Roadmap
-
-### Completed ✅
-- [x] Virtual Threads migration
-- [x] gRPC + FlatBuffers
-- [x] Redis integration
-- [x] GPU-ready architecture
-- [x] Docker containerization
-- [x] Kubernetes manifests + HPA
-- [x] Complete documentation
-
-### Next Steps 📋
-- [ ] Performance benchmarks (JMH)
-- [ ] Integration tests (Testcontainers)
-- [ ] Monitoring (Prometheus/Grafana)
-- [ ] GPU deployment (AWS/GCP)
-- [ ] Custom metrics scaling (KEDA)
-
----
-
-## 🤝 Contributing
-
-Areas for contribution:
-- Algorithm optimizations
-- GPU benchmarks
-- Documentation improvements
-- Additional solver strategies
-
----
-
-## 📄 License
-
-[Your License Here]
-
----
-
-## 🎓 Project Highlights
-
-This project demonstrates:
-- ✨ **Modern Java 21**: Virtual Threads, Records, Pattern Matching
-- 🚀 **High Performance**: gRPC, zero-copy serialization
-- 🌐 **Distributed Systems**: Redis, job queues, caching
-- ☁️ **Cloud Native**: Docker, Kubernetes, auto-scaling
-- 🧬 **GPU-Ready**: TornadoVM architecture (scalable)
-
----
-
-**Status:** ✅ Production-ready  
-**Deployment:** Local (CPU) + Cloud/Cluster ready (GPU)  
-**Last Updated:** 2024-11-23
-
----
-
-*Built with ❤️ using Java 21, Virtual Threads, gRPC, Redis, Docker, and Kubernetes*
+© 2025 Gemini AI Assistant & Silvère

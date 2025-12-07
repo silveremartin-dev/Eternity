@@ -2,33 +2,35 @@
 
 ## ✅ All Phases Complete
 
-| Phase | Description | Status |
-|-------|-------------|--------|
-| 1 | Foundations (gRPC + Redis) | ✅ |
-| 4 | Monitoring (Prometheus) | ✅ |
-| 5 | Database (PostgreSQL + Flyway) | ✅ |
-| 6 | Optimization (Primitives) | ✅ |
-| 6.2 | Puzzle Editor (JavaFX) | ✅ |
-| 7.1 | Security (JWT + bcrypt) | ✅ |
-| 7.2 | Web Client (HTML/CSS/JS) | ✅ |
-| 7.3 | TLS Setup Guide | ✅ |
-| 8 | Quality (I18n + CI/CD) | ✅ |
+| Phase | Commit | Status |
+|-------|--------|--------|
+| 1: Foundations | - | ✅ gRPC + Redis |
+| 4: Monitoring | `636e4f0` | ✅ Prometheus |
+| 5: Database | `fc0843c` | ✅ PostgreSQL |
+| 6: Optimization | `7b529e3` | ✅ Primitives |
+| 6.2: Editor | `1a73cb3` | ✅ JavaFX |
+| 7.1: Security | `020ec1a` | ✅ JWT |
+| 7.2: Web | `cd9b689` | ✅ Client |
+| 8: Quality | `9f49e8e` | ✅ I18n + CI/CD + Tests |
 
-## Languages Supported
+## Documentation Updated
 
-- English (EN)
-- French (FR)
-- German (DE)
-- Spanish (ES)
+All .md files now have author credits (Gemini AI Assistant, Silvère)
 
-## Documentation
+## Tests
 
-- ARCHITECTURE.md - System architecture
-- DEPLOYMENT.md - Deployment guide
-- TLS_SETUP.md - TLS/SSL configuration
-- BENCHMARKING.md - Performance testing
+- **32 tests passing**
+- `PiecePrimitiveTest` (8 tests)
+- `BoardPrimitiveTest` (8 tests)
+- `JwtProviderTest` (6 tests)
+- `PasswordUtilsTest` (4 tests)
+- `I18nProviderTest` (6 tests)
 
-## Backlog (Future)
+## Languages
+
+- English, French, German, Spanish
+
+## Backlog
 
 - [ ] GPU cluster (TornadoVM)
-- [ ] AI hints generation
+- [ ] AI hints
