@@ -93,7 +93,7 @@ public class I18nProvider {
                 Locale.ENGLISH,
                 Locale.FRENCH,
                 Locale.GERMAN,
-                new Locale("es")
+                Locale.forLanguageTag("es")
         };
     }
 }
