@@ -10,6 +10,7 @@ import org.apache.logging.log4j.Logger;
  */
 public class AuthInterceptor implements ServerInterceptor {
 
+    @SuppressWarnings("unused")
     private static final Logger LOGGER = LogManager.getLogger(AuthInterceptor.class);
     private static final Metadata.Key<String> AUTH_HEADER = Metadata.Key.of("Authorization",
             Metadata.ASCII_STRING_MARSHALLER);

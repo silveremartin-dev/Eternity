@@ -17,10 +17,6 @@ package org.game.eternity2.server;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
-
-import java.io.File;
-import java.nio.file.Path;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -38,82 +34,91 @@ class JsonUserDatabaseTest {
 
     @Test
     void testRegisterNewUser() {
-        String uniqueUser = "testuser_" + System.currentTimeMillis();
+        String uniqueUser = "testuser_" + System.nanoTime();
         boolean result = database.registerUser(uniqueUser, "password123");
         assertTrue(result, "Should successfully register new user");
     }
 
     @Test
     void testRegisterDuplicateUser() {
-        database.registerUser("duplicate", "pass1");
-        boolean result = database.registerUser("duplicate", "pass2");
+        String user = "duplicate_" + System.nanoTime();
+        database.registerUser(user, "pass1");
+        boolean result = database.registerUser(user, "pass2");
         assertFalse(result, "Should not allow duplicate registration");
     }
 
     @Test
     void testAuthenticateValidCredentials() {
-        database.registerUser("authtest", "secret");
-        boolean result = database.authenticateUser("authtest", "secret");
+        String user = "authtest_" + System.nanoTime();
+        database.registerUser(user, "secret");
+        boolean result = database.authenticateUser(user, "secret");
         assertTrue(result, "Should authenticate with correct password");
     }
 
     @Test
     void testAuthenticateInvalidPassword() {
-        database.registerUser("authtest2", "correct");
-        boolean result = database.authenticateUser("authtest2", "wrong");
+        String user = "authtest2_" + System.nanoTime();
+        database.registerUser(user, "correct");
+        boolean result = database.authenticateUser(user, "wrong");
         assertFalse(result, "Should reject incorrect password");
     }
 
     @Test
     void testAuthenticateNonexistentUser() {
-        boolean result = database.authenticateUser("nonexistent", "password");
+        boolean result = database.authenticateUser("nonexistent_" + System.nanoTime(), "password");
         assertFalse(result, "Should reject nonexistent user");
     }
 
     @Test
     void testUserExists() {
-        database.registerUser("existcheck", "pass");
-        assertTrue(database.userExists("existcheck"));
-        assertFalse(database.userExists("notexist"));
+        String user = "existcheck_" + System.nanoTime();
+        database.registerUser(user, "pass");
+        assertTrue(database.userExists(user));
+        assertFalse(database.userExists("notexist_" + System.nanoTime()));
     }
 
     @Test
     void testDeleteUser() {
-        database.registerUser("todelete", "pass");
-        boolean deleted = database.deleteUser("todelete");
+        String user = "todelete_" + System.nanoTime();
+        database.registerUser(user, "pass");
+        boolean deleted = database.deleteUser(user);
         assertTrue(deleted, "Should delete existing user");
-        assertFalse(database.userExists("todelete"));
+        assertFalse(database.userExists(user));
     }
 
     @Test
     void testDeleteUserWithPassword() {
-        database.registerUser("todelete2", "mypass");
-        boolean deleted = database.deleteUser("todelete2", "mypass");
+        String user = "todelete2_" + System.nanoTime();
+        database.registerUser(user, "mypass");
+        boolean deleted = database.deleteUser(user, "mypass");
         assertTrue(deleted, "Should delete with correct password");
-        assertFalse(database.userExists("todelete2"));
+        assertFalse(database.userExists(user));
     }
 
     @Test
     void testDeleteUserWithWrongPassword() {
-        database.registerUser("todelete3", "correct");
-        boolean deleted = database.deleteUser("todelete3", "wrong");
+        String user = "todelete3_" + System.nanoTime();
+        database.registerUser(user, "correct");
+        boolean deleted = database.deleteUser(user, "wrong");
         assertFalse(deleted, "Should not delete with wrong password");
-        assertTrue(database.userExists("todelete3"));
+        assertTrue(database.userExists(user));
     }
 
     @Test
     void testChangePassword() {
-        database.registerUser("changepass", "oldpass");
-        boolean changed = database.changePassword("changepass", "oldpass", "newpass");
+        String user = "changepass_" + System.nanoTime();
+        database.registerUser(user, "oldpass");
+        boolean changed = database.changePassword(user, "oldpass", "newpass");
         assertTrue(changed, "Should change password");
-        assertTrue(database.authenticateUser("changepass", "newpass"));
-        assertFalse(database.authenticateUser("changepass", "oldpass"));
+        assertTrue(database.authenticateUser(user, "newpass"));
+        assertFalse(database.authenticateUser(user, "oldpass"));
     }
 
     @Test
     void testChangePasswordWithWrongOld() {
-        database.registerUser("changepass2", "correct");
-        boolean changed = database.changePassword("changepass2", "wrong", "new");
+        String user = "changepass2_" + System.nanoTime();
+        database.registerUser(user, "correct");
+        boolean changed = database.changePassword(user, "wrong", "new");
         assertFalse(changed, "Should not change with wrong old password");
     }
 }

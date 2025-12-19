@@ -7,7 +7,6 @@ import org.game.eternity2.server.db.DatabaseManager;
 import java.sql.*;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
 
 /**
  * Data Access Object for configuration stored in the database.

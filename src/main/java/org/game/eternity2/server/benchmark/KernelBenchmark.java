@@ -48,7 +48,7 @@ public class KernelBenchmark {
 
     @Benchmark
     public void testCheckCandidates(Blackhole bh) {
-        kernel.checkCandidates(constraints, candidates, results);
+        EternityKernel.checkCandidates(constraints, candidates, results);
         bh.consume(results);
     }
 

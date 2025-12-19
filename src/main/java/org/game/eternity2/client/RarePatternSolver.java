@@ -81,26 +81,22 @@ public class RarePatternSolver implements EternitySolverInterface {
 
         // 2. Get missing tiles
         List<EternityTileInterface> missingTiles = new ArrayList<>(startingBoard.getMissingTiles());
+        missingTiles.removeIf(Objects::isNull);
 
         // 3. Sort tiles by rarity
         missingTiles.sort(Comparator.comparingInt(t -> calculateTileRarityScore(t, patternCounts)));
 
-        // 4. Solve
-        return solve(startingBoard, missingTiles);
+        // 4. Solve with allocation-free backtracking
+        boolean[] used = new boolean[missingTiles.size()];
+        return solve(startingBoard, missingTiles, used, missingTiles.size());
     }
 
+    // ... (helper methods like
+    // countPatterns/incrementCounts/calculateTileRarityScore remain unchanged)
     private Map<String, Integer> countPatterns(EternityBoardInterface board) {
         Map<String, Integer> counts = new HashMap<>();
         // Count from all tiles (on board and missing)
-        for (EternityTileInterface tile : board.getTiles()) { // getTiles() returns all tiles? No, "Set of Tiles without
-                                                              // their position".
-            // Wait, getTiles() doc says "return the Set of Tiles without their position".
-            // Does it include missing ones?
-            // "getMissingTiles()" exists.
-            // Usually getTiles() means tiles on board.
-            // But we want counts from the full set of 256 tiles.
-            // Let's assume we have access to all tiles.
-            // We can combine getTiles() and getMissingTiles().
+        for (EternityTileInterface tile : board.getTiles()) {
             incrementCounts(tile, counts);
         }
         for (EternityTileInterface tile : board.getMissingTiles()) {
@@ -112,13 +108,15 @@ public class RarePatternSolver implements EternitySolverInterface {
     private void incrementCounts(EternityTileInterface tile, Map<String, Integer> counts) {
         if (tile == null)
             return;
-        counts.merge(tile.getTop().toString(), 1, Integer::sum);
-        counts.merge(tile.getRight().toString(), 1, Integer::sum);
-        counts.merge(tile.getBottom().toString(), 1, Integer::sum);
-        counts.merge(tile.getLeft().toString(), 1, Integer::sum);
+        counts.merge(tile.getTop().toString(), 1, (a, b) -> a + b);
+        counts.merge(tile.getRight().toString(), 1, (a, b) -> a + b);
+        counts.merge(tile.getBottom().toString(), 1, (a, b) -> a + b);
+        counts.merge(tile.getLeft().toString(), 1, (a, b) -> a + b);
     }
 
     private int calculateTileRarityScore(EternityTileInterface tile, Map<String, Integer> counts) {
+        if (tile == null)
+            return Integer.MAX_VALUE;
         // Score = min count of any pattern on the tile
         // We want tiles with rare patterns (low count) to have low score (be first)
         int min = Integer.MAX_VALUE;
@@ -129,7 +127,11 @@ public class RarePatternSolver implements EternitySolverInterface {
         return min;
     }
 
-    private AbstractEternityBoard solve(EternityBoardInterface board, List<EternityTileInterface> tiles) {
+    private AbstractEternityBoard solve(EternityBoardInterface board, List<EternityTileInterface> tiles, boolean[] used,
+            int remainingCount) {
+        // Optimization: Fail fast if tiles remaining doesn't match empty spots?
+        // Actually, findNextEmpty handles completion.
+
         // Find next empty position
         int[] nextPos = findNextEmpty(board);
         if (nextPos == null) {
@@ -139,22 +141,23 @@ public class RarePatternSolver implements EternitySolverInterface {
         int y = nextPos[1];
 
         for (int i = 0; i < tiles.size(); i++) {
+            if (used[i])
+                continue;
+
             EternityTileInterface tile = tiles.get(i);
 
             // Try all 4 rotations
             for (int r = 0; r < 4; r++) {
                 if (board.setTileAt(x, y, tile)) {
-                    // Move tile from available to used (by creating new list or swapping)
-                    // Swapping is faster but changes order. List copy is safer but slower.
-                    // Let's use remove/add for simplicity in this recursive step
-                    List<EternityTileInterface> remaining = new ArrayList<>(tiles);
-                    remaining.remove(i);
+                    // Mark used
+                    used[i] = true;
 
-                    AbstractEternityBoard result = solve(board, remaining);
+                    AbstractEternityBoard result = solve(board, tiles, used, remainingCount - 1);
                     if (result != null)
                         return result;
 
                     // Backtrack
+                    used[i] = false;
                     board.setTileAt(x, y, null); // Assuming null clears it
                 }
                 tile.rotateClockwise();

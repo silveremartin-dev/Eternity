@@ -19,12 +19,18 @@ All .md files now have author credits (Gemini AI Assistant, Silvère)
 
 ## Tests
 
-- **32 tests passing**
+- **78 tests passing**
+- `JsonUserDatabaseTest` (11 tests)
+- `InMemoryJobQueueTest` (5 tests)
+- `BoardFactoryTest` (9 tests)
+- `ConfigurationManagerTest` (8 tests)
+- `JobTest` (6 tests)
+- `ServerStatisticsTest` (8 tests)
 - `PiecePrimitiveTest` (8 tests)
 - `BoardPrimitiveTest` (8 tests)
 - `JwtProviderTest` (6 tests)
 - `PasswordUtilsTest` (4 tests)
-- `I18nProviderTest` (6 tests)
+- `I18nProviderTest` (5 tests)
 
 ## Languages
 

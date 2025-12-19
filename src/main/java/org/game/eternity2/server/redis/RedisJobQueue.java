@@ -19,6 +19,7 @@ public class RedisJobQueue {
     private static final Logger logger = LogManager.getLogger(RedisJobQueue.class);
     private static final String QUEUE_KEY = "eternity:jobs:pending";
 
+    @SuppressWarnings("unused")
     private final RedisConnectionManager redisManager;
     private final RedisAsyncCommands<String, String> async;
     private final Gson gson;
