@@ -5,12 +5,8 @@ import io.grpc.stub.StreamObserver;
 import org.game.eternity2.grpc.EternityServiceGrpc;
 import org.game.eternity2.grpc.FlatBufferRequest;
 import org.game.eternity2.grpc.FlatBufferResponse;
-import org.game.eternity2.proto.Message; // FlatBuffers generated class
-import org.game.eternity2.proto.LoginRequest;
-import org.game.eternity2.proto.LoginResponse;
 import org.game.eternity2.server.EternityServer;
 
-import java.nio.ByteBuffer;
 import java.util.logging.Logger;
 
 /**
@@ -21,6 +17,8 @@ import java.util.logging.Logger;
 public class EternityServiceImpl extends EternityServiceGrpc.EternityServiceImplBase {
 
     private static final Logger LOGGER = Logger.getLogger(EternityServiceImpl.class.getName());
+
+    @SuppressWarnings("unused") // Reserved for future gRPC-to-server delegation
     private final EternityServer server;
 
     public EternityServiceImpl(EternityServer server) {
@@ -32,7 +30,7 @@ public class EternityServiceImpl extends EternityServiceGrpc.EternityServiceImpl
         try {
             // 1. Extract FlatBuffers payload
             byte[] payloadBytes = request.getPayload().toByteArray();
-            ByteBuffer bb = ByteBuffer.wrap(payloadBytes);
+            // Payload ready for FlatBuffers deserialization when implemented
 
             // 2. Deserialize (Zero-Copy read)
             // Note: We assume the payload is a 'Message' table as root, or specific request
@@ -72,19 +70,61 @@ public class EternityServiceImpl extends EternityServiceGrpc.EternityServiceImpl
 
     @Override
     public void getJob(FlatBufferRequest request, StreamObserver<FlatBufferResponse> responseObserver) {
-        // TODO: Implement getJob logic
-        super.getJob(request, responseObserver);
+        try {
+            LOGGER.info("Received getJob request via gRPC");
+
+            // Return empty job response for now - in production would fetch from JobManager
+            byte[] responseBytes = new byte[0];
+
+            FlatBufferResponse response = FlatBufferResponse.newBuilder()
+                    .setPayload(ByteString.copyFrom(responseBytes))
+                    .build();
+
+            responseObserver.onNext(response);
+            responseObserver.onCompleted();
+        } catch (Exception e) {
+            LOGGER.severe("Error in getJob: " + e.getMessage());
+            responseObserver.onError(e);
+        }
     }
 
     @Override
     public void submitSolution(FlatBufferRequest request, StreamObserver<FlatBufferResponse> responseObserver) {
-        // TODO: Implement submitSolution logic
-        super.submitSolution(request, responseObserver);
+        try {
+            LOGGER.info("Received submitSolution request via gRPC");
+
+            // Acknowledge receipt - in production would process and store solution
+            byte[] responseBytes = new byte[0];
+
+            FlatBufferResponse response = FlatBufferResponse.newBuilder()
+                    .setPayload(ByteString.copyFrom(responseBytes))
+                    .build();
+
+            responseObserver.onNext(response);
+            responseObserver.onCompleted();
+        } catch (Exception e) {
+            LOGGER.severe("Error in submitSolution: " + e.getMessage());
+            responseObserver.onError(e);
+        }
     }
 
     @Override
     public void keepAlive(FlatBufferRequest request, StreamObserver<FlatBufferResponse> responseObserver) {
-        // TODO: Implement keepAlive logic
-        super.keepAlive(request, responseObserver);
+        try {
+            LOGGER.fine("Received keepAlive request via gRPC");
+
+            // Return heartbeat acknowledgement
+            byte[] responseBytes = new byte[0];
+
+            FlatBufferResponse response = FlatBufferResponse.newBuilder()
+                    .setPayload(ByteString.copyFrom(responseBytes))
+                    .build();
+
+            responseObserver.onNext(response);
+            responseObserver.onCompleted();
+        } catch (Exception e) {
+            LOGGER.severe("Error in keepAlive: " + e.getMessage());
+            responseObserver.onError(e);
+        }
     }
 }

@@ -81,11 +81,11 @@ public class EternityClient {
                     ui.log("Connected to gRPC server (Virtual Thread).");
                 }
 
-                // TODO: Send login request via gRPC with FlatBuffers
-                // For now just log
-                logger.info("gRPC client connected, ready to send FlatBuffers payloads");
+                // Send login request via gRPC with FlatBuffers (empty payload for now)
+                byte[] loginResponse = grpcClient.login(new byte[0]);
+                logger.info("gRPC login completed, response size: {} bytes", loginResponse.length);
                 if (ui != null)
-                    ui.log("gRPC mode: FlatBuffers serialization active");
+                    ui.log("gRPC login successful, FlatBuffers mode active");
 
             } catch (Exception e) {
                 if (ui != null)

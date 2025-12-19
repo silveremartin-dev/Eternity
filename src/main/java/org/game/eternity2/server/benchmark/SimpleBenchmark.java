@@ -20,8 +20,6 @@ public class SimpleBenchmark {
         System.out.println("Iterations: " + ITERATIONS);
         System.out.println();
 
-        EternityKernel kernel = new EternityKernel();
-
         // Setup test data
         int[] constraints = new int[4];
         constraints[0] = 1; // Top
@@ -46,7 +44,7 @@ public class SimpleBenchmark {
         // Warmup
         System.out.println("Warmup...");
         for (int i = 0; i < 10; i++) {
-            kernel.checkCandidates(constraints, candidates, results);
+            EternityKernel.checkCandidates(constraints, candidates, results);
         }
 
         // Benchmark
@@ -56,7 +54,7 @@ public class SimpleBenchmark {
 
         for (int iteration = 0; iteration < ITERATIONS; iteration++) {
             long start = System.nanoTime();
-            kernel.checkCandidates(constraints, candidates, results);
+            EternityKernel.checkCandidates(constraints, candidates, results);
             long end = System.nanoTime();
 
             totalTime += (end - start);

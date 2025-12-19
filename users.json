@@ -1,0 +1,53 @@
+{
+  "version": "2.0",
+  "users": {
+    "todelete3": {
+      "username": "todelete3",
+      "passwordHash": "$2a$12$ErTyNfWxCX9qYvBhvFpspexFEcKMN6FT1jsSOPN14M3woOWRFpTKS",
+      "registeredAt": 1766167770475,
+      "lastLogin": 1766167770475
+    },
+    "duplicate": {
+      "username": "duplicate",
+      "passwordHash": "$2a$12$0W0TA7m.eJXh8skfJ6e.lOsRt4H56.qD44ZxUqbC7VCeNuHd3SWly",
+      "registeredAt": 1766167771830,
+      "lastLogin": 1766167771830
+    },
+    "changepass": {
+      "username": "changepass",
+      "passwordHash": "$2a$12$CYOYkLTzy/o7J7ZrC4qTcumFmtBg3DoKyC6RvlAifjtIvY4qw7wom",
+      "registeredAt": 1766167772509,
+      "lastLogin": 1766167773541
+    },
+    "changepass2": {
+      "username": "changepass2",
+      "passwordHash": "$2a$12$/7dHHLu6RX2c.kAQq4/u7.dqtw7.POCP3izW67osH3iJkrQFM2VWC",
+      "registeredAt": 1766167774138,
+      "lastLogin": 1766167774138
+    },
+    "authtest": {
+      "username": "authtest",
+      "passwordHash": "$2a$12$pg9XMR0usbb8uoCP37LtIu4sXOpANbd1P775IMTq88e2lAd6YfrOm",
+      "registeredAt": 1766167774735,
+      "lastLogin": 1766167917437
+    },
+    "existcheck": {
+      "username": "existcheck",
+      "passwordHash": "$2a$12$0KU2wVDPiDONWPAARybVz.esxDMYhoCv/2OcOErFjnaKoi8EnH/fC",
+      "registeredAt": 1766167775581,
+      "lastLogin": 1766167775581
+    },
+    "authtest2": {
+      "username": "authtest2",
+      "passwordHash": "$2a$12$XkK9yfiQVYTyV8zHgMgiX.kEvt5Ik5My95JrbzxKIV0YA5N2WMZKS",
+      "registeredAt": 1766167775904,
+      "lastLogin": 1766167775904
+    },
+    "testuser": {
+      "username": "testuser",
+      "passwordHash": "$2a$12$GWhBnTpw8WUvLAMk.1Eije5vxCaekwEY6BKdT7k8x3s.BLn2IVFTy",
+      "registeredAt": 1766167776815,
+      "lastLogin": 1766167776815
+    }
+  }
+}

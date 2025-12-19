@@ -160,10 +160,10 @@ EternityBoardInterface
 
 ### Security
 
-- JWT token authentication
-- bcrypt password hashing
-- gRPC interceptor for auth validation
-- Environment-based configuration
+- JWT token authentication (`JwtProvider`)
+- bcrypt password hashing (`PasswordUtils` + `JsonUserDatabase`)
+- gRPC interceptor for auth validation (`AuthInterceptor`)
+- Environment-based configuration (no hardcoded credentials)
 
 ### Monitoring
 

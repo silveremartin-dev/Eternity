@@ -29,6 +29,9 @@ import java.io.Serializable;
 import java.util.List;
 import java.util.Set;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 /**
  * A way to read the tiles of the Eternity II box set from a file.
  *
@@ -37,6 +40,7 @@ import java.util.Set;
  */
 
 public abstract class AbstractEternityTilesReader {
+    private static final Logger logger = LogManager.getLogger(AbstractEternityTilesReader.class);
 
     private EternityXMLGameTiles eternityXMLGameTiles;
 
@@ -47,7 +51,7 @@ public abstract class AbstractEternityTilesReader {
             Unmarshaller jaxbUnmarshaller = jaxbContext.createUnmarshaller();
             eternityXMLGameTiles = (EternityXMLGameTiles) jaxbUnmarshaller.unmarshal(file);
         } catch (JAXBException e) {
-            e.printStackTrace();
+            logger.error("Failed to parse XML game tiles", e);
         }
     }
 

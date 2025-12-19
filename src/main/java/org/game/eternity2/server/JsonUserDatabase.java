@@ -12,6 +12,8 @@ import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.game.eternity2.server.security.PasswordUtils;
+
 /**
  * Modern JSON-based user database.
  * Replaces binary serialization with human-readable JSON format.
@@ -68,7 +70,7 @@ public class JsonUserDatabase {
             return false;
         }
 
-        if (userData.passwordHash.equals(hashPassword(password))) {
+        if (PasswordUtils.verify(password, userData.passwordHash)) {
             userData.lastLogin = System.currentTimeMillis();
             save();
             return true;
@@ -100,6 +102,20 @@ public class JsonUserDatabase {
             return true;
         }
         return false;
+    }
+
+    /**
+     * Delete user with password verification.
+     *
+     * @param username Username
+     * @param password Password for verification
+     * @return true if authenticated and deleted
+     */
+    public synchronized boolean deleteUser(String username, String password) {
+        if (!authenticateUser(username, password)) {
+            return false;
+        }
+        return deleteUser(username);
     }
 
     /**
@@ -155,8 +171,7 @@ public class JsonUserDatabase {
     }
 
     private String hashPassword(String password) {
-        // Simple hash for demo - use BCrypt in production
-        return Integer.toHexString(password.hashCode());
+        return PasswordUtils.hash(password);
     }
 
     /**

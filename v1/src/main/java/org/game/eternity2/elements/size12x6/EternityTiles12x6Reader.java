@@ -1,0 +1,68 @@
+/*
+ *  Copyright 2022 Silvere Martin-Michiellot
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
+package org.game.eternity2.elements.size12x6;
+
+
+import org.game.eternity2.io.AbstractEternityTilesReader;
+import org.jetbrains.annotations.NotNull;
+
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
+/**
+ * A way to read the tiles of the Eternity II box set from a file.
+ *
+ * @author Silvere Martin-Michiellot
+ * @version 1.0
+ */
+
+public final class EternityTiles12x6Reader extends AbstractEternityTilesReader {
+
+    public final static String DEFAULT_PATH_12x6 = "xml/data/e2tiles12x6.xml";
+
+    public final static Set<EternityTile12x6> EternityTiles12x6 = new EternityTiles12x6Reader(DEFAULT_PATH_12x6).getTiles();
+
+    public EternityTiles12x6Reader(@NotNull String path) {
+        super(path);
+    }
+
+    public Set<EternityTile12x6> getTiles() {
+        Set<EternityTile12x6> eternityTiles;
+        eternityTiles = new HashSet<>();
+        boolean[] checkedTiles;
+        List<EternityXMLTile> eternityXMLTiles = getEternityXMLGameTiles().getEternityXMLTiles();
+        checkedTiles = new boolean[eternityXMLTiles.size()];
+        for (int i = 0; i< eternityXMLTiles.size(); i++) {
+            checkedTiles[i]=false;
+        }
+        for (int i = 0; i < eternityXMLTiles.size(); i++) {
+            EternityXMLTile currentEternityXMLTile = eternityXMLTiles.get(i);
+            EternityTile12x6 currentTile = new EternityTile12x6(currentEternityXMLTile.getNumber(),
+                    EternityBasicPatterns12x6.getPatternFromInteger(currentEternityXMLTile.getTop()),
+                    EternityBasicPatterns12x6.getPatternFromInteger(currentEternityXMLTile.getRight()),
+                    EternityBasicPatterns12x6.getPatternFromInteger(currentEternityXMLTile.getBottom()),
+                    EternityBasicPatterns12x6.getPatternFromInteger(currentEternityXMLTile.getLeft()));
+            if (!checkedTiles[currentEternityXMLTile.getNumber()]) {
+                eternityTiles.add(currentTile);
+                checkedTiles[currentEternityXMLTile.getNumber()] = true;
+            } else throw new IllegalArgumentException("Tiles must have a unique backValue number.");
+        }
+        return eternityTiles;
+    }
+
+}

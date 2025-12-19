@@ -60,5 +60,57 @@ public class EternityGrpcClient {
         }
     }
 
-    // TODO: Add other methods (getJob, submitSolution) similarly
+    /**
+     * Sends a raw byte array payload (FlatBuffers) to the getJob endpoint.
+     */
+    public byte[] getJob(byte[] flatBuffersPayload) {
+        logger.info("Sending getJob request via gRPC...");
+        FlatBufferRequest request = FlatBufferRequest.newBuilder()
+                .setPayload(ByteString.copyFrom(flatBuffersPayload))
+                .build();
+
+        try {
+            FlatBufferResponse response = blockingStub.getJob(request);
+            return response.getPayload().toByteArray();
+        } catch (Exception e) {
+            logger.error("RPC getJob failed: " + e.getMessage());
+            throw e;
+        }
+    }
+
+    /**
+     * Sends a raw byte array payload (FlatBuffers) to the submitSolution endpoint.
+     */
+    public byte[] submitSolution(byte[] flatBuffersPayload) {
+        logger.info("Sending submitSolution request via gRPC...");
+        FlatBufferRequest request = FlatBufferRequest.newBuilder()
+                .setPayload(ByteString.copyFrom(flatBuffersPayload))
+                .build();
+
+        try {
+            FlatBufferResponse response = blockingStub.submitSolution(request);
+            return response.getPayload().toByteArray();
+        } catch (Exception e) {
+            logger.error("RPC submitSolution failed: " + e.getMessage());
+            throw e;
+        }
+    }
+
+    /**
+     * Sends a keepAlive heartbeat via gRPC.
+     */
+    public byte[] keepAlive(byte[] flatBuffersPayload) {
+        logger.debug("Sending keepAlive via gRPC...");
+        FlatBufferRequest request = FlatBufferRequest.newBuilder()
+                .setPayload(ByteString.copyFrom(flatBuffersPayload))
+                .build();
+
+        try {
+            FlatBufferResponse response = blockingStub.keepAlive(request);
+            return response.getPayload().toByteArray();
+        } catch (Exception e) {
+            logger.error("RPC keepAlive failed: " + e.getMessage());
+            throw e;
+        }
+    }
 }

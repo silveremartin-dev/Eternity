@@ -10,16 +10,21 @@ import org.game.eternity2.io.JsonSolutionPersistence;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 public class GenerateUnsolved {
+    private static final Logger logger = LogManager.getLogger(GenerateUnsolved.class);
+
     public static void main(String[] args) {
-        System.out.println("Generating unsolved puzzle files...");
+        logger.info("Generating unsolved puzzle files...");
 
         generate(new EternityBoard4x4(), "unsolved_4x4.puzzle");
         generate(new EternityBoard6x6(), "unsolved_6x6.puzzle");
         generate(new EternityBoard12x6(), "unsolved_12x6.puzzle");
         generate(new EternityBoard16x16(), "unsolved_16x16.puzzle");
 
-        System.out.println("Generation complete.");
+        logger.info("Generation complete.");
         System.exit(0);
     }
 
@@ -50,10 +55,10 @@ public class GenerateUnsolved {
             String json = gson.toJson(data);
 
             java.nio.file.Files.writeString(path, json);
-            System.out.println("Generated: " + path.toAbsolutePath());
+            logger.info("Generated: {}", path.toAbsolutePath());
 
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("Failed to generate puzzle file", e);
         }
     }
 }

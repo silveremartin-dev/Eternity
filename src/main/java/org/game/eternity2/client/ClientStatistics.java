@@ -26,6 +26,9 @@ import java.util.Properties;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 /**
  * Tracks client statistics for monitoring and display.
  * Supports session vs total statistics and persistence.
@@ -34,6 +37,8 @@ import java.util.concurrent.atomic.AtomicLong;
  * @version 2.1
  */
 public class ClientStatistics {
+    private static final Logger logger = LogManager.getLogger(ClientStatistics.class);
+
     // Session stats
     private final AtomicInteger jobsCompleted = new AtomicInteger(0);
     private final AtomicInteger piecesPlaced = new AtomicInteger(0);
@@ -144,7 +149,7 @@ public class ClientStatistics {
         try (FileOutputStream out = new FileOutputStream(file)) {
             props.store(out, "Eternity Client Statistics");
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.error("Failed to save client statistics", e);
         }
     }
 
@@ -159,7 +164,7 @@ public class ClientStatistics {
             totalBacktrackCount.set(Long.parseLong(props.getProperty("totalBacktrackCount", "0")));
             totalComputeTimeMs.set(Long.parseLong(props.getProperty("totalComputeTimeMs", "0")));
         } catch (IOException | NumberFormatException e) {
-            e.printStackTrace();
+            logger.error("Failed to load client statistics", e);
         }
     }
 }

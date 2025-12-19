@@ -1,0 +1,52 @@
+Number to color:
+
+gray is 0
+orangelightblue is 1
+roseyellow2 is 2
+browngreen is 3
+lightbluerose2 is 4
+greendarkblue is 5
+purpleyellow is 6
+lightbluerose is 7
+darkblueorange is 8
+darkblueyellow is 9
+purplelightblue is 10
+greenorange is 11
+yellowdarkblue is 12
+brownorange is 13
+greenrose is 14
+yellowgreen is 15
+darkbluelightblue is 16
+roselightblue is 17
+yellowlightblue is 18
+brownyellow is 19
+orangepurple is 20
+roseyellow is 21
+darkbluerose is 22
+
+
+Color to number:
+
+browngreen is 3
+brownorange is 13
+brownyellow is 19
+darkbluelightblue is 16
+darkblueorange is 8
+darkbluerose is 22
+darkblueyellow is 9
+greendarkblue is 5
+greenorange is 11
+greenrose is 14
+gray is 0
+lightbluerose2 is 4
+lightbluerose is 7
+orangelightblue is 1
+orangepurple is 20
+purplelightblue is 10
+purpleyellow is 6
+roselightblue is 17
+roseyellow2 is 2
+roseyellow is 21
+yellowdarkblue is 12
+yellowgreen is 15
+yellowlightblue is 18

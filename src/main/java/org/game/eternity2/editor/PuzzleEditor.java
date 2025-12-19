@@ -16,8 +16,6 @@ import org.game.eternity2.model.optimized.PuzzleLoader;
 
 import java.io.File;
 import java.nio.file.Path;
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * JavaFX Puzzle Editor for creating and editing Eternity II puzzles.
@@ -244,7 +242,7 @@ public class PuzzleEditor extends Application {
 
         // Edge triangles
         double half = size / 2;
-        double edge = size / 4;
+        // Note: edge size calculated but visual rendering uses half
 
         // Top edge
         javafx.scene.shape.Polygon top = new javafx.scene.shape.Polygon(
@@ -339,8 +337,28 @@ public class PuzzleEditor extends Application {
                 new FileChooser.ExtensionFilter("Puzzle Files", "*.txt", "*.puzzle"));
         File file = chooser.showOpenDialog(stage);
         if (file != null) {
-            // TODO: Load puzzle from file
-            showAlert("Open", "Loading: " + file.getName());
+            try {
+                pieces = PuzzleLoader.loadPieces(Path.of(file.getPath()));
+                // Determine board size from piece count
+                int pieceCount = pieces.length;
+                if (pieceCount == 16) {
+                    boardWidth = 4;
+                    boardHeight = 4;
+                } else if (pieceCount == 36) {
+                    boardWidth = 6;
+                    boardHeight = 6;
+                } else if (pieceCount == 72) {
+                    boardWidth = 12;
+                    boardHeight = 6;
+                } else if (pieceCount == 256) {
+                    boardWidth = 16;
+                    boardHeight = 16;
+                }
+                initializeBoard();
+                showAlert("Open", "Loaded " + pieces.length + " pieces from: " + file.getName());
+            } catch (Exception e) {
+                showAlert("Error", "Failed to load puzzle: " + e.getMessage());
+            }
         }
     }
 
@@ -348,11 +366,15 @@ public class PuzzleEditor extends Application {
         FileChooser chooser = new FileChooser();
         chooser.setTitle("Save Puzzle");
         chooser.getExtensionFilters().add(
-                new FileChooser.ExtensionFilter("Puzzle Files", "*.puzzle"));
+                new FileChooser.ExtensionFilter("Puzzle Files", "*.txt"));
         File file = chooser.showSaveDialog(stage);
         if (file != null) {
-            // TODO: Save puzzle to file
-            showAlert("Save", "Saved: " + file.getName());
+            try {
+                PuzzleLoader.savePieces(Path.of(file.getPath()), pieces);
+                showAlert("Save", "Saved " + pieces.length + " pieces to: " + file.getName());
+            } catch (Exception e) {
+                showAlert("Error", "Failed to save puzzle: " + e.getMessage());
+            }
         }
     }
 

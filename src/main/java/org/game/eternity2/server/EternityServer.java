@@ -43,7 +43,7 @@ public class EternityServer {
 
     private AbstractEternityBoard masterBoard;
     private JobManager jobManager;
-    private UserDatabase userDatabase;
+    private JsonUserDatabase userDatabase;
     private ServerStatistics statistics;
     private EternityWebSocketServer webSocketServer;
     private Server grpcServer;
@@ -56,18 +56,20 @@ public class EternityServer {
         this.clients = new ArrayList<>();
         // masterBoard will be initialized in initializeGame
         this.jobManager = new JobManager();
-        this.userDatabase = new UserDatabase();
+        this.userDatabase = new JsonUserDatabase();
         this.statistics = new ServerStatistics();
 
         // Start WebSocket server on port + 1
         this.webSocketServer = new EternityWebSocketServer(port + 1, this);
         this.webSocketServer.start();
 
-        // Initialize Redis components
+        // Initialize Redis components with environment-based configuration
         try {
-            this.redisManager = new RedisConnectionManager("localhost", 6379);
+            String redisHost = System.getenv().getOrDefault("REDIS_HOST", "localhost");
+            int redisPort = Integer.parseInt(System.getenv().getOrDefault("REDIS_PORT", "6379"));
+            this.redisManager = new RedisConnectionManager(redisHost, redisPort);
             this.constraintCache = new ConstraintCache(redisManager);
-            logger.info("Redis connection established and Constraint Cache initialized");
+            logger.info("Redis connection established to {}:{} and Constraint Cache initialized", redisHost, redisPort);
         } catch (Exception e) {
             logger.warn("Redis not available. Constraint Cache will be disabled.", e);
         }

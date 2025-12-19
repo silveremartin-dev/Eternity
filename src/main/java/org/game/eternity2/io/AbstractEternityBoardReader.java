@@ -28,6 +28,9 @@ import java.io.Serial;
 import java.io.Serializable;
 import java.util.List;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 /**
  * A way to read a (possibly partial) solution to the Eternity II puzzles from a
  * file.
@@ -37,6 +40,7 @@ import java.util.List;
  */
 
 public abstract class AbstractEternityBoardReader {
+    private static final Logger logger = LogManager.getLogger(AbstractEternityBoardReader.class);
 
     private EternityXMLGameBoard eternityXMLGameBoard;
 
@@ -47,7 +51,7 @@ public abstract class AbstractEternityBoardReader {
             Unmarshaller jaxbUnmarshaller = jaxbContext.createUnmarshaller();
             eternityXMLGameBoard = (EternityXMLGameBoard) jaxbUnmarshaller.unmarshal(file);
         } catch (JAXBException e) {
-            e.printStackTrace();
+            logger.error("Failed to parse XML game board", e);
         }
     }
 

@@ -11,7 +11,11 @@ import java.net.InetSocketAddress;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 public class EternityWebSocketServer extends WebSocketServer {
+    private static final Logger logger = LogManager.getLogger(EternityWebSocketServer.class);
 
     @SuppressWarnings("unused")
     private final EternityServer gameServer;
@@ -25,12 +29,12 @@ public class EternityWebSocketServer extends WebSocketServer {
 
     @Override
     public void onOpen(WebSocket conn, ClientHandshake handshake) {
-        System.out.println("New WebSocket connection: " + conn.getRemoteSocketAddress());
+        logger.info("New WebSocket connection: {}", conn.getRemoteSocketAddress());
     }
 
     @Override
     public void onClose(WebSocket conn, int code, String reason, boolean remote) {
-        System.out.println("Closed WebSocket connection: " + conn.getRemoteSocketAddress());
+        logger.info("Closed WebSocket connection: {}", conn.getRemoteSocketAddress());
         authenticatedUsers.remove(conn);
     }
 
@@ -54,7 +58,7 @@ public class EternityWebSocketServer extends WebSocketServer {
                     sendError(conn, "Unknown command: " + command);
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("Error processing WebSocket message", e);
             sendError(conn, "Invalid message format");
         }
     }
@@ -102,11 +106,11 @@ public class EternityWebSocketServer extends WebSocketServer {
 
     @Override
     public void onError(WebSocket conn, Exception ex) {
-        ex.printStackTrace();
+        logger.error("WebSocket error", ex);
     }
 
     @Override
     public void onStart() {
-        System.out.println("WebSocket Server started on port: " + getPort());
+        logger.info("WebSocket Server started on port: {}", getPort());
     }
 }

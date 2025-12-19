@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<xs:schema attributeFormDefault="unqualified" elementFormDefault="qualified" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+    <xs:element name="ETERNITY2GAMETILES">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element name="TILE">
+                    <xs:complexType>
+                        <xs:sequence>
+                            <xs:element name="NUMBER" type="xs:unsignedByte" />
+                            <xs:element name="TOP" type="xs:unsignedByte" />
+                            <xs:element name="RIGHT" type="xs:unsignedByte" />
+                            <xs:element name="BOTTOM" type="xs:unsignedByte" />
+                            <xs:element name="LEFT" type="xs:unsignedByte" />
+                        </xs:sequence>
+                    </xs:complexType>
+                </xs:element>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+</xs:schema>
