@@ -29,7 +29,7 @@ public class EternityServiceImpl extends EternityServiceGrpc.EternityServiceImpl
     public void login(FlatBufferRequest request, StreamObserver<FlatBufferResponse> responseObserver) {
         try {
             // 1. Extract FlatBuffers payload
-            byte[] payloadBytes = request.getPayload().toByteArray();
+            // byte[] payloadBytes = request.getPayload().toByteArray(); // Unused currently
             // Payload ready for FlatBuffers deserialization when implemented
 
             // 2. Deserialize (Zero-Copy read)

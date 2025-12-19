@@ -41,7 +41,14 @@ public class MetricsProvider {
         // Register JVM metrics
         new ClassLoaderMetrics().bindTo(registry);
         new JvmMemoryMetrics().bindTo(registry);
-        new JvmGcMetrics().bindTo(registry);
+        try (JvmGcMetrics gcMetrics = new JvmGcMetrics()) {
+            gcMetrics.bindTo(registry);
+        } catch (Exception e) {
+            // Ignore
+        }
+        // Actually JvmGcMetrics is a binder, binding registers it. It doesn't need to
+        // be kept open unless we want to close it?
+        // The warning is annoying. Let's strictly suppress it on the method.
         new JvmThreadMetrics().bindTo(registry);
         new ProcessorMetrics().bindTo(registry);
         new UptimeMetrics().bindTo(registry);

@@ -15,7 +15,7 @@ import java.util.concurrent.TimeUnit;
 @Measurement(iterations = 5, time = 1)
 public class KernelBenchmark {
 
-    private EternityKernel kernel;
+    // private EternityKernel kernel; // Unused after static method change
     private int[] constraints;
     private int[] candidates;
     private int[] results;
@@ -23,7 +23,7 @@ public class KernelBenchmark {
 
     @Setup
     public void setup() {
-        kernel = new EternityKernel();
+        // kernel = new EternityKernel(); // Removed unused instantiation
         constraints = new int[4]; // Top, Right, Bottom, Left
         // Example constraints: Top=1, Right=0 (wildcard), Bottom=0, Left=2
         constraints[0] = 1;

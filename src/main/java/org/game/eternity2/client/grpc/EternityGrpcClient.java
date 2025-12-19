@@ -20,6 +20,7 @@ public class EternityGrpcClient {
 
     private final ManagedChannel channel;
     private final EternityServiceGrpc.EternityServiceBlockingStub blockingStub;
+    @SuppressWarnings("unused")
     private final EternityServiceGrpc.EternityServiceStub asyncStub;
 
     public EternityGrpcClient(String host, int port) {
