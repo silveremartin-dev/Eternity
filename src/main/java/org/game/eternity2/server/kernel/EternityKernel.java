@@ -21,9 +21,6 @@ public class EternityKernel {
      *                    num_candidates.
      */
     public static void checkCandidates(int[] constraints, int[] candidates, int[] results) {
-        // For TornadoVM, we would use the @Parallel annotation here on a loop
-        // for (int i = 0; i < results.length; i++) {
-
         // CPU implementation (mimics the parallel kernel structure)
         for (int i = 0; i < results.length; i++) {
             int baseIndex = i * 4;

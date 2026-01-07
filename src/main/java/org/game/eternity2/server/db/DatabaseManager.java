@@ -22,9 +22,9 @@ public class DatabaseManager implements AutoCloseable {
     private final boolean enabled;
 
     private DatabaseManager() {
-        String dbUrl = System.getenv().getOrDefault("DB_URL",
-                "jdbc:postgresql://localhost:5432/eternity");
-        String dbEnabled = System.getenv().getOrDefault("DB_ENABLED", "true");
+        String dbUrl = System.getProperty("DB_URL", System.getenv().getOrDefault("DB_URL",
+                "jdbc:postgresql://localhost:5432/eternity"));
+        String dbEnabled = System.getProperty("DB_ENABLED", System.getenv().getOrDefault("DB_ENABLED", "true"));
 
         this.enabled = Boolean.parseBoolean(dbEnabled);
 
@@ -36,8 +36,8 @@ public class DatabaseManager implements AutoCloseable {
 
         HikariConfig config = new HikariConfig();
         config.setJdbcUrl(dbUrl);
-        config.setUsername(System.getenv().getOrDefault("DB_USER", "postgres"));
-        config.setPassword(System.getenv().getOrDefault("DB_PASSWORD", "postgres"));
+        config.setUsername(System.getProperty("DB_USER", System.getenv().getOrDefault("DB_USER", "postgres")));
+        config.setPassword(System.getProperty("DB_PASSWORD", System.getenv().getOrDefault("DB_PASSWORD", "postgres")));
         config.setMaximumPoolSize(10);
         config.setMinimumIdle(2);
         config.setConnectionTimeout(30000);
@@ -76,6 +76,16 @@ public class DatabaseManager implements AutoCloseable {
             instance = new DatabaseManager();
         }
         return instance;
+    }
+
+    /**
+     * Reset the singleton instance (For Testing Only).
+     */
+    public static synchronized void resetInstance() {
+        if (instance != null) {
+            instance.close();
+            instance = null;
+        }
     }
 
     /**
