@@ -28,9 +28,13 @@ public class BasicEternitySolver implements EternitySolverInterface {
     }
 
     private BoardPrimitive solve(BoardPrimitive board, List<Long> tiles) {
-        int[] nextPos = findNextEmpty(board);
-        if (nextPos == null) {
-            return board; // Solved
+        if (board.isComplete()) {
+            return board;
+        }
+
+        int[] nextPos = board.findMostConstrainedPosition();
+        if (nextPos[0] == -1) {
+            return board; // Should not happen if not complete
         }
         int x = nextPos[0];
         int y = nextPos[1];
@@ -73,16 +77,5 @@ public class BasicEternitySolver implements EternitySolverInterface {
             }
         }
         return unused;
-    }
-
-    private int[] findNextEmpty(BoardPrimitive board) {
-        for (int y = 0; y < board.getHeight(); y++) {
-            for (int x = 0; x < board.getWidth(); x++) {
-                if (board.isEmpty(x, y)) {
-                    return new int[] { x, y };
-                }
-            }
-        }
-        return null;
     }
 }

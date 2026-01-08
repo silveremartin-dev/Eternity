@@ -51,6 +51,9 @@ public class EternityWebSocketServer extends WebSocketServer {
                 case "JOB_REQUEST":
                     handleJobRequest(conn, json);
                     break;
+                case "SERVER_STATS":
+                    handleServerStats(conn);
+                    break;
                 case "RESULT_SUBMISSION":
                     handleResultSubmission(conn, json);
                     break;
@@ -61,6 +64,22 @@ public class EternityWebSocketServer extends WebSocketServer {
             logger.error("Error processing WebSocket message", e);
             sendError(conn, "Invalid message format");
         }
+    }
+
+    private void handleServerStats(WebSocket conn) {
+        JobManager.JobStatistics stats = gameServer.getJobManager().getStatistics();
+        ServerStatistics serverStats = gameServer.getStatistics();
+
+        JsonObject response = new JsonObject();
+        response.addProperty("command", "SERVER_STATS");
+        response.addProperty("activeClients", serverStats.getActiveClients());
+        response.addProperty("totalJobs", stats.total());
+        response.addProperty("completedJobs", stats.completed());
+        response.addProperty("completionPercentage", stats.getCompletionPercentage());
+        response.addProperty("bestScore", gameServer.getMasterBoard().computeScore());
+        response.addProperty("uptimeMs", serverStats.getUptimeMs());
+
+        conn.send(gson.toJson(response));
     }
 
     private void handleLogin(WebSocket conn, JsonObject json) {

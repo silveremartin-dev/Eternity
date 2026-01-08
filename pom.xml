@@ -138,8 +138,7 @@
             <scope>provided</scope>
         </dependency>
 
-        <!-- TornadoVM for GPU Acceleration (Temporarily disabled due to resolution issues) -->
-        <!--
+        <!-- TornadoVM for GPU Acceleration -->
         <dependency>
             <groupId>uk.ac.manchester.tornado</groupId>
             <artifactId>tornado-api</artifactId>
@@ -150,7 +149,6 @@
             <artifactId>tornado-matrices</artifactId>
             <version>1.0.0</version>
         </dependency>
-        -->
         <!-- JMH Benchmarking -->
         <dependency>
             <groupId>org.openjdk.jmh</groupId>

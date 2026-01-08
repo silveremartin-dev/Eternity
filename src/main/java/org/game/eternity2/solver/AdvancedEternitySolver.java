@@ -3,6 +3,7 @@ package org.game.eternity2.solver;
 import org.game.eternity2.model.BoardPrimitive;
 import org.game.eternity2.model.PiecePrimitive;
 import org.game.eternity2.server.kernel.EternityKernel;
+import org.game.eternity2.server.kernel.TornadoEternityDriver;
 import org.game.eternity2.io.PuzzleLoaderWriter;
 
 import java.util.ArrayList;
@@ -19,9 +20,19 @@ import java.util.Set;
 public class AdvancedEternitySolver implements EternitySolverInterface {
 
     private final long[] allPieces;
+    private TornadoEternityDriver gpuDriver;
+    private boolean useGpu;
 
     public AdvancedEternitySolver() {
         this.allPieces = PuzzleLoaderWriter.generateEternity2Pieces();
+        try {
+            // Assume 1024 candidates max for a single evaluation (enough for 256 tiles * 4
+            // rotations)
+            this.gpuDriver = new TornadoEternityDriver(1024);
+            this.useGpu = true;
+        } catch (Throwable e) {
+            this.useGpu = false;
+        }
     }
 
     @Override
@@ -31,8 +42,12 @@ public class AdvancedEternitySolver implements EternitySolverInterface {
     }
 
     private BoardPrimitive solve(BoardPrimitive board, List<Long> tiles) {
-        int[] nextPos = findNextEmpty(board);
-        if (nextPos == null) {
+        if (board.isComplete()) {
+            return board;
+        }
+
+        int[] nextPos = board.findMostConstrainedPosition();
+        if (nextPos[0] == -1) {
             return board;
         }
         int x = nextPos[0];
@@ -57,9 +72,13 @@ public class AdvancedEternitySolver implements EternitySolverInterface {
             }
         }
 
-        // 3. Call Kernel
+        // 3. Call Kernel (GPU or CPU)
         int[] results = new int[numTiles * 4];
-        EternityKernel.checkCandidates(constraints, candidates, results);
+        if (useGpu && results.length <= 1024) {
+            gpuDriver.solve(constraints, candidates, results);
+        } else {
+            EternityKernel.checkCandidates(constraints, candidates, results);
+        }
 
         // 4. Process Results
         for (int i = 0; i < results.length; i++) {
@@ -105,16 +124,5 @@ public class AdvancedEternitySolver implements EternitySolverInterface {
             }
         }
         return unused;
-    }
-
-    private int[] findNextEmpty(BoardPrimitive board) {
-        for (int y = 0; y < board.getHeight(); y++) {
-            for (int x = 0; x < board.getWidth(); x++) {
-                if (board.isEmpty(x, y)) {
-                    return new int[] { x, y };
-                }
-            }
-        }
-        return null;
     }
 }

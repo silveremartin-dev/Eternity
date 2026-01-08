@@ -138,6 +138,52 @@ public class BoardPrimitive implements Serializable {
     }
 
     /**
+     * Finds the best next position to fill based on constraints (Most Constrained
+     * First).
+     * Returns int[] {x, y, weight}. Weight is the number of mandatory color
+     * constraints.
+     */
+    public int[] findMostConstrainedPosition() {
+        int bestX = -1;
+        int bestY = -1;
+        int maxWeight = -1;
+
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                if (!isEmpty(x, y))
+                    continue;
+
+                int weight = 0;
+                // Check neighbors
+                if (y == 0 || getPiece(x, y - 1) != 0)
+                    weight++;
+                if (x == width - 1 || getPiece(x + 1, y) != 0)
+                    weight++;
+                if (y == height - 1 || getPiece(x, y + 1) != 0)
+                    weight++;
+                if (x == 0 || getPiece(x - 1, y) != 0)
+                    weight++;
+
+                if (weight > maxWeight) {
+                    maxWeight = weight;
+                    bestX = x;
+                    bestY = y;
+                    if (maxWeight == 4)
+                        return new int[] { bestX, bestY, maxWeight }; // Optimization
+                } else if (weight == maxWeight) {
+                    // Tie-breaker: prefer corners, then edges
+                    int type = getPositionType(x, y);
+                    if (bestX != -1 && type < getPositionType(bestX, bestY)) {
+                        bestX = x;
+                        bestY = y;
+                    }
+                }
+            }
+        }
+        return new int[] { bestX, bestY, maxWeight };
+    }
+
+    /**
      * Get position type (corner=0, edge=1, inner=2).
      */
     public int getPositionType(int x, int y) {
@@ -156,6 +202,22 @@ public class BoardPrimitive implements Serializable {
             case 1 -> PiecePrimitive.TYPE_EDGE;
             default -> PiecePrimitive.TYPE_INNER;
         };
+    }
+
+    /**
+     * Get neighboring pieces count.
+     */
+    public int getNeighborCount(int x, int y) {
+        int count = 0;
+        if (y > 0 && getPiece(x, y - 1) != 0)
+            count++;
+        if (x < width - 1 && getPiece(x + 1, y) != 0)
+            count++;
+        if (y < height - 1 && getPiece(x, y + 1) != 0)
+            count++;
+        if (x > 0 && getPiece(x - 1, y) != 0)
+            count++;
+        return count;
     }
 
     // Getters

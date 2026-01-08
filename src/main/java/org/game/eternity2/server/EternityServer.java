@@ -227,6 +227,20 @@ public class EternityServer {
         this.gui = gui;
     }
 
+    public JobManager getJobManager() {
+        return jobManager;
+    }
+
+    public ServerStatistics getStatistics() {
+        return statistics;
+    }
+
+    public BoardPrimitive getMasterBoard() {
+        synchronized (masterBoard) {
+            return masterBoard;
+        }
+    }
+
     private String timestamp() {
         return "[" + LocalTime.now().format(TIME_FORMATTER) + "]";
     }
