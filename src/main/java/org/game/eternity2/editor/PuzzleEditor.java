@@ -10,9 +10,9 @@ import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
-import org.game.eternity2.model.optimized.BoardPrimitive;
-import org.game.eternity2.model.optimized.PiecePrimitive;
-import org.game.eternity2.model.optimized.PuzzleLoader;
+import org.game.eternity2.model.BoardPrimitive;
+import org.game.eternity2.model.PiecePrimitive;
+import org.game.eternity2.io.PuzzleLoaderWriter;
 
 import java.io.File;
 import java.nio.file.Path;
@@ -338,7 +338,7 @@ public class PuzzleEditor extends Application {
         File file = chooser.showOpenDialog(stage);
         if (file != null) {
             try {
-                pieces = PuzzleLoader.loadPieces(Path.of(file.getPath()));
+                pieces = PuzzleLoaderWriter.loadPieces(Path.of(file.getPath()));
                 // Determine board size from piece count
                 int pieceCount = pieces.length;
                 if (pieceCount == 16) {
@@ -366,11 +366,11 @@ public class PuzzleEditor extends Application {
         FileChooser chooser = new FileChooser();
         chooser.setTitle("Save Puzzle");
         chooser.getExtensionFilters().add(
-                new FileChooser.ExtensionFilter("Puzzle Files", "*.txt"));
+                new FileChooser.ExtensionFilter("Puzzle Files", "*.txt", "*.json"));
         File file = chooser.showSaveDialog(stage);
         if (file != null) {
             try {
-                PuzzleLoader.savePieces(Path.of(file.getPath()), pieces);
+                PuzzleLoaderWriter.savePieces(Path.of(file.getPath()), pieces);
                 showAlert("Save", "Saved " + pieces.length + " pieces to: " + file.getName());
             } catch (Exception e) {
                 showAlert("Error", "Failed to save puzzle: " + e.getMessage());
@@ -386,7 +386,7 @@ public class PuzzleEditor extends Application {
         File file = chooser.showOpenDialog(stage);
         if (file != null) {
             try {
-                pieces = PuzzleLoader.loadPieces(Path.of(file.getPath()));
+                pieces = PuzzleLoaderWriter.loadPieces(Path.of(file.getPath()));
                 showAlert("Import", "Imported " + pieces.length + " pieces");
             } catch (Exception e) {
                 showAlert("Error", "Failed to import: " + e.getMessage());
@@ -395,7 +395,7 @@ public class PuzzleEditor extends Application {
     }
 
     private void generateRandomPuzzle() {
-        pieces = PuzzleLoader.generateEternity2Pieces();
+        pieces = PuzzleLoaderWriter.generateEternity2Pieces();
         boardWidth = 16;
         boardHeight = 16;
         initializeBoard();

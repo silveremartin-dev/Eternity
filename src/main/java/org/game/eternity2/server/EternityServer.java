@@ -2,8 +2,8 @@ package org.game.eternity2.server;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.game.eternity2.elements.AbstractEternityBoard;
-import org.game.eternity2.elements.Hint;
+import org.game.eternity2.model.BoardPrimitive;
+import org.game.eternity2.model.Hint;
 import org.game.eternity2.server.strategy.BorderFirstStrategy;
 import org.game.eternity2.server.redis.ConstraintCache;
 import org.game.eternity2.server.redis.RedisConnectionManager;
@@ -27,7 +27,7 @@ import org.game.eternity2.server.grpc.EternityServiceImpl;
  * The server to be used to dispatch packets between clients.
  *
  * @author Silvere Martin-Michiellot
- * @version 2.0
+ * @version 2.2
  */
 public class EternityServer {
     private static final Logger logger = LogManager.getLogger(EternityServer.class);
@@ -41,7 +41,7 @@ public class EternityServer {
     private ExecutorService clientExecutor;
     private List<ClientHandler> clients;
 
-    private AbstractEternityBoard masterBoard;
+    private BoardPrimitive masterBoard;
     private JobManager jobManager;
     private JsonUserDatabase userDatabase;
     private ServerStatistics statistics;
@@ -76,8 +76,8 @@ public class EternityServer {
     }
 
     public void initializeGame(int sizeX, int sizeY, String strategyName, List<Hint> hints) {
-        // Create board using factory
-        this.masterBoard = org.game.eternity2.elements.BoardFactory.createBoard(sizeX, sizeY);
+        // Create board using primitives
+        this.masterBoard = new BoardPrimitive(sizeX, sizeY);
 
         if (hints == null) {
             hints = new ArrayList<>();
@@ -339,12 +339,12 @@ public class EternityServer {
                     if (gui != null) {
                         gui.log(timestamp() + " Job requested by " + packet.getUser().getLogin());
                     }
-                    if (packet.getPayload() instanceof AbstractEternityBoard) {
-                        AbstractEternityBoard resultBoard = (AbstractEternityBoard) packet.getPayload();
+                    if (packet.getPayload() instanceof BoardPrimitive) {
+                        BoardPrimitive resultBoard = (BoardPrimitive) packet.getPayload();
                         synchronized (masterBoard) {
                             if (resultBoard.computeScore() > masterBoard.computeScore()) {
                                 masterBoard = resultBoard;
-                                statistics.incrementPiecesSolved(resultBoard.numTiles());
+                                statistics.incrementPiecesSolved(resultBoard.getPlacedCount());
                                 if (gui != null) {
                                     gui.log(timestamp() + " New best score: " + masterBoard.computeScore());
                                 }

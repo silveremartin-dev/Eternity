@@ -1,104 +1,2119 @@
 {
-    "name": "Eternity II - Official 16x16",
-    "description": "The original Eternity II puzzle - 256 pieces, 22 patterns",
-    "width": 16,
-    "height": 16,
-    "patterns": 22,
-    "patternNames": [
-        "Border (Grey)",
-        "Yellow Star",
-        "Blue Diamond",
-        "Red Flower",
-        "Green Leaf",
-        "Purple Crown",
-        "Orange Sun",
-        "Cyan Moon",
-        "Pink Heart",
-        "Brown Tree",
-        "Navy Anchor",
-        "Lime Clover",
-        "Coral Shell",
-        "Gold Key",
-        "Silver Bell",
-        "Maroon Shield",
-        "Olive Branch",
-        "Teal Wave",
-        "Fuchsia Bow",
-        "Salmon Fish",
-        "Khaki Castle",
-        "Plum Grape",
-        "Indigo Cross"
-    ],
-    "pieces": [
-        {
-            "id": 1,
-            "top": 0,
-            "right": 1,
-            "bottom": 5,
-            "left": 0,
-            "type": "corner"
-        },
-        {
-            "id": 2,
-            "top": 0,
-            "right": 2,
-            "bottom": 6,
-            "left": 1,
-            "type": "edge"
-        },
-        {
-            "id": 3,
-            "top": 0,
-            "right": 3,
-            "bottom": 7,
-            "left": 2,
-            "type": "edge"
-        },
-        {
-            "id": 4,
-            "top": 0,
-            "right": 0,
-            "bottom": 8,
-            "left": 3,
-            "type": "corner"
-        }
-    ],
-    "note": "Full 256 pieces available from TheSil/edge_puzzle format",
-    "hints": [
-        {
-            "x": 0,
-            "y": 0,
-            "pieceId": 139,
-            "rotation": 0,
-            "source": "Official Eternity II hint #1"
-        },
-        {
-            "x": 2,
-            "y": 7,
-            "pieceId": 208,
-            "rotation": 0,
-            "source": "Official Eternity II hint #2"
-        },
-        {
-            "x": 2,
-            "y": 2,
-            "pieceId": 249,
-            "rotation": 3,
-            "source": "Official Eternity II hint #3"
-        },
-        {
-            "x": 5,
-            "y": 6,
-            "pieceId": 255,
-            "rotation": 2,
-            "source": "Official Eternity II hint #4"
-        }
-    ],
-    "solution": null,
-    "solutionStatus": "UNSOLVED",
-    "bestKnownScore": {
-        "matches": 467,
-        "possible": 480,
-        "percentage": 97.29
+  "name": "Eternity II - Official 16x16",
+  "description": "The original Eternity II puzzle - 256 pieces, 22 patterns",
+  "width": 16,
+  "height": 16,
+  "patterns": 22,
+  "patternNames": [
+    "Border (Grey)",
+    "Yellow Star",
+    "Blue Diamond",
+    "Red Flower",
+    "Green Leaf",
+    "Purple Crown",
+    "Orange Sun",
+    "Cyan Moon",
+    "Pink Heart",
+    "Brown Tree",
+    "Navy Anchor",
+    "Lime Clover",
+    "Coral Shell",
+    "Gold Key",
+    "Silver Bell",
+    "Maroon Shield",
+    "Olive Branch",
+    "Teal Wave",
+    "Fuchsia Bow",
+    "Salmon Fish",
+    "Khaki Castle",
+    "Plum Grape",
+    "Indigo Cross"
+  ],
+  "pieces": [
+    {
+      "id": 1,
+      "top": 1,
+      "right": 17,
+      "bottom": 0,
+      "left": 0,
+      "type": "corner"
+    },
+    {
+      "id": 2,
+      "top": 1,
+      "right": 5,
+      "bottom": 0,
+      "left": 0,
+      "type": "corner"
+    },
+    {
+      "id": 3,
+      "top": 9,
+      "right": 17,
+      "bottom": 0,
+      "left": 0,
+      "type": "corner"
+    },
+    {
+      "id": 4,
+      "top": 17,
+      "right": 9,
+      "bottom": 0,
+      "left": 0,
+      "type": "corner"
+    },
+    {
+      "id": 5,
+      "top": 2,
+      "right": 1,
+      "bottom": 0,
+      "left": 1,
+      "type": "edge"
+    },
+    {
+      "id": 6,
+      "top": 10,
+      "right": 9,
+      "bottom": 0,
+      "left": 1,
+      "type": "edge"
+    },
+    {
+      "id": 7,
+      "top": 6,
+      "right": 1,
+      "bottom": 0,
+      "left": 1,
+      "type": "edge"
+    },
+    {
+      "id": 8,
+      "top": 6,
+      "right": 13,
+      "bottom": 0,
+      "left": 1,
+      "type": "edge"
+    },
+    {
+      "id": 9,
+      "top": 11,
+      "right": 17,
+      "bottom": 0,
+      "left": 1,
+      "type": "edge"
+    },
+    {
+      "id": 10,
+      "top": 7,
+      "right": 5,
+      "bottom": 0,
+      "left": 1,
+      "type": "edge"
+    },
+    {
+      "id": 11,
+      "top": 15,
+      "right": 9,
+      "bottom": 0,
+      "left": 1,
+      "type": "edge"
+    },
+    {
+      "id": 12,
+      "top": 8,
+      "right": 5,
+      "bottom": 0,
+      "left": 1,
+      "type": "edge"
+    },
+    {
+      "id": 13,
+      "top": 8,
+      "right": 13,
+      "bottom": 0,
+      "left": 1,
+      "type": "edge"
+    },
+    {
+      "id": 14,
+      "top": 21,
+      "right": 5,
+      "bottom": 0,
+      "left": 1,
+      "type": "edge"
+    },
+    {
+      "id": 15,
+      "top": 10,
+      "right": 1,
+      "bottom": 0,
+      "left": 9,
+      "type": "edge"
+    },
+    {
+      "id": 16,
+      "top": 18,
+      "right": 17,
+      "bottom": 0,
+      "left": 9,
+      "type": "edge"
+    },
+    {
+      "id": 17,
+      "top": 14,
+      "right": 13,
+      "bottom": 0,
+      "left": 9,
+      "type": "edge"
+    },
+    {
+      "id": 18,
+      "top": 19,
+      "right": 13,
+      "bottom": 0,
+      "left": 9,
+      "type": "edge"
+    },
+    {
+      "id": 19,
+      "top": 7,
+      "right": 9,
+      "bottom": 0,
+      "left": 9,
+      "type": "edge"
+    },
+    {
+      "id": 20,
+      "top": 15,
+      "right": 9,
+      "bottom": 0,
+      "left": 9,
+      "type": "edge"
+    },
+    {
+      "id": 21,
+      "top": 4,
+      "right": 5,
+      "bottom": 0,
+      "left": 9,
+      "type": "edge"
+    },
+    {
+      "id": 22,
+      "top": 12,
+      "right": 1,
+      "bottom": 0,
+      "left": 9,
+      "type": "edge"
+    },
+    {
+      "id": 23,
+      "top": 12,
+      "right": 13,
+      "bottom": 0,
+      "left": 9,
+      "type": "edge"
+    },
+    {
+      "id": 24,
+      "top": 20,
+      "right": 1,
+      "bottom": 0,
+      "left": 9,
+      "type": "edge"
+    },
+    {
+      "id": 25,
+      "top": 21,
+      "right": 1,
+      "bottom": 0,
+      "left": 9,
+      "type": "edge"
+    },
+    {
+      "id": 26,
+      "top": 2,
+      "right": 9,
+      "bottom": 0,
+      "left": 17,
+      "type": "edge"
+    },
+    {
+      "id": 27,
+      "top": 2,
+      "right": 17,
+      "bottom": 0,
+      "left": 17,
+      "type": "edge"
+    },
+    {
+      "id": 28,
+      "top": 10,
+      "right": 17,
+      "bottom": 0,
+      "left": 17,
+      "type": "edge"
+    },
+    {
+      "id": 29,
+      "top": 18,
+      "right": 17,
+      "bottom": 0,
+      "left": 17,
+      "type": "edge"
+    },
+    {
+      "id": 30,
+      "top": 7,
+      "right": 13,
+      "bottom": 0,
+      "left": 17,
+      "type": "edge"
+    },
+    {
+      "id": 31,
+      "top": 15,
+      "right": 9,
+      "bottom": 0,
+      "left": 17,
+      "type": "edge"
+    },
+    {
+      "id": 32,
+      "top": 20,
+      "right": 17,
+      "bottom": 0,
+      "left": 17,
+      "type": "edge"
+    },
+    {
+      "id": 33,
+      "top": 8,
+      "right": 9,
+      "bottom": 0,
+      "left": 17,
+      "type": "edge"
+    },
+    {
+      "id": 34,
+      "top": 8,
+      "right": 5,
+      "bottom": 0,
+      "left": 17,
+      "type": "edge"
+    },
+    {
+      "id": 35,
+      "top": 16,
+      "right": 13,
+      "bottom": 0,
+      "left": 17,
+      "type": "edge"
+    },
+    {
+      "id": 36,
+      "top": 22,
+      "right": 5,
+      "bottom": 0,
+      "left": 17,
+      "type": "edge"
+    },
+    {
+      "id": 37,
+      "top": 18,
+      "right": 1,
+      "bottom": 0,
+      "left": 5,
+      "type": "edge"
+    },
+    {
+      "id": 38,
+      "top": 3,
+      "right": 13,
+      "bottom": 0,
+      "left": 5,
+      "type": "edge"
+    },
+    {
+      "id": 39,
+      "top": 11,
+      "right": 13,
+      "bottom": 0,
+      "left": 5,
+      "type": "edge"
+    },
+    {
+      "id": 40,
+      "top": 19,
+      "right": 9,
+      "bottom": 0,
+      "left": 5,
+      "type": "edge"
+    },
+    {
+      "id": 41,
+      "top": 19,
+      "right": 17,
+      "bottom": 0,
+      "left": 5,
+      "type": "edge"
+    },
+    {
+      "id": 42,
+      "top": 15,
+      "right": 1,
+      "bottom": 0,
+      "left": 5,
+      "type": "edge"
+    },
+    {
+      "id": 43,
+      "top": 15,
+      "right": 9,
+      "bottom": 0,
+      "left": 5,
+      "type": "edge"
+    },
+    {
+      "id": 44,
+      "top": 15,
+      "right": 17,
+      "bottom": 0,
+      "left": 5,
+      "type": "edge"
+    },
+    {
+      "id": 45,
+      "top": 4,
+      "right": 1,
+      "bottom": 0,
+      "left": 5,
+      "type": "edge"
+    },
+    {
+      "id": 46,
+      "top": 20,
+      "right": 5,
+      "bottom": 0,
+      "left": 5,
+      "type": "edge"
+    },
+    {
+      "id": 47,
+      "top": 8,
+      "right": 5,
+      "bottom": 0,
+      "left": 5,
+      "type": "edge"
+    },
+    {
+      "id": 48,
+      "top": 16,
+      "right": 5,
+      "bottom": 0,
+      "left": 5,
+      "type": "edge"
+    },
+    {
+      "id": 49,
+      "top": 2,
+      "right": 13,
+      "bottom": 0,
+      "left": 13,
+      "type": "edge"
+    },
+    {
+      "id": 50,
+      "top": 10,
+      "right": 1,
+      "bottom": 0,
+      "left": 13,
+      "type": "edge"
+    },
+    {
+      "id": 51,
+      "top": 10,
+      "right": 9,
+      "bottom": 0,
+      "left": 13,
+      "type": "edge"
+    },
+    {
+      "id": 52,
+      "top": 6,
+      "right": 1,
+      "bottom": 0,
+      "left": 13,
+      "type": "edge"
+    },
+    {
+      "id": 53,
+      "top": 7,
+      "right": 5,
+      "bottom": 0,
+      "left": 13,
+      "type": "edge"
+    },
+    {
+      "id": 54,
+      "top": 4,
+      "right": 5,
+      "bottom": 0,
+      "left": 13,
+      "type": "edge"
+    },
+    {
+      "id": 55,
+      "top": 4,
+      "right": 13,
+      "bottom": 0,
+      "left": 13,
+      "type": "edge"
+    },
+    {
+      "id": 56,
+      "top": 8,
+      "right": 17,
+      "bottom": 0,
+      "left": 13,
+      "type": "edge"
+    },
+    {
+      "id": 57,
+      "top": 16,
+      "right": 1,
+      "bottom": 0,
+      "left": 13,
+      "type": "edge"
+    },
+    {
+      "id": 58,
+      "top": 16,
+      "right": 13,
+      "bottom": 0,
+      "left": 13,
+      "type": "edge"
+    },
+    {
+      "id": 59,
+      "top": 21,
+      "right": 9,
+      "bottom": 0,
+      "left": 13,
+      "type": "edge"
+    },
+    {
+      "id": 60,
+      "top": 22,
+      "right": 17,
+      "bottom": 0,
+      "left": 13,
+      "type": "edge"
+    },
+    {
+      "id": 61,
+      "top": 6,
+      "right": 18,
+      "bottom": 2,
+      "left": 2,
+      "type": "inner"
+    },
+    {
+      "id": 62,
+      "top": 14,
+      "right": 7,
+      "bottom": 2,
+      "left": 2,
+      "type": "inner"
+    },
+    {
+      "id": 63,
+      "top": 10,
+      "right": 3,
+      "bottom": 2,
+      "left": 10,
+      "type": "inner"
+    },
+    {
+      "id": 64,
+      "top": 2,
+      "right": 8,
+      "bottom": 2,
+      "left": 18,
+      "type": "inner"
+    },
+    {
+      "id": 65,
+      "top": 18,
+      "right": 22,
+      "bottom": 2,
+      "left": 18,
+      "type": "inner"
+    },
+    {
+      "id": 66,
+      "top": 14,
+      "right": 14,
+      "bottom": 2,
+      "left": 18,
+      "type": "inner"
+    },
+    {
+      "id": 67,
+      "top": 11,
+      "right": 10,
+      "bottom": 2,
+      "left": 18,
+      "type": "inner"
+    },
+    {
+      "id": 68,
+      "top": 20,
+      "right": 6,
+      "bottom": 2,
+      "left": 18,
+      "type": "inner"
+    },
+    {
+      "id": 69,
+      "top": 22,
+      "right": 8,
+      "bottom": 2,
+      "left": 18,
+      "type": "inner"
+    },
+    {
+      "id": 70,
+      "top": 3,
+      "right": 7,
+      "bottom": 2,
+      "left": 3,
+      "type": "inner"
+    },
+    {
+      "id": 71,
+      "top": 7,
+      "right": 12,
+      "bottom": 2,
+      "left": 3,
+      "type": "inner"
+    },
+    {
+      "id": 72,
+      "top": 14,
+      "right": 18,
+      "bottom": 2,
+      "left": 11,
+      "type": "inner"
+    },
+    {
+      "id": 73,
+      "top": 15,
+      "right": 4,
+      "bottom": 2,
+      "left": 11,
+      "type": "inner"
+    },
+    {
+      "id": 74,
+      "top": 20,
+      "right": 15,
+      "bottom": 2,
+      "left": 11,
+      "type": "inner"
+    },
+    {
+      "id": 75,
+      "top": 8,
+      "right": 3,
+      "bottom": 2,
+      "left": 11,
+      "type": "inner"
+    },
+    {
+      "id": 76,
+      "top": 14,
+      "right": 15,
+      "bottom": 2,
+      "left": 19,
+      "type": "inner"
+    },
+    {
+      "id": 77,
+      "top": 19,
+      "right": 15,
+      "bottom": 2,
+      "left": 19,
+      "type": "inner"
+    },
+    {
+      "id": 78,
+      "top": 3,
+      "right": 16,
+      "bottom": 2,
+      "left": 7,
+      "type": "inner"
+    },
+    {
+      "id": 79,
+      "top": 20,
+      "right": 3,
+      "bottom": 2,
+      "left": 7,
+      "type": "inner"
+    },
+    {
+      "id": 80,
+      "top": 16,
+      "right": 21,
+      "bottom": 2,
+      "left": 7,
+      "type": "inner"
+    },
+    {
+      "id": 81,
+      "top": 19,
+      "right": 18,
+      "bottom": 2,
+      "left": 15,
+      "type": "inner"
+    },
+    {
+      "id": 82,
+      "top": 18,
+      "right": 18,
+      "bottom": 2,
+      "left": 4,
+      "type": "inner"
+    },
+    {
+      "id": 83,
+      "top": 11,
+      "right": 4,
+      "bottom": 2,
+      "left": 4,
+      "type": "inner"
+    },
+    {
+      "id": 84,
+      "top": 18,
+      "right": 19,
+      "bottom": 2,
+      "left": 12,
+      "type": "inner"
+    },
+    {
+      "id": 85,
+      "top": 6,
+      "right": 14,
+      "bottom": 2,
+      "left": 12,
+      "type": "inner"
+    },
+    {
+      "id": 86,
+      "top": 8,
+      "right": 12,
+      "bottom": 2,
+      "left": 12,
+      "type": "inner"
+    },
+    {
+      "id": 87,
+      "top": 16,
+      "right": 20,
+      "bottom": 2,
+      "left": 12,
+      "type": "inner"
+    },
+    {
+      "id": 88,
+      "top": 2,
+      "right": 21,
+      "bottom": 2,
+      "left": 20,
+      "type": "inner"
+    },
+    {
+      "id": 89,
+      "top": 6,
+      "right": 22,
+      "bottom": 2,
+      "left": 20,
+      "type": "inner"
+    },
+    {
+      "id": 90,
+      "top": 4,
+      "right": 16,
+      "bottom": 2,
+      "left": 20,
+      "type": "inner"
+    },
+    {
+      "id": 91,
+      "top": 11,
+      "right": 12,
+      "bottom": 2,
+      "left": 8,
+      "type": "inner"
+    },
+    {
+      "id": 92,
+      "top": 19,
+      "right": 15,
+      "bottom": 2,
+      "left": 8,
+      "type": "inner"
+    },
+    {
+      "id": 93,
+      "top": 19,
+      "right": 4,
+      "bottom": 2,
+      "left": 8,
+      "type": "inner"
+    },
+    {
+      "id": 94,
+      "top": 4,
+      "right": 21,
+      "bottom": 2,
+      "left": 8,
+      "type": "inner"
+    },
+    {
+      "id": 95,
+      "top": 12,
+      "right": 14,
+      "bottom": 2,
+      "left": 8,
+      "type": "inner"
+    },
+    {
+      "id": 96,
+      "top": 21,
+      "right": 3,
+      "bottom": 2,
+      "left": 21,
+      "type": "inner"
+    },
+    {
+      "id": 97,
+      "top": 4,
+      "right": 19,
+      "bottom": 2,
+      "left": 22,
+      "type": "inner"
+    },
+    {
+      "id": 98,
+      "top": 20,
+      "right": 8,
+      "bottom": 2,
+      "left": 22,
+      "type": "inner"
+    },
+    {
+      "id": 99,
+      "top": 21,
+      "right": 6,
+      "bottom": 2,
+      "left": 22,
+      "type": "inner"
+    },
+    {
+      "id": 100,
+      "top": 22,
+      "right": 21,
+      "bottom": 2,
+      "left": 22,
+      "type": "inner"
+    },
+    {
+      "id": 101,
+      "top": 12,
+      "right": 15,
+      "bottom": 10,
+      "left": 10,
+      "type": "inner"
+    },
+    {
+      "id": 102,
+      "top": 12,
+      "right": 16,
+      "bottom": 10,
+      "left": 10,
+      "type": "inner"
+    },
+    {
+      "id": 103,
+      "top": 16,
+      "right": 19,
+      "bottom": 10,
+      "left": 10,
+      "type": "inner"
+    },
+    {
+      "id": 104,
+      "top": 22,
+      "right": 6,
+      "bottom": 10,
+      "left": 10,
+      "type": "inner"
+    },
+    {
+      "id": 105,
+      "top": 4,
+      "right": 15,
+      "bottom": 10,
+      "left": 18,
+      "type": "inner"
+    },
+    {
+      "id": 106,
+      "top": 3,
+      "right": 8,
+      "bottom": 10,
+      "left": 6,
+      "type": "inner"
+    },
+    {
+      "id": 107,
+      "top": 19,
+      "right": 8,
+      "bottom": 10,
+      "left": 6,
+      "type": "inner"
+    },
+    {
+      "id": 108,
+      "top": 4,
+      "right": 15,
+      "bottom": 10,
+      "left": 6,
+      "type": "inner"
+    },
+    {
+      "id": 109,
+      "top": 16,
+      "right": 11,
+      "bottom": 10,
+      "left": 6,
+      "type": "inner"
+    },
+    {
+      "id": 110,
+      "top": 15,
+      "right": 12,
+      "bottom": 10,
+      "left": 14,
+      "type": "inner"
+    },
+    {
+      "id": 111,
+      "top": 12,
+      "right": 15,
+      "bottom": 10,
+      "left": 14,
+      "type": "inner"
+    },
+    {
+      "id": 112,
+      "top": 20,
+      "right": 19,
+      "bottom": 10,
+      "left": 3,
+      "type": "inner"
+    },
+    {
+      "id": 113,
+      "top": 20,
+      "right": 16,
+      "bottom": 10,
+      "left": 3,
+      "type": "inner"
+    },
+    {
+      "id": 114,
+      "top": 14,
+      "right": 4,
+      "bottom": 10,
+      "left": 11,
+      "type": "inner"
+    },
+    {
+      "id": 115,
+      "top": 7,
+      "right": 12,
+      "bottom": 10,
+      "left": 11,
+      "type": "inner"
+    },
+    {
+      "id": 116,
+      "top": 12,
+      "right": 11,
+      "bottom": 10,
+      "left": 11,
+      "type": "inner"
+    },
+    {
+      "id": 117,
+      "top": 22,
+      "right": 16,
+      "bottom": 10,
+      "left": 11,
+      "type": "inner"
+    },
+    {
+      "id": 118,
+      "top": 3,
+      "right": 21,
+      "bottom": 10,
+      "left": 19,
+      "type": "inner"
+    },
+    {
+      "id": 119,
+      "top": 16,
+      "right": 12,
+      "bottom": 10,
+      "left": 7,
+      "type": "inner"
+    },
+    {
+      "id": 120,
+      "top": 8,
+      "right": 22,
+      "bottom": 10,
+      "left": 15,
+      "type": "inner"
+    },
+    {
+      "id": 121,
+      "top": 14,
+      "right": 22,
+      "bottom": 10,
+      "left": 4,
+      "type": "inner"
+    },
+    {
+      "id": 122,
+      "top": 6,
+      "right": 16,
+      "bottom": 10,
+      "left": 20,
+      "type": "inner"
+    },
+    {
+      "id": 123,
+      "top": 14,
+      "right": 19,
+      "bottom": 10,
+      "left": 20,
+      "type": "inner"
+    },
+    {
+      "id": 124,
+      "top": 20,
+      "right": 15,
+      "bottom": 10,
+      "left": 20,
+      "type": "inner"
+    },
+    {
+      "id": 125,
+      "top": 12,
+      "right": 22,
+      "bottom": 10,
+      "left": 8,
+      "type": "inner"
+    },
+    {
+      "id": 126,
+      "top": 21,
+      "right": 15,
+      "bottom": 10,
+      "left": 8,
+      "type": "inner"
+    },
+    {
+      "id": 127,
+      "top": 14,
+      "right": 6,
+      "bottom": 10,
+      "left": 16,
+      "type": "inner"
+    },
+    {
+      "id": 128,
+      "top": 19,
+      "right": 21,
+      "bottom": 10,
+      "left": 16,
+      "type": "inner"
+    },
+    {
+      "id": 129,
+      "top": 4,
+      "right": 3,
+      "bottom": 10,
+      "left": 16,
+      "type": "inner"
+    },
+    {
+      "id": 130,
+      "top": 20,
+      "right": 8,
+      "bottom": 10,
+      "left": 16,
+      "type": "inner"
+    },
+    {
+      "id": 131,
+      "top": 6,
+      "right": 20,
+      "bottom": 10,
+      "left": 21,
+      "type": "inner"
+    },
+    {
+      "id": 132,
+      "top": 12,
+      "right": 14,
+      "bottom": 10,
+      "left": 21,
+      "type": "inner"
+    },
+    {
+      "id": 133,
+      "top": 14,
+      "right": 16,
+      "bottom": 10,
+      "left": 22,
+      "type": "inner"
+    },
+    {
+      "id": 134,
+      "top": 11,
+      "right": 4,
+      "bottom": 10,
+      "left": 22,
+      "type": "inner"
+    },
+    {
+      "id": 135,
+      "top": 4,
+      "right": 3,
+      "bottom": 10,
+      "left": 22,
+      "type": "inner"
+    },
+    {
+      "id": 136,
+      "top": 16,
+      "right": 20,
+      "bottom": 10,
+      "left": 22,
+      "type": "inner"
+    },
+    {
+      "id": 137,
+      "top": 20,
+      "right": 7,
+      "bottom": 18,
+      "left": 18,
+      "type": "inner"
+    },
+    {
+      "id": 138,
+      "top": 6,
+      "right": 3,
+      "bottom": 18,
+      "left": 6,
+      "type": "inner"
+    },
+    {
+      "id": 139,
+      "top": 6,
+      "right": 11,
+      "bottom": 18,
+      "left": 6,
+      "type": "inner"
+    },
+    {
+      "id": 140,
+      "top": 6,
+      "right": 12,
+      "bottom": 18,
+      "left": 6,
+      "type": "inner"
+    },
+    {
+      "id": 141,
+      "top": 19,
+      "right": 21,
+      "bottom": 18,
+      "left": 6,
+      "type": "inner"
+    },
+    {
+      "id": 142,
+      "top": 15,
+      "right": 6,
+      "bottom": 18,
+      "left": 6,
+      "type": "inner"
+    },
+    {
+      "id": 143,
+      "top": 16,
+      "right": 12,
+      "bottom": 18,
+      "left": 6,
+      "type": "inner"
+    },
+    {
+      "id": 144,
+      "top": 21,
+      "right": 21,
+      "bottom": 18,
+      "left": 6,
+      "type": "inner"
+    },
+    {
+      "id": 145,
+      "top": 3,
+      "right": 4,
+      "bottom": 18,
+      "left": 14,
+      "type": "inner"
+    },
+    {
+      "id": 146,
+      "top": 18,
+      "right": 12,
+      "bottom": 18,
+      "left": 3,
+      "type": "inner"
+    },
+    {
+      "id": 147,
+      "top": 18,
+      "right": 22,
+      "bottom": 18,
+      "left": 3,
+      "type": "inner"
+    },
+    {
+      "id": 148,
+      "top": 3,
+      "right": 14,
+      "bottom": 18,
+      "left": 3,
+      "type": "inner"
+    },
+    {
+      "id": 149,
+      "top": 15,
+      "right": 12,
+      "bottom": 18,
+      "left": 3,
+      "type": "inner"
+    },
+    {
+      "id": 150,
+      "top": 6,
+      "right": 11,
+      "bottom": 18,
+      "left": 19,
+      "type": "inner"
+    },
+    {
+      "id": 151,
+      "top": 4,
+      "right": 22,
+      "bottom": 18,
+      "left": 19,
+      "type": "inner"
+    },
+    {
+      "id": 152,
+      "top": 11,
+      "right": 11,
+      "bottom": 18,
+      "left": 7,
+      "type": "inner"
+    },
+    {
+      "id": 153,
+      "top": 11,
+      "right": 19,
+      "bottom": 18,
+      "left": 7,
+      "type": "inner"
+    },
+    {
+      "id": 154,
+      "top": 22,
+      "right": 16,
+      "bottom": 18,
+      "left": 7,
+      "type": "inner"
+    },
+    {
+      "id": 155,
+      "top": 7,
+      "right": 7,
+      "bottom": 18,
+      "left": 4,
+      "type": "inner"
+    },
+    {
+      "id": 156,
+      "top": 7,
+      "right": 12,
+      "bottom": 18,
+      "left": 4,
+      "type": "inner"
+    },
+    {
+      "id": 157,
+      "top": 22,
+      "right": 7,
+      "bottom": 18,
+      "left": 4,
+      "type": "inner"
+    },
+    {
+      "id": 158,
+      "top": 7,
+      "right": 16,
+      "bottom": 18,
+      "left": 20,
+      "type": "inner"
+    },
+    {
+      "id": 159,
+      "top": 8,
+      "right": 6,
+      "bottom": 18,
+      "left": 20,
+      "type": "inner"
+    },
+    {
+      "id": 160,
+      "top": 21,
+      "right": 21,
+      "bottom": 18,
+      "left": 8,
+      "type": "inner"
+    },
+    {
+      "id": 161,
+      "top": 6,
+      "right": 20,
+      "bottom": 18,
+      "left": 16,
+      "type": "inner"
+    },
+    {
+      "id": 162,
+      "top": 14,
+      "right": 20,
+      "bottom": 18,
+      "left": 16,
+      "type": "inner"
+    },
+    {
+      "id": 163,
+      "top": 15,
+      "right": 11,
+      "bottom": 18,
+      "left": 22,
+      "type": "inner"
+    },
+    {
+      "id": 164,
+      "top": 4,
+      "right": 16,
+      "bottom": 18,
+      "left": 22,
+      "type": "inner"
+    },
+    {
+      "id": 165,
+      "top": 3,
+      "right": 4,
+      "bottom": 6,
+      "left": 14,
+      "type": "inner"
+    },
+    {
+      "id": 166,
+      "top": 4,
+      "right": 8,
+      "bottom": 6,
+      "left": 14,
+      "type": "inner"
+    },
+    {
+      "id": 167,
+      "top": 3,
+      "right": 3,
+      "bottom": 6,
+      "left": 11,
+      "type": "inner"
+    },
+    {
+      "id": 168,
+      "top": 11,
+      "right": 15,
+      "bottom": 6,
+      "left": 19,
+      "type": "inner"
+    },
+    {
+      "id": 169,
+      "top": 19,
+      "right": 21,
+      "bottom": 6,
+      "left": 19,
+      "type": "inner"
+    },
+    {
+      "id": 170,
+      "top": 4,
+      "right": 8,
+      "bottom": 6,
+      "left": 7,
+      "type": "inner"
+    },
+    {
+      "id": 171,
+      "top": 20,
+      "right": 16,
+      "bottom": 6,
+      "left": 7,
+      "type": "inner"
+    },
+    {
+      "id": 172,
+      "top": 21,
+      "right": 11,
+      "bottom": 6,
+      "left": 7,
+      "type": "inner"
+    },
+    {
+      "id": 173,
+      "top": 15,
+      "right": 15,
+      "bottom": 6,
+      "left": 15,
+      "type": "inner"
+    },
+    {
+      "id": 174,
+      "top": 12,
+      "right": 20,
+      "bottom": 6,
+      "left": 15,
+      "type": "inner"
+    },
+    {
+      "id": 175,
+      "top": 7,
+      "right": 21,
+      "bottom": 6,
+      "left": 4,
+      "type": "inner"
+    },
+    {
+      "id": 176,
+      "top": 7,
+      "right": 19,
+      "bottom": 6,
+      "left": 12,
+      "type": "inner"
+    },
+    {
+      "id": 177,
+      "top": 14,
+      "right": 4,
+      "bottom": 6,
+      "left": 20,
+      "type": "inner"
+    },
+    {
+      "id": 178,
+      "top": 12,
+      "right": 16,
+      "bottom": 6,
+      "left": 8,
+      "type": "inner"
+    },
+    {
+      "id": 179,
+      "top": 8,
+      "right": 15,
+      "bottom": 6,
+      "left": 8,
+      "type": "inner"
+    },
+    {
+      "id": 180,
+      "top": 7,
+      "right": 16,
+      "bottom": 6,
+      "left": 16,
+      "type": "inner"
+    },
+    {
+      "id": 181,
+      "top": 11,
+      "right": 16,
+      "bottom": 6,
+      "left": 21,
+      "type": "inner"
+    },
+    {
+      "id": 182,
+      "top": 7,
+      "right": 11,
+      "bottom": 6,
+      "left": 21,
+      "type": "inner"
+    },
+    {
+      "id": 183,
+      "top": 19,
+      "right": 8,
+      "bottom": 14,
+      "left": 14,
+      "type": "inner"
+    },
+    {
+      "id": 184,
+      "top": 22,
+      "right": 7,
+      "bottom": 14,
+      "left": 3,
+      "type": "inner"
+    },
+    {
+      "id": 185,
+      "top": 19,
+      "right": 12,
+      "bottom": 14,
+      "left": 11,
+      "type": "inner"
+    },
+    {
+      "id": 186,
+      "top": 8,
+      "right": 8,
+      "bottom": 14,
+      "left": 11,
+      "type": "inner"
+    },
+    {
+      "id": 187,
+      "top": 21,
+      "right": 7,
+      "bottom": 14,
+      "left": 19,
+      "type": "inner"
+    },
+    {
+      "id": 188,
+      "top": 14,
+      "right": 21,
+      "bottom": 14,
+      "left": 7,
+      "type": "inner"
+    },
+    {
+      "id": 189,
+      "top": 3,
+      "right": 19,
+      "bottom": 14,
+      "left": 7,
+      "type": "inner"
+    },
+    {
+      "id": 190,
+      "top": 16,
+      "right": 19,
+      "bottom": 14,
+      "left": 7,
+      "type": "inner"
+    },
+    {
+      "id": 191,
+      "top": 3,
+      "right": 3,
+      "bottom": 14,
+      "left": 15,
+      "type": "inner"
+    },
+    {
+      "id": 192,
+      "top": 15,
+      "right": 20,
+      "bottom": 14,
+      "left": 15,
+      "type": "inner"
+    },
+    {
+      "id": 193,
+      "top": 11,
+      "right": 7,
+      "bottom": 14,
+      "left": 4,
+      "type": "inner"
+    },
+    {
+      "id": 194,
+      "top": 21,
+      "right": 11,
+      "bottom": 14,
+      "left": 12,
+      "type": "inner"
+    },
+    {
+      "id": 195,
+      "top": 21,
+      "right": 22,
+      "bottom": 14,
+      "left": 12,
+      "type": "inner"
+    },
+    {
+      "id": 196,
+      "top": 22,
+      "right": 15,
+      "bottom": 14,
+      "left": 12,
+      "type": "inner"
+    },
+    {
+      "id": 197,
+      "top": 11,
+      "right": 22,
+      "bottom": 14,
+      "left": 20,
+      "type": "inner"
+    },
+    {
+      "id": 198,
+      "top": 19,
+      "right": 8,
+      "bottom": 14,
+      "left": 20,
+      "type": "inner"
+    },
+    {
+      "id": 199,
+      "top": 20,
+      "right": 20,
+      "bottom": 14,
+      "left": 20,
+      "type": "inner"
+    },
+    {
+      "id": 200,
+      "top": 19,
+      "right": 3,
+      "bottom": 14,
+      "left": 8,
+      "type": "inner"
+    },
+    {
+      "id": 201,
+      "top": 21,
+      "right": 8,
+      "bottom": 14,
+      "left": 16,
+      "type": "inner"
+    },
+    {
+      "id": 202,
+      "top": 22,
+      "right": 7,
+      "bottom": 14,
+      "left": 16,
+      "type": "inner"
+    },
+    {
+      "id": 203,
+      "top": 12,
+      "right": 19,
+      "bottom": 14,
+      "left": 21,
+      "type": "inner"
+    },
+    {
+      "id": 204,
+      "top": 12,
+      "right": 8,
+      "bottom": 14,
+      "left": 21,
+      "type": "inner"
+    },
+    {
+      "id": 205,
+      "top": 16,
+      "right": 3,
+      "bottom": 14,
+      "left": 21,
+      "type": "inner"
+    },
+    {
+      "id": 206,
+      "top": 22,
+      "right": 21,
+      "bottom": 14,
+      "left": 21,
+      "type": "inner"
+    },
+    {
+      "id": 207,
+      "top": 22,
+      "right": 7,
+      "bottom": 3,
+      "left": 3,
+      "type": "inner"
+    },
+    {
+      "id": 208,
+      "top": 19,
+      "right": 22,
+      "bottom": 3,
+      "left": 11,
+      "type": "inner"
+    },
+    {
+      "id": 209,
+      "top": 8,
+      "right": 15,
+      "bottom": 3,
+      "left": 11,
+      "type": "inner"
+    },
+    {
+      "id": 210,
+      "top": 11,
+      "right": 19,
+      "bottom": 3,
+      "left": 7,
+      "type": "inner"
+    },
+    {
+      "id": 211,
+      "top": 16,
+      "right": 15,
+      "bottom": 3,
+      "left": 7,
+      "type": "inner"
+    },
+    {
+      "id": 212,
+      "top": 3,
+      "right": 16,
+      "bottom": 3,
+      "left": 15,
+      "type": "inner"
+    },
+    {
+      "id": 213,
+      "top": 8,
+      "right": 8,
+      "bottom": 3,
+      "left": 4,
+      "type": "inner"
+    },
+    {
+      "id": 214,
+      "top": 3,
+      "right": 20,
+      "bottom": 3,
+      "left": 12,
+      "type": "inner"
+    },
+    {
+      "id": 215,
+      "top": 4,
+      "right": 22,
+      "bottom": 3,
+      "left": 12,
+      "type": "inner"
+    },
+    {
+      "id": 216,
+      "top": 22,
+      "right": 21,
+      "bottom": 3,
+      "left": 12,
+      "type": "inner"
+    },
+    {
+      "id": 217,
+      "top": 19,
+      "right": 15,
+      "bottom": 3,
+      "left": 20,
+      "type": "inner"
+    },
+    {
+      "id": 218,
+      "top": 4,
+      "right": 12,
+      "bottom": 3,
+      "left": 16,
+      "type": "inner"
+    },
+    {
+      "id": 219,
+      "top": 11,
+      "right": 4,
+      "bottom": 3,
+      "left": 21,
+      "type": "inner"
+    },
+    {
+      "id": 220,
+      "top": 11,
+      "right": 16,
+      "bottom": 3,
+      "left": 22,
+      "type": "inner"
+    },
+    {
+      "id": 221,
+      "top": 21,
+      "right": 21,
+      "bottom": 3,
+      "left": 22,
+      "type": "inner"
+    },
+    {
+      "id": 222,
+      "top": 21,
+      "right": 22,
+      "bottom": 3,
+      "left": 22,
+      "type": "inner"
+    },
+    {
+      "id": 223,
+      "top": 12,
+      "right": 22,
+      "bottom": 11,
+      "left": 11,
+      "type": "inner"
+    },
+    {
+      "id": 224,
+      "top": 20,
+      "right": 7,
+      "bottom": 11,
+      "left": 11,
+      "type": "inner"
+    },
+    {
+      "id": 225,
+      "top": 16,
+      "right": 15,
+      "bottom": 11,
+      "left": 11,
+      "type": "inner"
+    },
+    {
+      "id": 226,
+      "top": 19,
+      "right": 15,
+      "bottom": 11,
+      "left": 7,
+      "type": "inner"
+    },
+    {
+      "id": 227,
+      "top": 12,
+      "right": 12,
+      "bottom": 11,
+      "left": 7,
+      "type": "inner"
+    },
+    {
+      "id": 228,
+      "top": 19,
+      "right": 8,
+      "bottom": 11,
+      "left": 4,
+      "type": "inner"
+    },
+    {
+      "id": 229,
+      "top": 7,
+      "right": 22,
+      "bottom": 11,
+      "left": 20,
+      "type": "inner"
+    },
+    {
+      "id": 230,
+      "top": 16,
+      "right": 8,
+      "bottom": 11,
+      "left": 20,
+      "type": "inner"
+    },
+    {
+      "id": 231,
+      "top": 12,
+      "right": 20,
+      "bottom": 11,
+      "left": 8,
+      "type": "inner"
+    },
+    {
+      "id": 232,
+      "top": 12,
+      "right": 21,
+      "bottom": 11,
+      "left": 8,
+      "type": "inner"
+    },
+    {
+      "id": 233,
+      "top": 19,
+      "right": 20,
+      "bottom": 19,
+      "left": 19,
+      "type": "inner"
+    },
+    {
+      "id": 234,
+      "top": 16,
+      "right": 4,
+      "bottom": 19,
+      "left": 7,
+      "type": "inner"
+    },
+    {
+      "id": 235,
+      "top": 7,
+      "right": 4,
+      "bottom": 19,
+      "left": 4,
+      "type": "inner"
+    },
+    {
+      "id": 236,
+      "top": 7,
+      "right": 20,
+      "bottom": 19,
+      "left": 4,
+      "type": "inner"
+    },
+    {
+      "id": 237,
+      "top": 12,
+      "right": 15,
+      "bottom": 19,
+      "left": 4,
+      "type": "inner"
+    },
+    {
+      "id": 238,
+      "top": 4,
+      "right": 16,
+      "bottom": 19,
+      "left": 12,
+      "type": "inner"
+    },
+    {
+      "id": 239,
+      "top": 15,
+      "right": 22,
+      "bottom": 19,
+      "left": 20,
+      "type": "inner"
+    },
+    {
+      "id": 240,
+      "top": 21,
+      "right": 15,
+      "bottom": 19,
+      "left": 20,
+      "type": "inner"
+    },
+    {
+      "id": 241,
+      "top": 7,
+      "right": 21,
+      "bottom": 19,
+      "left": 8,
+      "type": "inner"
+    },
+    {
+      "id": 242,
+      "top": 4,
+      "right": 21,
+      "bottom": 19,
+      "left": 8,
+      "type": "inner"
+    },
+    {
+      "id": 243,
+      "top": 15,
+      "right": 12,
+      "bottom": 7,
+      "left": 15,
+      "type": "inner"
+    },
+    {
+      "id": 244,
+      "top": 20,
+      "right": 8,
+      "bottom": 7,
+      "left": 15,
+      "type": "inner"
+    },
+    {
+      "id": 245,
+      "top": 22,
+      "right": 20,
+      "bottom": 7,
+      "left": 4,
+      "type": "inner"
+    },
+    {
+      "id": 246,
+      "top": 16,
+      "right": 22,
+      "bottom": 7,
+      "left": 21,
+      "type": "inner"
+    },
+    {
+      "id": 247,
+      "top": 21,
+      "right": 22,
+      "bottom": 15,
+      "left": 15,
+      "type": "inner"
+    },
+    {
+      "id": 248,
+      "top": 12,
+      "right": 4,
+      "bottom": 15,
+      "left": 4,
+      "type": "inner"
+    },
+    {
+      "id": 249,
+      "top": 4,
+      "right": 21,
+      "bottom": 15,
+      "left": 12,
+      "type": "inner"
+    },
+    {
+      "id": 250,
+      "top": 16,
+      "right": 21,
+      "bottom": 15,
+      "left": 20,
+      "type": "inner"
+    },
+    {
+      "id": 251,
+      "top": 22,
+      "right": 8,
+      "bottom": 4,
+      "left": 4,
+      "type": "inner"
+    },
+    {
+      "id": 252,
+      "top": 8,
+      "right": 12,
+      "bottom": 4,
+      "left": 12,
+      "type": "inner"
+    },
+    {
+      "id": 253,
+      "top": 16,
+      "right": 20,
+      "bottom": 12,
+      "left": 8,
+      "type": "inner"
+    },
+    {
+      "id": 254,
+      "top": 21,
+      "right": 16,
+      "bottom": 20,
+      "left": 16,
+      "type": "inner"
+    },
+    {
+      "id": 255,
+      "top": 16,
+      "right": 22,
+      "bottom": 20,
+      "left": 22,
+      "type": "inner"
+    },
+    {
+      "id": 256,
+      "top": 21,
+      "right": 22,
+      "bottom": 8,
+      "left": 22,
+      "type": "inner"
     }
+  ],
+  "note": "Full 256 pieces available from TheSil/edge_puzzle format",
+  "hints": [
+    {
+      "x": 0,
+      "y": 0,
+      "pieceId": 139,
+      "rotation": 0,
+      "source": "Official Eternity II hint #1"
+    },
+    {
+      "x": 2,
+      "y": 7,
+      "pieceId": 208,
+      "rotation": 0,
+      "source": "Official Eternity II hint #2"
+    },
+    {
+      "x": 2,
+      "y": 2,
+      "pieceId": 249,
+      "rotation": 3,
+      "source": "Official Eternity II hint #3"
+    },
+    {
+      "x": 5,
+      "y": 6,
+      "pieceId": 255,
+      "rotation": 2,
+      "source": "Official Eternity II hint #4"
+    }
+  ],
+  "solutionStatus": "UNSOLVED",
+  "bestKnownScore": {
+    "matches": 467,
+    "possible": 480,
+    "percentage": 97.29
+  }
 }

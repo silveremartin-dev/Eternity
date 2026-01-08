@@ -1,60 +1,62 @@
-/*
- *  Copyright 2022 Silvere Martin-Michiellot
- *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
- */
-
 package org.game.eternity2.client;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.game.eternity2.elements.EternityBoardInterface;
-import org.game.eternity2.elements.EternityTileInterface;
+import org.game.eternity2.model.BoardPrimitive;
+import org.game.eternity2.model.PiecePrimitive;
+import org.game.eternity2.io.PuzzleLoaderWriter;
 import org.game.eternity2.server.Job;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
 /**
  * Executes jobs using backtracking algorithm with tile rotation.
+ * Optimized version using primitive models.
  *
  * @author Silvere Martin-Michiellot
- * @version 2.0
+ * @version 3.0
  */
 public class JobExecutor {
     private static final Logger logger = LogManager.getLogger(JobExecutor.class);
 
     private final ClientStatistics statistics;
+    private final long[] allPieces;
     private volatile boolean cancelled = false;
 
     public JobExecutor(ClientStatistics statistics) {
         this.statistics = statistics;
+        this.allPieces = PuzzleLoaderWriter.generateEternity2Pieces();
     }
 
-    public EternityBoardInterface executeJob(Job job) {
+    public BoardPrimitive executeJob(Job job) {
         cancelled = false;
         long startTime = System.currentTimeMillis();
 
-        EternityBoardInterface board = job.getInitialBoard();
+        BoardPrimitive board = job.getInitialBoard();
         List<Job.Position> positions = job.getPositionsToFill();
 
         logger.info("Starting job {}: {} positions to fill", job.getJobId(), positions.size());
 
-        Set<EternityTileInterface> availableTiles = board.getMissingTiles();
-        List<EternityTileInterface> tilesList = new ArrayList<>(availableTiles);
+        // Track used piece IDs
+        Set<Integer> usedIds = new HashSet<>();
+        for (long cell : board.getCells()) {
+            if (cell != 0) {
+                usedIds.add(PiecePrimitive.getId(cell));
+            }
+        }
 
-        EternityBoardInterface result = backtrack(board, positions, tilesList, 0);
+        // Available pieces list
+        List<Long> availableList = new ArrayList<>();
+        for (long p : allPieces) {
+            if (!usedIds.contains(PiecePrimitive.getId(p))) {
+                availableList.add(p);
+            }
+        }
+
+        BoardPrimitive result = backtrack(board, positions, availableList, 0);
 
         long elapsed = System.currentTimeMillis() - startTime;
         statistics.addComputeTime(elapsed);
@@ -71,9 +73,9 @@ public class JobExecutor {
         return result;
     }
 
-    private EternityBoardInterface backtrack(EternityBoardInterface board,
+    private BoardPrimitive backtrack(BoardPrimitive board,
             List<Job.Position> positions,
-            List<EternityTileInterface> availableTiles,
+            List<Long> availableTiles,
             int positionIndex) {
         if (cancelled) {
             return null;
@@ -87,59 +89,33 @@ public class JobExecutor {
         int row = pos.getRow();
         int col = pos.getCol();
 
+        int[] constraints = board.getConstraints(col, row);
+
         for (int i = 0; i < availableTiles.size(); i++) {
-            EternityTileInterface tile = availableTiles.get(i);
-            if (tile == null)
-                continue;
+            long piece = availableTiles.get(i);
 
             // Try each rotation
             for (int rotation = 0; rotation < 4; rotation++) {
-                // Rotate tile
-                for (int r = 0; r < rotation; r++) {
-                    tile.rotateClockwise();
-                }
-
-                if (canPlaceTile(board, row, col, tile)) {
-                    board.setTileAtNoCheck(row, col, tile);
+                if (PiecePrimitive.matches(piece, constraints[0], constraints[1], constraints[2], constraints[3])) {
+                    board.placePiece(col, row, piece);
                     statistics.incrementPiecesPlaced(1);
 
-                    availableTiles.remove(i);
-
-                    EternityBoardInterface result = backtrack(board, positions, availableTiles, positionIndex + 1);
+                    Long removed = availableTiles.remove(i);
+                    BoardPrimitive result = backtrack(board, positions, availableTiles, positionIndex + 1);
 
                     if (result != null) {
                         return result;
                     }
 
                     statistics.incrementBacktrackCount();
-                    board.setTileAtNoCheck(row, col, null);
-                    availableTiles.add(i, tile);
+                    board.removePiece(col, row);
+                    availableTiles.add(i, removed);
                 }
-
-                // Rotate back
-                for (int r = 0; r < (4 - rotation); r++) {
-                    tile.rotateClockwise();
-                }
+                piece = PiecePrimitive.rotateCW(piece);
             }
         }
 
         return null;
-    }
-
-    private boolean canPlaceTile(EternityBoardInterface board, int row, int col, EternityTileInterface tile) {
-        if (tile == null)
-            return false;
-        if (board.isBorder(row, col)) {
-            if (!board.areBordersMatchingForBorderTile(row, col, tile)) {
-                return false;
-            }
-        } else {
-            if (!board.areBordersMatchingForInBoardTile(tile)) {
-                return false;
-            }
-        }
-
-        return board.areNeighborsMatching(row, col, tile);
     }
 
     public void cancel() {

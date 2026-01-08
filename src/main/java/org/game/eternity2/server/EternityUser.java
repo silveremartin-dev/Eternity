@@ -1,25 +1,6 @@
-/**
- * Copyright (C) 2007 Silvere Martin-Michiellot
- * <p>
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- * <p>
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- * <p>
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
- */
-
 package org.game.eternity2.server;
 
-import org.game.eternity2.elements.AbstractEternityBoard;
-import org.game.eternity2.elements.EternityTileInterface;
+import org.game.eternity2.model.BoardPrimitive;
 import org.jetbrains.annotations.NotNull;
 
 import java.time.Duration;
@@ -27,40 +8,41 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Some abstract information to communicate in a reliable manner between the
- * client and the server and some statistics too.
+ * Information about a user, including progress and statistics.
+ * Refactored to use optimized models.
  *
  * @author Silvere Martin-Michiellot
- * @version 1.0
+ * @version 2.0
  */
-
 public class EternityUser implements java.io.Serializable {
+
+    private static final long serialVersionUID = 1L;
 
     private String login;
     private String password;
     private Duration computedTime;
     private List<EternityPacket> computedPackets;
-    private List<EternityTileInterface> computedTiles;
+    private List<Long> computedPieces;
     private List<Integer> bestScores;
-    private List<AbstractEternityBoard> bestSolutions;
+    private List<BoardPrimitive> bestSolutions;
     private String hardwareArchitecture;
     private String operatingSystem;
     private String operatingSystemVersion;
 
     public EternityUser(@NotNull String login, @NotNull String password) {
-        if ((login != null) || (password != null)) {
-            this.login = login;
-            this.password = password;
-            computedTime = Duration.ZERO;
-            computedPackets = new ArrayList<>();
-            computedTiles = new ArrayList<>();
-            bestScores = new ArrayList<>();
-            bestSolutions = new ArrayList<>();
-            hardwareArchitecture = System.getProperty("os.arch");
-            operatingSystem = System.getProperty("os.name");
-            operatingSystemVersion = System.getProperty("os.version");
-        } else
+        if (login == null || password == null) {
             throw new IllegalArgumentException("You cannot set a null login or null password.");
+        }
+        this.login = login;
+        this.password = password;
+        this.computedTime = Duration.ZERO;
+        this.computedPackets = new ArrayList<>();
+        this.computedPieces = new ArrayList<>();
+        this.bestScores = new ArrayList<>();
+        this.bestSolutions = new ArrayList<>();
+        this.hardwareArchitecture = System.getProperty("os.arch");
+        this.operatingSystem = System.getProperty("os.name");
+        this.operatingSystemVersion = System.getProperty("os.version");
     }
 
     public String getLogin() {
@@ -68,10 +50,7 @@ public class EternityUser implements java.io.Serializable {
     }
 
     public void setLogin(@NotNull String login) {
-        if (login != null) {
-            this.login = login;
-        } else
-            throw new IllegalArgumentException("You cannot set a null login.");
+        this.login = login;
     }
 
     public String getPassword() {
@@ -79,10 +58,7 @@ public class EternityUser implements java.io.Serializable {
     }
 
     public void setPassword(@NotNull String password) {
-        if (password != null) {
-            this.password = password;
-        } else
-            throw new IllegalArgumentException("You cannot set a null password.");
+        this.password = password;
     }
 
     public Duration getComputedTime() {
@@ -90,10 +66,7 @@ public class EternityUser implements java.io.Serializable {
     }
 
     public void setComputedTime(@NotNull Duration computedTime) {
-        if (computedTime != null) {
-            this.computedTime = computedTime;
-        } else
-            throw new IllegalArgumentException("You cannot set a null computed time.");
+        this.computedTime = computedTime;
     }
 
     public List<EternityPacket> getComputedPackets() {
@@ -101,21 +74,15 @@ public class EternityUser implements java.io.Serializable {
     }
 
     public void setComputedPackets(@NotNull List<EternityPacket> computedPackets) {
-        if (computedPackets != null) {
-            this.computedPackets = computedPackets;
-        } else
-            throw new IllegalArgumentException("You cannot set a null computed packets array.");
+        this.computedPackets = computedPackets;
     }
 
-    public List<EternityTileInterface> getComputedTiles() {
-        return computedTiles;
+    public List<Long> getComputedPieces() {
+        return computedPieces;
     }
 
-    public void setComputedTiles(@NotNull List<EternityTileInterface> computedTiles) {
-        if (computedTiles != null) {
-            this.computedTiles = computedTiles;
-        } else
-            throw new IllegalArgumentException("You cannot set a null computed tiles array.");
+    public void setComputedPieces(@NotNull List<Long> computedPieces) {
+        this.computedPieces = computedPieces;
     }
 
     public List<Integer> getBestScores() {
@@ -123,54 +90,26 @@ public class EternityUser implements java.io.Serializable {
     }
 
     public void setBestScores(@NotNull List<Integer> bestScores) {
-        if (bestScores != null) {
-            this.bestScores = bestScores;
-        } else
-            throw new IllegalArgumentException("You cannot set a null best scores array.");
+        this.bestScores = bestScores;
     }
 
-    public List<AbstractEternityBoard> getBestSolutions() {
+    public List<BoardPrimitive> getBestSolutions() {
         return bestSolutions;
     }
 
-    public void setBestSolutions(@NotNull List<AbstractEternityBoard> bestSolutions) {
-        if (bestSolutions != null) {
-            this.bestSolutions = bestSolutions;
-        } else
-            throw new IllegalArgumentException("You cannot set a null best solutions array.");
+    public void setBestSolutions(@NotNull List<BoardPrimitive> bestSolutions) {
+        this.bestSolutions = bestSolutions;
     }
 
     public String getHardwareArchitecture() {
         return hardwareArchitecture;
     }
 
-    public void setHardwareArchitecture(@NotNull String hardwareArchitecture) {
-        if (hardwareArchitecture != null) {
-            this.hardwareArchitecture = hardwareArchitecture;
-        } else
-            throw new IllegalArgumentException("You cannot set a null hardware architecture.");
-    }
-
     public String getOperatingSystem() {
         return operatingSystem;
-    }
-
-    public void setOperatingSystem(@NotNull String operatingSystem) {
-        if (operatingSystem != null) {
-            this.operatingSystem = operatingSystem;
-        } else
-            throw new IllegalArgumentException("You cannot set a null operating system.");
     }
 
     public String getOperatingSystemVersion() {
         return operatingSystemVersion;
     }
-
-    public void setOperatingSystemVersion(@NotNull String operatingSystemVersion) {
-        if (operatingSystemVersion != null) {
-            this.operatingSystemVersion = operatingSystemVersion;
-        } else
-            throw new IllegalArgumentException("You cannot set a null operating system version.");
-    }
-
 }

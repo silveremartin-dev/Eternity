@@ -16,7 +16,8 @@
 
 package org.game.eternity2.client;
 
-import org.game.eternity2.elements.EternityBoardInterface;
+import org.game.eternity2.model.BoardPrimitive;
+import org.game.eternity2.model.PiecePrimitive;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -34,7 +35,7 @@ import org.apache.logging.log4j.Logger;
  * Supports session vs total statistics and persistence.
  *
  * @author Silvere Martin-Michiellot
- * @version 2.1
+ * @version 2.2
  */
 public class ClientStatistics {
     private static final Logger logger = LogManager.getLogger(ClientStatistics.class);
@@ -52,7 +53,7 @@ public class ClientStatistics {
     private final AtomicLong totalBacktrackCount = new AtomicLong(0);
     private final AtomicLong totalComputeTimeMs = new AtomicLong(0);
 
-    private EternityBoardInterface bestBoard;
+    private BoardPrimitive bestBoard;
     private final long startTime;
 
     public ClientStatistics() {
@@ -79,7 +80,7 @@ public class ClientStatistics {
         totalComputeTimeMs.addAndGet(milliseconds);
     }
 
-    public synchronized void updateBestBoard(EternityBoardInterface board) {
+    public synchronized void updateBestBoard(BoardPrimitive board) {
         int score = board.computeScore();
         if (score > bestScore.get()) {
             bestScore.set(score);
@@ -108,7 +109,7 @@ public class ClientStatistics {
         return computeTimeMs.get();
     }
 
-    public synchronized EternityBoardInterface getBestBoard() {
+    public synchronized BoardPrimitive getBestBoard() {
         return bestBoard;
     }
 

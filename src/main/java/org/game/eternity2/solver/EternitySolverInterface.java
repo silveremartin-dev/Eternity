@@ -14,35 +14,18 @@
  *  limitations under the License.
  */
 
-package org.game.eternity2.server;
+package org.game.eternity2.solver;
 
 import org.game.eternity2.model.BoardPrimitive;
-import org.game.eternity2.model.Hint;
-
-import java.util.List;
 
 /**
- * Strategy for dividing puzzle-solving work into jobs.
- * Different strategies explore the search space in different orders.
- *
+ * Interface for Eternity II solvers.
+ * 
  * @author Silvere Martin-Michiellot
- * @version 2.1
+ * @version 2.0
  */
-public interface WorkStrategy {
+public interface EternitySolverInterface {
 
-    /**
-     * Generate a list of jobs for solving the given puzzle.
-     *
-     * @param puzzle The puzzle to solve
-     * @param hints  Pre-placed tiles (constraints)
-     * @return List of jobs that cover the entire search space without overlap
-     */
-    List<Job> generateJobs(BoardPrimitive puzzle, List<Hint> hints);
+    public BoardPrimitive computeTessellation(BoardPrimitive startingBoard);
 
-    /**
-     * Get the name of this strategy.
-     *
-     * @return Strategy name
-     */
-    String getName();
 }

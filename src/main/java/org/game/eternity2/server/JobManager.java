@@ -18,8 +18,8 @@ package org.game.eternity2.server;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.game.eternity2.elements.AbstractEternityBoard;
-import org.game.eternity2.elements.Hint;
+import org.game.eternity2.model.BoardPrimitive;
+import org.game.eternity2.model.Hint;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -63,7 +63,7 @@ public class JobManager {
      * @param hints    Pre-placed tiles
      * @param strategy Work distribution strategy
      */
-    public void initializeJobs(AbstractEternityBoard puzzle, List<Hint> hints, WorkStrategy strategy) {
+    public void initializeJobs(BoardPrimitive puzzle, List<Hint> hints, WorkStrategy strategy) {
         this.currentStrategy = strategy;
         List<Job> jobs = strategy.generateJobs(puzzle, hints);
 
@@ -100,7 +100,7 @@ public class JobManager {
      * @param jobId  ID of the completed job
      * @param result Result board (may be null if no solution found)
      */
-    public void markJobCompleted(String jobId, AbstractEternityBoard result) {
+    public void markJobCompleted(String jobId, BoardPrimitive result) {
         JobStatus status = jobStatuses.get(jobId);
         if (status != null) {
             status.markCompleted(result);
@@ -157,7 +157,7 @@ public class JobManager {
         @SuppressWarnings("unused")
         private long dispatchedTimestamp;
         @SuppressWarnings("unused")
-        private AbstractEternityBoard result;
+        private BoardPrimitive result;
 
         public JobStatus(Job job) {
             this.job = job;
@@ -170,7 +170,7 @@ public class JobManager {
             this.dispatchedTimestamp = System.currentTimeMillis();
         }
 
-        public void markCompleted(AbstractEternityBoard result) {
+        public void markCompleted(BoardPrimitive result) {
             this.state = JobState.COMPLETED;
             this.result = result;
         }

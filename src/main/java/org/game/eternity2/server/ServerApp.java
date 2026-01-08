@@ -1,6 +1,7 @@
 package org.game.eternity2.server;
 
 import javafx.application.Application;
+import org.game.eternity2.model.Hint;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
@@ -147,7 +148,7 @@ public class ServerApp extends Application {
             String selectedStrategy = strategyCombo.getSelectionModel().getSelectedItem();
 
             int x = 4, y = 4;
-            java.util.List<org.game.eternity2.elements.Hint> hints = new java.util.ArrayList<>();
+            java.util.List<Hint> hints = new java.util.ArrayList<>();
 
             if ("Custom (Load File)".equals(selectedSize)) {
                 if (selectedPuzzleFile == null || !selectedPuzzleFile.exists()) {
@@ -168,7 +169,7 @@ public class ServerApp extends Application {
                             int col = Integer.parseInt(parts[1]);
                             int id = Integer.parseInt(parts[2]);
                             int rot = Integer.parseInt(parts[3]);
-                            hints.add(new org.game.eternity2.elements.Hint(row, col, id, rot));
+                            hints.add(new Hint(row, col, id, rot));
                         }
                     }
                 } catch (Exception ex) {

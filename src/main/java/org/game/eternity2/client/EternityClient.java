@@ -2,8 +2,7 @@ package org.game.eternity2.client;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.game.eternity2.elements.EternityBoardInterface;
-import org.game.eternity2.elements.size16x16.EternityBoard16x16;
+import org.game.eternity2.model.BoardPrimitive;
 import org.game.eternity2.server.EternityPacket;
 import org.game.eternity2.server.EternityUser;
 import org.game.eternity2.server.Job;
@@ -157,11 +156,11 @@ public class EternityClient {
     private void processPacket(EternityPacket packet) {
         switch (packet.getCommand()) {
             case JOB_DISPATCH:
-                // Old job format (just a board)
-                if (packet.getPayload() instanceof EternityBoard16x16) {
-                    EternityBoard16x16 board = (EternityBoard16x16) packet.getPayload();
+                // Old job format (now using primitives)
+                if (packet.getPayload() instanceof BoardPrimitive) {
+                    BoardPrimitive board = (BoardPrimitive) packet.getPayload();
                     if (ui != null)
-                        ui.log("Received old job format: Board with score " + board.computeScore());
+                        ui.log("Received job: Board with score " + board.computeScore());
                     // Just send it back for now
                     sendPacket(new EternityPacket(user, EternityPacket.Command.RESULT_SUBMISSION, board));
                 }
@@ -180,7 +179,7 @@ public class EternityClient {
                     // Process job in Virtual Thread (lightweight background processing)
                     Thread.ofVirtual().name("job-executor-" + job.getJobId()).start(() -> {
                         try {
-                            EternityBoardInterface result = executor.executeJob(job);
+                            BoardPrimitive result = executor.executeJob(job);
 
                             if (result != null) {
                                 if (ui != null)

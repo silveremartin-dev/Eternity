@@ -10,6 +10,14 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.stage.Stage;
+import org.game.eternity2.model.Hint;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Scanner;
+import java.io.File;
+import java.io.PrintWriter;
+import java.io.IOException;
 
 /**
  * A simple UI for designing Eternity II puzzles.
@@ -17,7 +25,7 @@ import javafx.stage.Stage;
  */
 public class PuzzleDesigner extends Stage {
 
-    private java.util.List<org.game.eternity2.elements.Hint> hints = new java.util.ArrayList<>();
+    private List<Hint> hints = new ArrayList<>();
     private Canvas boardCanvas;
     private int sizeX = 16;
     private int sizeY = 16;
@@ -78,7 +86,7 @@ public class PuzzleDesigner extends Stage {
 
         if (col >= 0 && col < sizeX && row >= 0 && row < sizeY) {
             // Check if hint already exists
-            hints.removeIf(h -> h.getRow() == row && h.getCol() == col);
+            hints.removeIf(h -> h.row() == row && h.col() == col);
 
             // Ask for tile ID and rotation
             TextInputDialog dialog = new TextInputDialog("0,0");
@@ -92,7 +100,7 @@ public class PuzzleDesigner extends Stage {
                     if (parts.length == 2) {
                         int id = Integer.parseInt(parts[0].trim());
                         int rot = Integer.parseInt(parts[1].trim());
-                        hints.add(new org.game.eternity2.elements.Hint(row, col, id, rot));
+                        hints.add(new Hint(row, col, id, rot));
                         drawGrid();
                     }
                 } catch (NumberFormatException e) {
@@ -129,12 +137,12 @@ public class PuzzleDesigner extends Stage {
         gc.clearRect(0, 0, boardCanvas.getWidth(), boardCanvas.getHeight());
 
         // Draw hints
-        for (org.game.eternity2.elements.Hint hint : hints) {
+        for (Hint hint : hints) {
             gc.setFill(Color.LIGHTBLUE);
-            gc.fillRect(hint.getCol() * cellSize, hint.getRow() * cellSize, cellSize, cellSize);
+            gc.fillRect(hint.col() * cellSize, hint.row() * cellSize, cellSize, cellSize);
             gc.setFill(Color.BLACK);
-            gc.fillText(hint.getTileId() + "", hint.getCol() * cellSize + 5, hint.getRow() * cellSize + 15);
-            gc.fillText("r" + hint.getRotation(), hint.getCol() * cellSize + 5, hint.getRow() * cellSize + 25);
+            gc.fillText(hint.tileId() + "", hint.col() * cellSize + 5, hint.row() * cellSize + 15);
+            gc.fillText("r" + hint.rotation(), hint.col() * cellSize + 5, hint.row() * cellSize + 25);
         }
 
         gc.setStroke(Color.GRAY);
@@ -151,19 +159,19 @@ public class PuzzleDesigner extends Stage {
     private void saveDesign() {
         javafx.stage.FileChooser fileChooser = new javafx.stage.FileChooser();
         fileChooser.setTitle("Save Puzzle Design");
-        fileChooser.setInitialDirectory(new java.io.File("."));
+        fileChooser.setInitialDirectory(new File("."));
         fileChooser.getExtensionFilters().add(new javafx.stage.FileChooser.ExtensionFilter("Puzzle Files", "*.puzzle"));
-        java.io.File file = fileChooser.showSaveDialog(this);
+        File file = fileChooser.showSaveDialog(this);
 
         if (file != null) {
-            try (java.io.PrintWriter writer = new java.io.PrintWriter(file)) {
+            try (PrintWriter writer = new PrintWriter(file)) {
                 writer.println("SIZE=" + sizeX);
                 writer.println("DIM=" + sizeX + "x" + sizeY);
                 writer.println("HINTS=" + hints.size());
                 for (int i = 0; i < hints.size(); i++) {
-                    org.game.eternity2.elements.Hint h = hints.get(i);
-                    writer.println("HINT_" + i + "=" + h.getRow() + "," + h.getCol() + "," + h.getTileId() + ","
-                            + h.getRotation());
+                    Hint h = hints.get(i);
+                    writer.println("HINT_" + i + "=" + h.row() + "," + h.col() + "," + h.tileId() + ","
+                            + h.rotation());
                 }
 
                 Alert alert = new Alert(Alert.AlertType.INFORMATION);
@@ -171,7 +179,7 @@ public class PuzzleDesigner extends Stage {
                 alert.setHeaderText(null);
                 alert.setContentText("Puzzle saved to " + file.getName());
                 alert.showAndWait();
-            } catch (java.io.IOException ex) {
+            } catch (IOException ex) {
                 Alert alert = new Alert(Alert.AlertType.ERROR);
                 alert.setTitle("Error");
                 alert.setHeaderText("Could not save file");
@@ -184,12 +192,12 @@ public class PuzzleDesigner extends Stage {
     private void loadDesign() {
         javafx.stage.FileChooser fileChooser = new javafx.stage.FileChooser();
         fileChooser.setTitle("Load Puzzle Design");
-        fileChooser.setInitialDirectory(new java.io.File("."));
+        fileChooser.setInitialDirectory(new File("."));
         fileChooser.getExtensionFilters().add(new javafx.stage.FileChooser.ExtensionFilter("Puzzle Files", "*.puzzle"));
-        java.io.File file = fileChooser.showOpenDialog(this);
+        File file = fileChooser.showOpenDialog(this);
 
         if (file != null) {
-            try (java.util.Scanner scanner = new java.util.Scanner(file)) {
+            try (Scanner scanner = new Scanner(file)) {
                 hints.clear();
                 while (scanner.hasNextLine()) {
                     String line = scanner.nextLine();
@@ -205,7 +213,7 @@ public class PuzzleDesigner extends Stage {
                         int col = Integer.parseInt(parts[1]);
                         int id = Integer.parseInt(parts[2]);
                         int rot = Integer.parseInt(parts[3]);
-                        hints.add(new org.game.eternity2.elements.Hint(row, col, id, rot));
+                        hints.add(new Hint(row, col, id, rot));
                     }
                 }
                 drawGrid();

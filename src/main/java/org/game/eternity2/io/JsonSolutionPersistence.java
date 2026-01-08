@@ -2,130 +2,26 @@ package org.game.eternity2.io;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.game.eternity2.elements.AbstractEternityBoard;
-import org.game.eternity2.elements.EternityTileInterface;
+import org.game.eternity2.model.BoardPrimitive;
+import org.game.eternity2.model.PiecePrimitive;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Modern JSON-based solution persistence.
- * Provides human-readable storage format.
- *
- * @author Silvere Martin-Michiellot
- * @version 2.0
+ * Persists board solutions in JSON format.
+ * Updated to use BoardPrimitive.
  */
 public class JsonSolutionPersistence {
-    private static final Logger logger = LogManager.getLogger(JsonSolutionPersistence.class);
-    private static final String SOLUTIONS_DIR = "data/solutions";
-    private static final DateTimeFormatter TIMESTAMP_FORMAT = DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss");
-    private static final Gson gson = new GsonBuilder().setPrettyPrinting().create();
 
-    /**
-     * Save a solution to JSON format.
-     *
-     * @param board The board to save
-     * @param score The board's score
-     * @return Path to saved file
-     */
-    public static Path saveSolution(AbstractEternityBoard board, int score) {
-        try {
-            Path solutionsPath = Paths.get(SOLUTIONS_DIR);
-            if (!Files.exists(solutionsPath)) {
-                Files.createDirectories(solutionsPath);
-            }
+    private static final String SOLUTIONS_DIR = "solutions";
+    private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 
-            String timestamp = LocalDateTime.now().format(TIMESTAMP_FORMAT);
-            String filename = String.format("solution_%s_score%d.json", timestamp, score);
-            Path filePath = solutionsPath.resolve(filename);
-
-            SolutionData data = new SolutionData();
-            data.timestamp = LocalDateTime.now().toString();
-            data.score = score;
-            data.boardSizeX = board.getXBoardSize();
-            data.boardSizeY = board.getYBoardSize();
-            data.tiles = new ArrayList<>();
-
-            for (int row = 0; row < data.boardSizeY; row++) {
-                for (int col = 0; col < data.boardSizeX; col++) {
-                    EternityTileInterface tile = board.getTileAt(row, col);
-                    if (tile != null) {
-                        TileData tileData = new TileData();
-                        tileData.row = row;
-                        tileData.col = col;
-                        tileData.tileId = tile.getBackValue();
-                        tileData.rotation = tile.getRotation();
-                        data.tiles.add(tileData);
-                    }
-                }
-            }
-
-            String json = gson.toJson(data);
-            Files.writeString(filePath, json);
-
-            logger.info("Solution saved to JSON: {}", filePath);
-            return filePath;
-
-        } catch (IOException e) {
-            logger.error("Failed to save solution to JSON", e);
-            return null;
-        }
-    }
-
-    /**
-     * Load a solution from JSON format.
-     *
-     * @param filePath Path to JSON file
-     * @return Solution data
-     */
-    public static SolutionData loadSolution(Path filePath) {
-        try {
-            String json = Files.readString(filePath);
-            SolutionData data = gson.fromJson(json, SolutionData.class);
-            logger.info("Loaded solution from JSON: {} tiles", data.tiles.size());
-            return data;
-        } catch (IOException e) {
-            logger.error("Failed to load solution from JSON", e);
-            return null;
-        }
-    }
-
-    /**
-     * List all JSON solutions.
-     *
-     * @return List of solution files
-     */
-    public static List<Path> listSolutions() {
-        List<Path> solutions = new ArrayList<>();
-        Path solutionsPath = Paths.get(SOLUTIONS_DIR);
-
-        if (!Files.exists(solutionsPath)) {
-            return solutions;
-        }
-
-        try {
-            Files.list(solutionsPath)
-                    .filter(path -> path.toString().endsWith(".json"))
-                    .forEach(solutions::add);
-        } catch (IOException e) {
-            logger.error("Failed to list JSON solutions", e);
-        }
-
-        return solutions;
-    }
-
-    /**
-     * Solution data structure for JSON serialization.
-     */
     public static class SolutionData {
         public String timestamp;
         public int score;
@@ -134,13 +30,44 @@ public class JsonSolutionPersistence {
         public List<TileData> tiles;
     }
 
-    /**
-     * Tile data for JSON serialization.
-     */
     public static class TileData {
-        public int row;
-        public int col;
-        public int tileId;
+        public int x;
+        public int y;
+        public int id;
         public int rotation;
+    }
+
+    public static Path saveSolution(BoardPrimitive board) throws IOException {
+        Path dir = Paths.get(SOLUTIONS_DIR);
+        if (!Files.exists(dir)) {
+            Files.createDirectories(dir);
+        }
+
+        SolutionData data = new SolutionData();
+        data.timestamp = LocalDateTime.now().toString();
+        data.score = board.computeScore();
+        data.boardSizeX = board.getWidth();
+        data.boardSizeY = board.getHeight();
+        data.tiles = new ArrayList<>();
+
+        for (int y = 0; y < board.getHeight(); y++) {
+            for (int x = 0; x < board.getWidth(); x++) {
+                long piece = board.getPiece(x, y);
+                if (piece != 0) {
+                    TileData td = new TileData();
+                    td.x = x;
+                    td.y = y;
+                    td.id = PiecePrimitive.getId(piece);
+                    td.rotation = PiecePrimitive.getRotation(piece);
+                    data.tiles.add(td);
+                }
+            }
+        }
+
+        String filename = String.format("solution_%dx%d_%d_%d.json",
+                board.getWidth(), board.getHeight(), data.score, System.currentTimeMillis());
+        Path file = dir.resolve(filename);
+        Files.writeString(file, GSON.toJson(data));
+        return file;
     }
 }

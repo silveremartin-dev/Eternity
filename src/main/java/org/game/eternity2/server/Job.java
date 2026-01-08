@@ -16,7 +16,7 @@
 
 package org.game.eternity2.server;
 
-import org.game.eternity2.elements.EternityBoardInterface;
+import org.game.eternity2.model.BoardPrimitive;
 
 import java.io.Serializable;
 import java.util.List;
@@ -32,7 +32,7 @@ public class Job implements Serializable {
     private static final long serialVersionUID = 1L;
 
     private final String jobId;
-    private final EternityBoardInterface initialBoard;
+    private final BoardPrimitive initialBoard;
     private final List<Position> positionsToFill;
     private final String strategyName;
     private final long createdTimestamp;
@@ -45,7 +45,7 @@ public class Job implements Serializable {
      * @param positionsToFill List of positions to fill in order
      * @param strategyName    Name of the strategy being used
      */
-    public Job(String jobId, EternityBoardInterface initialBoard,
+    public Job(String jobId, BoardPrimitive initialBoard,
             List<Position> positionsToFill, String strategyName) {
         this.jobId = jobId;
         this.initialBoard = initialBoard;
@@ -58,7 +58,7 @@ public class Job implements Serializable {
         return jobId;
     }
 
-    public EternityBoardInterface getInitialBoard() {
+    public BoardPrimitive getInitialBoard() {
         return initialBoard;
     }
 

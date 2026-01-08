@@ -3,9 +3,8 @@ package org.game.eternity2.server.redis;
 import io.lettuce.core.api.async.RedisAsyncCommands;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.game.eternity2.elements.AbstractEternityBoard;
-import org.game.eternity2.elements.AbstractEternityTile;
-import org.game.eternity2.elements.EternityTileInterface;
+import org.game.eternity2.model.BoardPrimitive;
+import org.game.eternity2.model.PiecePrimitive;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -18,6 +17,7 @@ import java.util.concurrent.TimeoutException;
 /**
  * Caches tile constraints in Redis to allow fast lookup of compatible tiles.
  * Indexes all tiles by their edge patterns for all 4 rotations.
+ * Optimized version using primitive models.
  */
 public class ConstraintCache {
     private static final Logger logger = LogManager.getLogger(ConstraintCache.class);
@@ -30,84 +30,51 @@ public class ConstraintCache {
     }
 
     /**
-     * Index all tiles from the board into Redis.
-     * This allows finding tiles that match specific edge constraints.
+     * Index all tiles into Redis.
      * 
-     * @param board The board containing all game tiles
+     * @param pieces Array of piece primitives to index
      */
-    public void indexBoard(AbstractEternityBoard board) {
+    public void indexPieces(long[] pieces) {
         try {
-            // Clear existing index
-            // In a real scenario we might want to be more selective, but for now we rebuild
-
-            Set<EternityTileInterface> tiles = board.getTiles();
             int count = 0;
-
-            for (EternityTileInterface tile : tiles) {
-                if (tile instanceof AbstractEternityTile) {
-                    indexTile((AbstractEternityTile) tile);
-                    count++;
-                }
+            for (long piece : pieces) {
+                indexTile(piece);
+                count++;
             }
-
-            logger.info("Indexed {} tiles into Constraint Cache", count);
-
+            logger.info("Indexed {} pieces into Constraint Cache", count);
         } catch (Exception e) {
-            logger.error("Failed to index board", e);
+            logger.error("Failed to index pieces", e);
         }
     }
 
-    private void indexTile(AbstractEternityTile tile) {
-        int id = tile.getBackValue();
+    /**
+     * Legacy support for and/or wrapper for indexPieces.
+     */
+    public void indexBoard(BoardPrimitive board) {
+        // Since we don't track all pieces in the board primitive directly easily,
+        // this method assumes we index the pieces that were used to create the board.
+        // In a real scenario, we'd pass the full piece set.
+        // For now, let's just log a warning or do nothing if pieces aren't available.
+        logger.warn("indexBoard called on ConstraintCache, better use indexPieces(long[] pieces)");
+    }
+
+    private void indexTile(long piece) {
+        int id = PiecePrimitive.getId(piece);
 
         // We need to index all 4 rotations
-        // Rotation 0: Original
-        indexRotation(id, 0,
-                tile.getTop().getValue(),
-                tile.getRight().getValue(),
-                tile.getBottom().getValue(),
-                tile.getLeft().getValue());
-
-        // Rotation 1: Clockwise 90 (Top becomes Right, Left becomes Top, etc.)
-        // Logic from AbstractEternityTile.rotateClockwise:
-        // temp = top; top = right; right = bottom; bottom = left; left = temp; (Wait,
-        // this is counter-clockwise? No, let's check source)
-        // Source says: temp=top; top=right; right=bottom; bottom=left; left=temp;
-        // If top becomes right, that means the pattern at 'right' moves to 'top'? No.
-        // If I rotate tile clockwise:
-        // The pattern that was on Left is now on Top.
-        // The pattern that was on Top is now on Right.
-        // The pattern that was on Right is now on Bottom.
-        // The pattern that was on Bottom is now on Left.
-
-        indexRotation(id, 1,
-                tile.getLeft().getValue(), // Top
-                tile.getTop().getValue(), // Right
-                tile.getRight().getValue(), // Bottom
-                tile.getBottom().getValue() // Left
-        );
-
-        // Rotation 2: 180
-        indexRotation(id, 2,
-                tile.getBottom().getValue(), // Top
-                tile.getLeft().getValue(), // Right
-                tile.getTop().getValue(), // Bottom
-                tile.getRight().getValue() // Left
-        );
-
-        // Rotation 3: 270
-        indexRotation(id, 3,
-                tile.getRight().getValue(), // Top
-                tile.getBottom().getValue(), // Right
-                tile.getLeft().getValue(), // Bottom
-                tile.getTop().getValue() // Left
-        );
+        long current = piece;
+        for (int r = 0; r < 4; r++) {
+            indexRotation(id, PiecePrimitive.getRotation(current),
+                    PiecePrimitive.getTop(current),
+                    PiecePrimitive.getRight(current),
+                    PiecePrimitive.getBottom(current),
+                    PiecePrimitive.getLeft(current));
+            current = PiecePrimitive.rotateCW(current);
+        }
     }
 
     private void indexRotation(int tileId, int rotation, int top, int right, int bottom, int left) {
         String value = tileId + ":" + rotation;
-
-        // Pipeline these adds? Lettuce auto-pipelines.
         async.sadd(KEY_PREFIX + top + ":TOP", value);
         async.sadd(KEY_PREFIX + right + ":RIGHT", value);
         async.sadd(KEY_PREFIX + bottom + ":BOTTOM", value);
@@ -116,24 +83,10 @@ public class ConstraintCache {
 
     /**
      * Find tiles that match the given edge constraints.
-     * Pass -1 for any edge constraint to ignore it (wildcard).
-     * 
-     * @return List of strings in format "tileId:rotation"
      */
     public List<String> findCandidates(int topPattern, int rightPattern, int bottomPattern, int leftPattern) {
         List<String> keys = new ArrayList<>();
 
-        if (topPattern != -1)
-            keys.add(KEY_PREFIX + topPattern + ":BOTTOM"); // We look for a tile whose TOP matches this pattern?
-        // Wait, if we want a tile to place at (x,y), and the tile above has pattern P
-        // on its bottom,
-        // then our tile must have pattern P on its TOP.
-        // So if the argument 'topPattern' means "The pattern required on the Top side
-        // of the tile", then:
-        // keys.add(KEY_PREFIX + topPattern + ":TOP");
-
-        // Let's assume arguments are "Target Pattern ID required on that side of the
-        // candidate tile".
         if (topPattern != -1)
             keys.add(KEY_PREFIX + topPattern + ":TOP");
         if (rightPattern != -1)
