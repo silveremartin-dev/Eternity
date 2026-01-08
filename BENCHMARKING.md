@@ -1,6 +1,6 @@
 # Benchmarking Guide
 
-**Authors:** Gemini AI Assistant, Silvère
+**Authors:** Silvere Martin-Michiellot, Antigravity
 
 ## Quick Benchmark
 

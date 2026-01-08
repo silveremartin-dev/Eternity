@@ -106,4 +106,40 @@ class PiecePrimitiveTest {
         // Border constraint where not border
         assertFalse(PiecePrimitive.matches(piece, -1, 0, 0, 0));
     }
+
+    @Test
+    @DisplayName("Set rotation")
+    void testSetRotation() {
+        long piece = PiecePrimitive.create(1, 1, 2, 3, 4);
+        long rotated = PiecePrimitive.setRotation(piece, 2);
+        assertEquals(2, PiecePrimitive.getRotation(rotated));
+        // Edges should be UNCHANGED by setRotation (only the flag changes)
+        assertEquals(1, PiecePrimitive.getTop(rotated));
+    }
+
+    @Test
+    @DisplayName("ToString check")
+    void testToString() {
+        long piece = PiecePrimitive.create(1, 1, 2, 3, 4);
+        String s = PiecePrimitive.toString(piece);
+        assertNotNull(s);
+        assertTrue(s.contains("id=1"));
+    }
+
+    @Test
+    @DisplayName("Multiple CW rotations")
+    void testMultipleRotateCW() {
+        long piece = PiecePrimitive.create(1, 5, 10, 15, 20);
+        long r1 = PiecePrimitive.rotateCW(piece);
+        long r2 = PiecePrimitive.rotateCW(r1);
+        long r3 = PiecePrimitive.rotateCW(r2);
+        long r4 = PiecePrimitive.rotateCW(r3);
+
+        // After 4 rotations, should be back to original edges (but rotation flag might
+        // be different depending on implementation,
+        // actually rotateCW increases rotation flag too)
+        assertEquals(PiecePrimitive.getTop(piece), PiecePrimitive.getTop(r4));
+        assertEquals(PiecePrimitive.getRight(piece), PiecePrimitive.getRight(r4));
+        assertEquals(0, PiecePrimitive.getRotation(r4));
+    }
 }

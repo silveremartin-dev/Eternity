@@ -1,6 +1,6 @@
 # TLS/SSL Setup Guide
 
-**Authors:** Gemini AI Assistant, Silvère
+**Authors:** Silvere Martin-Michiellot, Antigravity
 
 ## Overview
 

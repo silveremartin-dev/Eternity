@@ -135,24 +135,13 @@ graph TB
 
 ### Domain Model
 
-**Optimized Data Structures** (`model.optimized`)
+**Optimized Data Structures** (`model`)
 
 | Class | Description |
 |-------|-------------|
 | `PiecePrimitive` | 64-bit packed piece (ID + 4 edges + rotation) |
 | `BoardPrimitive` | Primitive array board with constraint checking |
 | `PuzzleLoader` | TheSil format import/export |
-
-**Legacy Board Hierarchy** (`elements`)
-
-```
-EternityBoardInterface
-├── AbstractEternityBoard
-│   ├── EternityBoard4x4
-│   ├── EternityBoard6x6
-│   ├── EternityBoard12x6
-│   └── EternityBoard16x16
-```
 
 ---
 
@@ -216,7 +205,6 @@ eternity/
 │   ├── i18n/            # Internationalization
 │   └── elements/        # Legacy board/tile hierarchy
 ├── src/main/resources/
-│   ├── db/migration/    # Flyway SQL migrations
 │   ├── i18n/            # Language bundles
 │   ├── schema/          # Proto + FlatBuffers schemas
 │   └── xml/data/        # Puzzle data

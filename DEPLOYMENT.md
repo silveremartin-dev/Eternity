@@ -1,25 +1,25 @@
 # Eternity II - Deployment Guide
 
-**Authors:** Gemini AI Assistant, Silvère
+**Authors:** Silvere Martin-Michiellot, Antigravity
 
-## 📋 Table of Contents
+## Table of Contents
 
-- [Déploiement Local](#déploiement-local)
-- [Déploiement Kubernetes Local](#déploiement-kubernetes-local)
-- [Déploiement Cloud](#déploiement-cloud)
-- [Configuration par Environnement](#configuration-par-environnement)
+- [Local Deployment](#local-deployment)
+- [Kubernetes Deployment](#kubernetes-deployment)
+- [Cloud Deployment](#cloud-deployment)
+- [Environment Configuration](#environment-configuration)
 
 ---
 
-## 🚀 Déploiement Local
+## Local Deployment
 
-### Prérequis
+### Local Prerequisites
 
 - Java 21+
 - Maven 3.9+
-- Docker (optionnel, pour Redis)
+- Docker (optional, for Redis)
 
-### Scripts automatisés
+### Local Scripts
 
 **Linux/Mac/WSL:**
 
@@ -34,7 +34,7 @@ chmod +x scripts/deploy-local.sh
 .\scripts\deploy-local.ps1
 ```
 
-### Manuel
+### Local Manual Setup
 
 **Sans Redis:**
 
@@ -53,14 +53,14 @@ java -jar target/eternity-1.0-SNAPSHOT.jar
 
 ---
 
-## 🎛️ Déploiement Kubernetes Local
+## Kubernetes Deployment
 
-### Prérequis
+### Kubernetes Prerequisites
 
 - Docker Desktop avec Kubernetes activé
 - kubectl configuré
 
-### Scripts automatisés
+### Kubernetes Scripts
 
 **Linux/Mac:**
 
@@ -75,7 +75,7 @@ chmod +x scripts/deploy-k8s-local.sh
 .\scripts\deploy-k8s-local.ps1
 ```
 
-### Manuel
+### Kubernetes Manual Setup
 
 ```bash
 # 1. Build image
@@ -105,12 +105,12 @@ kubectl logs -f deployment/eternity-server
 
 ---
 
-## ☁️ Déploiement Cloud
+## Cloud Deployment
 
 ### Plateformes supportées
 
 | Provider | Registry | Kubernetes |
-|----------|----------|------------|
+| :--- | :--- | :--- |
 | **AWS** | ECR | EKS |
 | **GCP** | GCR | GKE |
 | **Azure** | ACR | AKS |
@@ -218,7 +218,7 @@ kubectl apply -f k8s/eternity-gpu.yaml
 
 ---
 
-## ⚙️ Configuration par Environnement
+## Environment Configuration
 
 ### Variables d'environnement
 
@@ -274,7 +274,7 @@ spec:
 
 ---
 
-## 🔄 CI/CD
+## CI/CD
 
 ### GitHub Actions (déjà configuré)
 
@@ -295,7 +295,7 @@ Ajouter des secrets GitHub:
 
 ---
 
-## 🐛 Troubleshooting
+## Troubleshooting
 
 ### Problème: Image pull failed
 
@@ -329,7 +329,7 @@ kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/late
 
 ---
 
-## 📊 Monitoring
+## Monitoring
 
 ### Prometheus + Grafana (optionnel)
 
@@ -344,7 +344,7 @@ kubectl port-forward svc/prometheus-grafana 3000:80
 
 ---
 
-## 📚 Références
+## References
 
 - [QUICKSTART.md](QUICKSTART.md) - Démarrage rapide
 - [README.md](README.md) - Vue d'ensemble

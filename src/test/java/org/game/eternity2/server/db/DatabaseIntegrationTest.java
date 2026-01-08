@@ -19,6 +19,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class DatabaseIntegrationTest {
 
     @Container
+    @SuppressWarnings("resource")
     public static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:15-alpine")
             .withDatabaseName("eternity_test")
             .withUsername("test")

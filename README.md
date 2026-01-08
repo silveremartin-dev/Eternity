@@ -86,4 +86,4 @@ eternity/
 
 ---
 
-© 2025 Gemini AI Assistant & Silvère
+© 2026 Silvere Martin-Michiellot & Antigravity

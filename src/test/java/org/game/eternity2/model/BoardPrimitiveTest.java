@@ -122,4 +122,111 @@ class BoardPrimitiveTest {
         assertFalse(board.isValid(4, 0));
         assertFalse(board.isValid(0, 4));
     }
+
+    @Test
+    @DisplayName("Is complete check")
+    void testIsComplete() {
+        assertFalse(board.isComplete());
+        // Fill the board (4x4)
+        for (int y = 0; y < 4; y++) {
+            for (int x = 0; x < 4; x++) {
+                board.placePiece(x, y, PiecePrimitive.create(1, 0, 0, 0, 0));
+            }
+        }
+        assertTrue(board.isComplete());
+    }
+
+    @Test
+    @DisplayName("Neighbor count calculation")
+    void testNeighborCount() {
+        assertEquals(0, board.getNeighborCount(1, 1));
+
+        board.placePiece(1, 0, PiecePrimitive.create(1, 0, 0, 0, 0));
+        assertEquals(1, board.getNeighborCount(1, 1));
+
+        board.placePiece(0, 1, PiecePrimitive.create(2, 0, 0, 0, 0));
+        assertEquals(2, board.getNeighborCount(1, 1));
+
+        board.placePiece(2, 1, PiecePrimitive.create(3, 0, 0, 0, 0));
+        assertEquals(3, board.getNeighborCount(1, 1));
+
+        board.placePiece(1, 2, PiecePrimitive.create(4, 0, 0, 0, 0));
+        assertEquals(4, board.getNeighborCount(1, 1));
+    }
+
+    @Test
+    @DisplayName("Compute board score")
+    void testComputeScore() {
+        // Place two matching pieces side by side
+        // Piece 1 at (0,0): Right edge = 5, Bottom edge = 10
+        long p1 = PiecePrimitive.create(1, 0, 5, 10, 0);
+        // Piece 2 at (1,0): Left edge = 5 (match), Top edge = 0 (border), Right edge =
+        // 7
+        long p2 = PiecePrimitive.create(2, 0, 7, 0, 5);
+
+        board.placePiece(0, 0, p1);
+        board.placePiece(1, 0, p2);
+
+        // Match at (0,0) with Top border, Left border
+        // Match at (1,0) with Top border
+        // Match between (0,0) and (1,0)
+        // Total matching edges should be calculated
+        int score = board.computeScore();
+        assertTrue(score > 0);
+    }
+
+    @Test
+    @DisplayName("Validate board state")
+    void testBoardIsValidState() {
+        assertTrue(board.isValid()); // Empty board is valid
+
+        // Place two non-matching pieces
+        long p1 = PiecePrimitive.create(1, 0, 5, 0, 0);
+        long p2 = PiecePrimitive.create(2, 0, 0, 0, 10); // Left is 10, doesn't match p1's right (5)
+
+        board.placePiece(0, 0, p1);
+        board.placePiece(1, 0, p2);
+
+        assertFalse(board.isValid());
+
+        // Correct p2
+        board.removePiece(1, 0);
+        long p2Correct = PiecePrimitive.create(2, 0, 0, 0, 5); // Left is 5, matches p1's right
+        board.placePiece(1, 0, p2Correct);
+        assertTrue(board.isValid());
+    }
+
+    @Test
+    @DisplayName("Find most constrained position")
+    void testFindMostConstrainedPosition() {
+        // Initially, corners are most constrained (2 border match constraints)
+        int[] pos = board.findMostConstrainedPosition();
+        assertNotNull(pos);
+        // Should be one of the corners
+        assertTrue((pos[0] == 0 || pos[0] == 3) && (pos[1] == 0 || pos[1] == 3));
+
+        // Fill a corner
+        board.placePiece(0, 0, PiecePrimitive.create(1, -1, 5, 10, -1));
+
+        // Now (1,0) or (0,1) might be more constrained as they have a neighbor and a
+        // border
+        pos = board.findMostConstrainedPosition();
+        assertNotNull(pos);
+        assertFalse(pos[0] == 0 && pos[1] == 0); // (0,0) is filled
+    }
+
+    @Test
+    @DisplayName("Board toString check")
+    void testToString() {
+        String s = board.toString();
+        assertNotNull(s);
+        assertTrue(s.contains("4x4"));
+    }
+
+    @Test
+    @DisplayName("Board raw cells access")
+    void testGetCells() {
+        long[] cells = board.getCells();
+        assertEquals(board.getSize(), cells.length);
+    }
 }

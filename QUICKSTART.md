@@ -14,12 +14,12 @@
 
 ```bash
 # 1. Compiler
-mvn clean package
+mvn clean package -DskipTests
 
-# 2. Lancer le serveur
-java -jar target/eternity-1.0-SNAPSHOT.jar
+# 2. Lancer le serveur (GUI)
+java -cp target/eternity-1.0-SNAPSHOT.jar org.game.eternity2.server.ServerApp
 
-# 3. Le serveur démarre sur le port 8080
+# 3. Le serveur démarre sur le port 12345
 # Mode in-memory - pas besoin de Redis
 ```
 
@@ -33,10 +33,10 @@ docker-compose up -d
 docker ps  # Redis doit être "Up"
 
 # 3. Compiler et lancer
-mvn clean package
-java -jar target/eternity-1.0-SNAPSHOT.jar
+mvn clean package -DskipTests
+java -cp target/eternity-1.0-SNAPSHOT.jar org.game.eternity2.server.ServerApp
 
-# 4. Le serveur utilise Redis automatiquement
+# 4. Le serveur utilise Redis automatiquement si REDIS_HOST est défini ou localhost
 ```
 
 ### Option 3 : Mode Kubernetes (Local)
@@ -58,7 +58,7 @@ kubectl get pods
 kubectl get svc
 
 # 5. Accéder au service
-kubectl port-forward svc/eternity-server 8080:8080
+kubectl port-forward svc/eternity-server 12345:12345
 ```
 
 ---
@@ -69,8 +69,7 @@ kubectl port-forward svc/eternity-server 8080:8080
 
 ```bash
 # Le serveur doit afficher au démarrage :
-# "EternityServer started on port 8080"
-# "Using Virtual Threads: true"
+# "Server started on port 12345 (Virtual Threads)"
 ```
 
 ### Test 2 : Redis (si activé)
@@ -82,18 +81,13 @@ docker exec -it eternity-redis-1 redis-cli
 # Tester
 127.0.0.1:6379> PING
 PONG
-
-# Vérifier les clés (après quelques jobs)
-127.0.0.1:6379> KEYS *
 ```
 
-### Test 3 : gRPC (optionnel)
+### Test 3 : Client
 
 ```bash
-# Avec grpcurl installé :
-grpcurl -plaintext localhost:50051 list
-
-# Devrait afficher les services gRPC disponibles
+# Lancer un client pour se connecter au serveur
+java -cp target/eternity-1.0-SNAPSHOT.jar org.game.eternity2.client.ClientApp
 ```
 
 ---
@@ -103,23 +97,23 @@ grpcurl -plaintext localhost:50051 list
 ### Variables d'environnement
 
 ```bash
-# Modifier le port serveur
-export SERVER_PORT=9000
+# Modifier le port serveur (nécessite modif code ou config file)
+# Par défaut : 12345
 
 # Pointer vers un Redis distant
 export REDIS_HOST=redis.example.com
 export REDIS_PORT=6379
 
-# Lancer avec config custom
-java -jar target/eternity-1.0-SNAPSHOT.jar
+# Lancer
+java -cp target/eternity-1.0-SNAPSHOT.jar org.game.eternity2.server.ServerApp
 ```
 
 ### Fichier de configuration (optionnel)
 
-Créer `application.properties` :
+Créer `application.properties` (si supporté par la version actuelle) :
 
 ```properties
-server.port=8080
+server.port=12345
 redis.host=localhost
 redis.port=6379
 solver.threads=8
@@ -224,7 +218,7 @@ java -version  # Doit être 21
 
 ### Pour activer le GPU (futur)
 
-1. 📖 Lire `TORNADOVM_SETUP.md`
+1. 📖 Lire `DEPLOYMENT.md`
 2. 🖥️ Provisionner une VM avec GPU (NVIDIA)
 3. 🔧 Installer CUDA + TornadoVM
 4. ⚙️ Décommenter les dépendances dans `pom.xml`

@@ -1,20 +1,22 @@
 package org.game.eternity2.client;
 
-import org.game.eternity2.elements.*;
-import org.game.eternity2.elements.size4x4.*;
+import org.game.eternity2.model.BoardPrimitive;
+import org.game.eternity2.solver.RarePatternSolver;
 import org.junit.jupiter.api.Test;
 
 class RarePatternSolverTest {
 
     @Test
-    void testSolveEmptyBoard() {
+    void testSolveStructure() {
         RarePatternSolver solver = new RarePatternSolver();
-        EternityBoard4x4 board = new EternityBoard4x4();
-        // Just checking it doesn't crash on empty board with no tiles
-        solver.computeTessellation(board);
-        // Result check removed to avoid unused variable warning and allow null result
-    }
+        BoardPrimitive board = new BoardPrimitive(4, 4);
 
-    // Hard to test actual solving without constraints, but checking structure is
-    // good.
+        // Just checking structure, actual solving requires real pieces
+        solver.computeTessellation(board);
+
+        // It might be null if it can't solve (which is expected with empty/random
+        // setup)
+        // or return a board. The main point is checking it runs without crashing.
+        // assertNotNull(result); // Result can be null if no solution found
+    }
 }
