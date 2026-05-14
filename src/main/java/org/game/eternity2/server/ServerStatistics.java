@@ -41,7 +41,17 @@ public class ServerStatistics {
     private final AtomicLong packetsReceived = new AtomicLong(0);
     private final AtomicLong totalComputeTimeMs = new AtomicLong(0);
     private final AtomicInteger piecesSolved = new AtomicInteger(0);
+    private final AtomicInteger currentPiecesPerSecond = new AtomicInteger(0);
+    private org.game.eternity2.model.BoardPrimitive bestBoard;
     private final long startTime;
+
+    public void updateBestBoard(org.game.eternity2.model.BoardPrimitive board) {
+        this.bestBoard = board;
+    }
+
+    public org.game.eternity2.model.BoardPrimitive getBestBoard() {
+        return bestBoard;
+    }
 
     public ServerStatistics() {
         this.startTime = System.currentTimeMillis();
@@ -112,5 +122,13 @@ public class ServerStatistics {
 
     public int getConnectedClients() {
         return activeClients.get();
+    }
+
+    public void setPiecesPerSecond(int pps) {
+        currentPiecesPerSecond.set(pps);
+    }
+
+    public int getCurrentPiecesPerSecond() {
+        return currentPiecesPerSecond.get();
     }
 }

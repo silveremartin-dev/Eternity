@@ -39,4 +39,10 @@ public interface ServerUI {
 
     /** Update the displayed client count. */
     void updateClientCount(int count);
+
+    /** Update the display of the best board found so far. */
+    void updateBestBoard(org.game.eternity2.model.BoardPrimitive board);
+
+    /** Update the real-time throughput statistics. */
+    void updateThroughput(double totalPps);
 }

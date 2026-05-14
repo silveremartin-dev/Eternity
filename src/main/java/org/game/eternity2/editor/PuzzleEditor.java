@@ -105,12 +105,16 @@ public class PuzzleEditor extends Application {
         ScrollPane scrollPane = new ScrollPane(boardGrid);
         scrollPane.setFitToWidth(true);
         scrollPane.setFitToHeight(true);
-        scrollPane.setStyle("-fx-background: #1a1a2e;");
+        scrollPane.setStyle("-fx-background: #1a1a2e; -fx-background-color: #1a1a2e;");
         root.setCenter(scrollPane);
 
         // Right: Piece palette
         VBox palette = createPalette();
         root.setRight(palette);
+
+        // Left: Workspace & Tools
+        VBox leftWorkspace = createLeftWorkspace();
+        root.setLeft(leftWorkspace);
 
         // Bottom: Status bar
         HBox statusBar = createStatusBar();
@@ -121,6 +125,14 @@ public class PuzzleEditor extends Application {
 
         Scene scene = new Scene(root, 1200, 800);
         stage.setScene(scene);
+
+        // Add Icon
+        try {
+            stage.getIcons().add(new javafx.scene.image.Image(getClass().getResourceAsStream("/images/editor_icon.png")));
+        } catch (Exception e) {
+            // Ignore if icon missing
+        }
+
         stage.show();
     }
 
@@ -133,23 +145,15 @@ public class PuzzleEditor extends Application {
         newBtn.setOnAction(e -> showNewPuzzleDialog());
 
         // Open
-        Button openBtn = new Button("Open");
+        Button openBtn = new Button("Open Puzzle");
         openBtn.setOnAction(e -> openPuzzle(stage));
 
         // Save
-        Button saveBtn = new Button("Save");
+        Button saveBtn = new Button("Save Pieces");
         saveBtn.setOnAction(e -> savePuzzle(stage));
 
-        // Import TheSil
-        Button importBtn = new Button("Import TheSil");
-        importBtn.setOnAction(e -> importTheSil(stage));
-
-        // Generate
-        Button generateBtn = new Button("Generate Random");
-        generateBtn.setOnAction(e -> generateRandomPuzzle());
-
         // Validate
-        Button validateBtn = new Button("Validate");
+        Button validateBtn = new Button("Check Compatibility");
         validateBtn.setOnAction(e -> validatePuzzle());
 
         // Clear
@@ -159,35 +163,185 @@ public class PuzzleEditor extends Application {
         toolbar.getItems().addAll(
                 newBtn, openBtn, saveBtn,
                 new Separator(),
-                importBtn, generateBtn,
-                new Separator(),
                 validateBtn, clearBtn);
+
+        Button saveSolutionBtn = new Button("Save Layout (.json)");
+        saveSolutionBtn.setOnAction(e -> saveSolution(stage));
+        
+        Button loadEternityBtn = new Button("Load EII Set");
+        loadEternityBtn.setOnAction(e -> loadEternity2Pieces());
+
+        toolbar.getItems().addAll(new Separator(), saveSolutionBtn, loadEternityBtn);
 
         return toolbar;
     }
+
+    private VBox createLeftWorkspace() {
+        VBox container = new VBox(20);
+        container.setPadding(new Insets(10));
+        container.setStyle("-fx-background-color: #16213e;");
+        container.setPrefWidth(220);
+
+        VBox editor = createPieceEditor();
+        
+        VBox boardControls = new VBox(10);
+        Label title = new Label("Board Properties");
+        title.setStyle("-fx-text-fill: white; -fx-font-weight: bold;");
+        
+        GridPane grid = new GridPane();
+        grid.setHgap(5); grid.setVgap(5);
+        TextField wField = new TextField(String.valueOf(boardWidth));
+        TextField hField = new TextField(String.valueOf(boardHeight));
+        wField.setMaxWidth(50); hField.setMaxWidth(50);
+        grid.add(new Label("W:"), 0, 0); grid.add(wField, 1, 0);
+        grid.add(new Label("H:"), 0, 1); grid.add(hField, 1, 1);
+        for(javafx.scene.Node n : grid.getChildren()) if(n instanceof Label) ((Label)n).setTextFill(Color.WHITE);
+        
+        Button resizeBtn = new Button("Resize Board");
+        resizeBtn.setOnAction(e -> {
+            try {
+                boardWidth = Integer.parseInt(wField.getText());
+                boardHeight = Integer.parseInt(hField.getText());
+                initializeBoard();
+            } catch (Exception ex) {}
+        });
+        resizeBtn.setMaxWidth(Double.MAX_VALUE);
+        
+        boardControls.getChildren().addAll(title, grid, resizeBtn);
+        
+        container.getChildren().addAll(editor, new Separator(), boardControls);
+        return container;
+    }
+
+    private ListView<Long> pieceListView;
 
     private VBox createPalette() {
         VBox palette = new VBox(10);
         palette.setPadding(new Insets(10));
         palette.setStyle("-fx-background-color: #16213e;");
-        palette.setPrefWidth(200);
+        palette.setPrefWidth(250);
 
-        Label title = new Label("Pieces");
+        Label title = new Label("Piece Library");
         title.setStyle("-fx-text-fill: white; -fx-font-size: 14px; -fx-font-weight: bold;");
         palette.getChildren().add(title);
 
-        // Piece list will be populated when puzzle is loaded
-        ListView<String> pieceList = new ListView<>();
-        pieceList.setStyle("-fx-background-color: #1a1a2e;");
-        pieceList.setPrefHeight(400);
-        palette.getChildren().add(pieceList);
+        pieceListView = new ListView<>();
+        pieceListView.setStyle("-fx-background-color: #1a1a2e;");
+        pieceListView.setPrefHeight(600);
+        pieceListView.setCellFactory(lv -> new ListCell<Long>() {
+            @Override
+            protected void updateItem(Long item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setGraphic(null);
+                    setText(null);
+                } else {
+                    Pane view = createPieceView(item, 40);
+                    setGraphic(view);
+                    setText("ID: " + PiecePrimitive.getId(item));
+                    setTextFill(Color.WHITE);
+                }
+            }
+        });
 
-        // Piece info
-        Label infoLabel = new Label("Select a piece");
-        infoLabel.setStyle("-fx-text-fill: #94a3b8;");
-        palette.getChildren().add(infoLabel);
+        pieceListView.getSelectionModel().selectedItemProperty().addListener((obs, old, val) -> {
+            if (val != null) {
+                selectedPieceIndex = pieceListView.getSelectionModel().getSelectedIndex();
+            }
+        });
 
+        palette.getChildren().add(pieceListView);
         return palette;
+    }
+
+    private TextField idField, topField, rightField, bottomField, leftField;
+    private StackPane previewContainer;
+
+    private VBox createPieceEditor() {
+        VBox editor = new VBox(10);
+        editor.setPadding(new Insets(10));
+        editor.setStyle("-fx-background-color: #1a2a4a; -fx-background-radius: 5;");
+
+        Label title = new Label("Piece Designer");
+        title.setStyle("-fx-text-fill: white; -fx-font-size: 14px; -fx-font-weight: bold;");
+        
+        previewContainer = new StackPane();
+        previewContainer.setPrefSize(80, 80);
+        updatePreview();
+
+        GridPane grid = new GridPane();
+        grid.setHgap(5); grid.setVgap(5);
+
+        idField = new TextField("1");
+        topField = new TextField("0");
+        rightField = new TextField("0");
+        bottomField = new TextField("0");
+        leftField = new TextField("0");
+        
+        // Update preview on text change
+        idField.textProperty().addListener((o, ov, nv) -> updatePreview());
+        topField.textProperty().addListener((o, ov, nv) -> updatePreview());
+        rightField.textProperty().addListener((o, ov, nv) -> updatePreview());
+        bottomField.textProperty().addListener((o, ov, nv) -> updatePreview());
+        leftField.textProperty().addListener((o, ov, nv) -> updatePreview());
+
+        grid.add(new Label("ID:"), 0, 0); grid.add(idField, 1, 0);
+        grid.add(new Label("T:"), 0, 1); grid.add(topField, 1, 1);
+        grid.add(new Label("R:"), 0, 2); grid.add(rightField, 1, 2);
+        grid.add(new Label("B:"), 0, 3); grid.add(bottomField, 1, 3);
+        grid.add(new Label("L:"), 0, 4); grid.add(leftField, 1, 4);
+
+        for (javafx.scene.Node node : grid.getChildren()) {
+            if (node instanceof Label) ((Label) node).setTextFill(Color.WHITE);
+        }
+
+        Button addBtn = new Button("Add to Library");
+        addBtn.setOnAction(e -> addPieceToLibrary());
+        addBtn.setMaxWidth(Double.MAX_VALUE);
+
+        editor.getChildren().addAll(title, previewContainer, grid, addBtn);
+        return editor;
+    }
+
+    private void updatePreview() {
+        try {
+            int id = Integer.parseInt(idField.getText());
+            int t = Integer.parseInt(topField.getText());
+            int r = Integer.parseInt(rightField.getText());
+            int b = Integer.parseInt(bottomField.getText());
+            int l = Integer.parseInt(leftField.getText());
+            long p = PiecePrimitive.create(id, t, r, b, l);
+            previewContainer.getChildren().clear();
+            previewContainer.getChildren().add(createPieceView(p, 80));
+        } catch (Exception e) {}
+    }
+
+    private void addPieceToLibrary() {
+        try {
+            int id = Integer.parseInt(idField.getText());
+            int t = Integer.parseInt(topField.getText());
+            int r = Integer.parseInt(rightField.getText());
+            int b = Integer.parseInt(bottomField.getText());
+            int l = Integer.parseInt(leftField.getText());
+
+            long piece = PiecePrimitive.create(id, t, r, b, l);
+            long[] newPieces = new long[pieces.length + 1];
+            System.arraycopy(pieces, 0, newPieces, 0, pieces.length);
+            newPieces[pieces.length] = piece;
+            pieces = newPieces;
+
+            updatePieceList();
+            idField.setText(String.valueOf(id + 1));
+        } catch (Exception e) {
+            showAlert("Error", "Invalid piece values");
+        }
+    }
+
+    private void updatePieceList() {
+        pieceListView.getItems().clear();
+        for (long p : pieces) {
+            pieceListView.getItems().add(p);
+        }
     }
 
     private HBox createStatusBar() {
@@ -227,33 +381,7 @@ public class PuzzleEditor extends Application {
         }
     }
 
-    private StackPane createCell(int x, int y, double size) {
-        StackPane cell = new StackPane();
-        cell.setPrefSize(size, size);
 
-        long piece = board.getPiece(x, y);
-
-        if (piece == 0) {
-            // Empty cell
-            Rectangle bg = new Rectangle(size - 4, size - 4);
-            bg.setFill(Color.web("#2d2d44"));
-            bg.setStroke(Color.web("#444466"));
-            bg.setStrokeWidth(1);
-            bg.setArcWidth(4);
-            bg.setArcHeight(4);
-            cell.getChildren().add(bg);
-        } else {
-            // Cell with piece - show edges
-            Pane pieceView = createPieceView(piece, size - 4);
-            cell.getChildren().add(pieceView);
-        }
-
-        // Click handler
-        final int fx = x, fy = y;
-        cell.setOnMouseClicked(e -> onCellClicked(fx, fy));
-
-        return cell;
-    }
 
     private Pane createPieceView(long piece, double size) {
         Pane pane = new Pane();
@@ -318,6 +446,55 @@ public class PuzzleEditor extends Application {
         }
     }
 
+    private void onCellRightClicked(int x, int y) {
+        long piece = board.getPiece(x, y);
+        if (piece != 0) {
+            board.placePiece(x, y, PiecePrimitive.rotateCW(piece));
+            updateBoardView();
+        }
+    }
+
+    private StackPane createCell(int x, int y, double size) {
+        StackPane cell = new StackPane();
+        cell.setPrefSize(size, size);
+
+        long piece = board.getPiece(x, y);
+
+        if (piece == 0) {
+            Rectangle bg = new Rectangle(size - 2, size - 2);
+            bg.setFill(Color.web("#2d2d44"));
+            bg.setStroke(Color.web("#444466"));
+            bg.setStrokeWidth(1);
+            cell.getChildren().add(bg);
+        } else {
+            Pane pieceView = createPieceView(piece, size - 2);
+            cell.getChildren().add(pieceView);
+            
+            // Highlight if invalid
+            if (!board.isValid(x, y)) {
+                Rectangle border = new Rectangle(size, size);
+                border.setFill(Color.TRANSPARENT);
+                border.setStroke(Color.RED);
+                border.setStrokeWidth(3);
+                cell.getChildren().add(border);
+            }
+        }
+
+        cell.setOnMouseClicked(e -> {
+            if (e.getButton() == javafx.scene.input.MouseButton.PRIMARY) {
+                if (e.isShiftDown()) {
+                    // Middle-click / Shift-click behavior: Toggle "Hint" (just visual for now or logic if needed)
+                    cell.setStyle("-fx-border-color: yellow; -fx-border-width: 2;");
+                } else {
+                    onCellClicked(x, y);
+                }
+            } else if (e.getButton() == javafx.scene.input.MouseButton.SECONDARY) {
+                onCellRightClicked(x, y);
+            }
+        });
+
+        return cell;
+    }
     private void showNewPuzzleDialog() {
         Dialog<int[]> dialog = new Dialog<>();
         dialog.setTitle("New Puzzle");
@@ -359,63 +536,100 @@ public class PuzzleEditor extends Application {
     private void openPuzzle(Stage stage) {
         FileChooser chooser = new FileChooser();
         chooser.setTitle("Open Puzzle");
-        chooser.getExtensionFilters().add(
-                new FileChooser.ExtensionFilter("Puzzle Files", "*.txt", "*.puzzle"));
+        chooser.getExtensionFilters().addAll(
+                new FileChooser.ExtensionFilter("JSON Puzzle", "*.json"),
+                new FileChooser.ExtensionFilter("Legacy Puzzle", "*.txt", "*.puzzle")
+        );
         File file = chooser.showOpenDialog(stage);
         if (file != null) {
             try {
-                pieces = PuzzleLoaderWriter.loadPieces(Path.of(file.getPath()));
-                // Determine board size from piece count
-                int pieceCount = pieces.length;
-                if (pieceCount == 16) {
-                    boardWidth = 4;
-                    boardHeight = 4;
-                } else if (pieceCount == 36) {
-                    boardWidth = 6;
-                    boardHeight = 6;
-                } else if (pieceCount == 72) {
-                    boardWidth = 12;
-                    boardHeight = 6;
-                } else if (pieceCount == 256) {
-                    boardWidth = 16;
-                    boardHeight = 16;
+                if (file.getName().endsWith(".json")) {
+                    // Try to load as solution first to get board state
+                    board = PuzzleLoaderWriter.loadSolution(Path.of(file.getPath()), null);
+                    boardWidth = board.getWidth();
+                    boardHeight = board.getHeight();
+                    // Extract pieces from board
+                    java.util.List<Long> pieceList = new java.util.ArrayList<>();
+                    for(int y=0; y<boardHeight; y++) {
+                        for(int x=0; x<boardWidth; x++) {
+                            long p = board.getPiece(x, y);
+                            if (p != 0) pieceList.add(p);
+                        }
+                    }
+                    pieces = pieceList.stream().mapToLong(l -> l).toArray();
+                } else {
+                    pieces = PuzzleLoaderWriter.loadPieces(Path.of(file.getPath()));
+                    // Infer size
+                    int count = pieces.length;
+                    if (count == 16) { boardWidth = 4; boardHeight = 4; }
+                    else if (count == 36) { boardWidth = 6; boardHeight = 6; }
+                    else if (count == 256) { boardWidth = 16; boardHeight = 16; }
+                    board = new BoardPrimitive(boardWidth, boardHeight);
                 }
-                initializeBoard();
-                showAlert("Open", "Loaded " + pieces.length + " pieces from: " + file.getName());
+                updatePieceList();
+                updateBoardView();
+                showAlert("Open", "Loaded puzzle successfully");
             } catch (Exception e) {
                 showAlert("Error", "Failed to load puzzle: " + e.getMessage());
             }
         }
     }
 
-    private void savePuzzle(Stage stage) {
+    private void saveSolution(Stage stage) {
         FileChooser chooser = new FileChooser();
-        chooser.setTitle("Save Puzzle");
-        chooser.getExtensionFilters().add(
-                new FileChooser.ExtensionFilter("Puzzle Files", "*.txt", "*.json"));
+        chooser.setTitle("Save Solution");
+        chooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("JSON Files", "*.json"));
         File file = chooser.showSaveDialog(stage);
         if (file != null) {
             try {
-                PuzzleLoaderWriter.savePieces(Path.of(file.getPath()), pieces);
-                showAlert("Save", "Saved " + pieces.length + " pieces to: " + file.getName());
+                PuzzleLoaderWriter.saveSolution(Path.of(file.getPath()), board);
+                showAlert("Save", "Saved solution to: " + file.getName());
             } catch (Exception e) {
-                showAlert("Error", "Failed to save puzzle: " + e.getMessage());
+                showAlert("Error", "Failed to save solution: " + e.getMessage());
             }
         }
     }
 
-    private void importTheSil(Stage stage) {
+    private void saveHints(Stage stage) {
         FileChooser chooser = new FileChooser();
-        chooser.setTitle("Import TheSil Pieces");
-        chooser.getExtensionFilters().add(
-                new FileChooser.ExtensionFilter("Text Files", "*.txt"));
-        File file = chooser.showOpenDialog(stage);
+        chooser.setTitle("Save Hints");
+        chooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("JSON Files", "*.json"));
+        File file = chooser.showSaveDialog(stage);
         if (file != null) {
             try {
-                pieces = PuzzleLoaderWriter.loadPieces(Path.of(file.getPath()));
-                showAlert("Import", "Imported " + pieces.length + " pieces");
+                // Same format as solution
+                PuzzleLoaderWriter.saveSolution(Path.of(file.getPath()), board);
+                showAlert("Save", "Saved hints to: " + file.getName());
             } catch (Exception e) {
-                showAlert("Error", "Failed to import: " + e.getMessage());
+                showAlert("Error", "Failed to save hints: " + e.getMessage());
+            }
+        }
+    }
+
+    private void loadEternity2Pieces() {
+        try {
+            pieces = PuzzleLoaderWriter.generateEternity2Pieces();
+            boardWidth = 16;
+            boardHeight = 16;
+            initializeBoard();
+            updatePieceList();
+            showAlert("Eternity II", "Loaded 256 official Eternity II pieces");
+        } catch (Exception e) {
+            showAlert("Error", "Failed to load Eternity II pieces");
+        }
+    }
+
+    private void savePuzzle(Stage stage) {
+        FileChooser chooser = new FileChooser();
+        chooser.setTitle("Save Puzzle");
+        chooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("JSON Puzzle", "*.json"));
+        File file = chooser.showSaveDialog(stage);
+        if (file != null) {
+            try {
+                PuzzleLoaderWriter.savePieces(Path.of(file.getPath()), pieces);
+                showAlert("Save", "Saved pieces to: " + file.getName());
+            } catch (Exception e) {
+                showAlert("Error", "Failed to save puzzle: " + e.getMessage());
             }
         }
     }

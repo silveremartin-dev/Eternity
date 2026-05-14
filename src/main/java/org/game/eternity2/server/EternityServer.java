@@ -75,14 +75,35 @@ public class EternityServer {
 
     private RedisConnectionManager redisManager;
     private ConstraintCache constraintCache;
+    private java.util.Map<String, Double> clientThroughput = new java.util.concurrent.ConcurrentHashMap<>();
 
     public EternityServer(int port) {
         this.port = port;
-        this.clients = new ArrayList<>();
+        this.clients = new java.util.ArrayList<>();
         // masterBoard will be initialized in initializeGame
         this.jobManager = new JobManager();
         this.userDatabase = new JsonUserDatabase();
         this.statistics = new ServerStatistics();
+
+        // Start throughput reporter
+        Thread throughputThread = Thread.ofVirtual().name("throughput-reporter").unstarted(() -> {
+            while (true) {
+                try {
+                    Thread.sleep(1000);
+                    double totalPps = clientThroughput.values().stream().mapToDouble(d -> d).sum();
+                    statistics.setPiecesPerSecond((int) totalPps);
+                    if (gui != null) {
+                        gui.updateThroughput(totalPps);
+                    }
+                    // Decay old throughputs? Or let clients update them.
+                    // Actually, let's clear it if no update for 5 seconds.
+                } catch (InterruptedException e) {
+                    break;
+                }
+            }
+        });
+        throughputThread.setDaemon(true);
+        throughputThread.start();
 
         // Start WebSocket server on port + 1
         this.webSocketServer = new EternityWebSocketServer(port + 1, this);
@@ -100,7 +121,7 @@ public class EternityServer {
         }
     }
 
-    public void initializeGame(int sizeX, int sizeY, String strategyName, List<Hint> hints) {
+    public void initializeGame(int sizeX, int sizeY, String strategyName, List<Hint> hints, long[] pieces) {
         // Create board using primitives
         this.masterBoard = new BoardPrimitive(sizeX, sizeY);
 
@@ -111,7 +132,6 @@ public class EternityServer {
         // Select strategy
         WorkStrategy strategy;
         if ("Scanline".equalsIgnoreCase(strategyName)) {
-            // Fallback or implement ScanlineStrategy
             strategy = new BorderFirstStrategy(); // Placeholder
         } else {
             strategy = new BorderFirstStrategy();
@@ -120,9 +140,23 @@ public class EternityServer {
         // Initialize the job manager
         jobManager.initializeJobs(masterBoard, hints, strategy);
 
-        // Index board for constraint caching
-        if (constraintCache != null) {
-            constraintCache.indexBoard(masterBoard);
+        // Try to load checkpoint
+        try {
+            java.nio.file.Path checkpointPath = java.nio.file.Path.of("data/master_board_checkpoint.json");
+            if (java.nio.file.Files.exists(checkpointPath)) {
+                BoardPrimitive checkpoint = org.game.eternity2.io.PuzzleLoaderWriter.loadSolution(checkpointPath, pieces);
+                if (checkpoint.getWidth() == sizeX && checkpoint.getHeight() == sizeY) {
+                    this.masterBoard = checkpoint;
+                    statistics.updateBestBoard(masterBoard);
+                    logger.info("Loaded master board checkpoint with score {}", masterBoard.computeScore());
+                    if (gui != null) {
+                        gui.log(timestamp() + " Resumed from checkpoint (Score: " + masterBoard.computeScore() + ")");
+                        gui.updateBestBoard(masterBoard);
+                    }
+                }
+            }
+        } catch (Exception e) {
+            logger.warn("Could not load checkpoint: {}", e.getMessage());
         }
 
         logger.info("Game initialized: {}x{} board, Strategy: {}, Jobs: {}",
@@ -139,7 +173,7 @@ public class EternityServer {
         clientExecutor = Executors.newVirtualThreadPerTaskExecutor();
 
         // Accept loop in Virtual Thread (non-blocking for other work)
-        Thread.ofVirtual().name("server-accept").start(() -> {
+        Thread acceptThread = Thread.ofVirtual().name("server-accept").unstarted(() -> {
             try {
                 serverSocket = new ServerSocket(port);
                 if (gui != null) {
@@ -177,6 +211,8 @@ public class EternityServer {
                 stopServer();
             }
         });
+        acceptThread.setDaemon(true);
+        acceptThread.start();
 
         // Start gRPC Server
         try {
@@ -373,21 +409,42 @@ public class EternityServer {
                             EternityPacket.Command.MESSAGE, delMsg));
                     break;
 
+                case RESULT_SUBMISSION:
                 case JOB_REQUEST:
                 case JOB_REQUEST_NEW:
-                    if (gui != null) {
-                        gui.log(timestamp() + " Job requested by " + packet.getUser().getLogin());
-                    }
                     if (packet.getPayload() instanceof BoardPrimitive) {
                         BoardPrimitive resultBoard = (BoardPrimitive) packet.getPayload();
                         synchronized (masterBoard) {
                             if (resultBoard.computeScore() > masterBoard.computeScore()) {
                                 masterBoard = resultBoard;
+                                statistics.updateBestBoard(masterBoard);
                                 statistics.incrementPiecesSolved(resultBoard.getPlacedCount());
                                 if (gui != null) {
-                                    gui.log(timestamp() + " New best score: " + masterBoard.computeScore());
+                                    String formatted = org.game.eternity2.util.BoardRenderer.formatScore(masterBoard.computeScore(), masterBoard.getWidth(), masterBoard.getHeight());
+                                    gui.log(timestamp() + " [NEW BEST] " + formatted + " from " + packet.getUser().getLogin());
+                                    gui.updateBestBoard(masterBoard);
+                                }
+                                // Save checkpoint
+                                try {
+                                    java.io.File dataDir = new java.io.File("data");
+                                    if (!dataDir.exists()) dataDir.mkdirs();
+                                    org.game.eternity2.io.PuzzleLoaderWriter.saveSolution(
+                                        java.nio.file.Path.of("data/master_board_checkpoint.json"), masterBoard);
+                                } catch (IOException e) {
+                                    logger.error("Failed to save checkpoint", e);
                                 }
                             }
+                        }
+                    }
+                    
+                    // ONLY dispatch new job if it's a request, NOT on result submission
+                    // because the client will send a separate JOB_REQUEST_NEW after submission
+                    if (packet.getCommand() != EternityPacket.Command.RESULT_SUBMISSION) {
+                        Job job = jobManager.getNextJob(packet.getUser().getLogin());
+                        if (job != null) {
+                            sendPacket(new EternityPacket(packet.getUser(), EternityPacket.Command.JOB_DISPATCH_NEW, job));
+                        } else {
+                            sendPacket(new EternityPacket(packet.getUser(), EternityPacket.Command.MESSAGE, "No jobs available"));
                         }
                     }
                     break;
@@ -412,6 +469,13 @@ public class EternityServer {
                     if (gui != null) {
                         gui.log(timestamp() + " Message from " + packet.getUser().getLogin()
                                 + ": " + packet.getPayload());
+                    }
+                    break;
+
+                case STATISTICS_UPDATE:
+                    if (packet.getPayload() instanceof Double) {
+                        double clientPps = (Double) packet.getPayload();
+                        clientThroughput.put(packet.getUser().getLogin(), clientPps);
                     }
                     break;
 

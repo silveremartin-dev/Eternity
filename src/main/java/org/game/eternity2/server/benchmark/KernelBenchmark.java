@@ -23,7 +23,7 @@
  */
 package org.game.eternity2.server.benchmark;
 
-import org.game.eternity2.server.kernel.EternityKernel;
+import org.game.eternity2.kernel.EternityKernel;
 import org.openjdk.jmh.annotations.*;
 import org.openjdk.jmh.infra.Blackhole;
 

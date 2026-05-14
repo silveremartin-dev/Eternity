@@ -19,15 +19,15 @@
 <Configuration status="WARN" name="logger">
     <Properties>
         <!-- Default to 'app' if no appType is set -->
-        <Property name="appType">${sys:appType:-app}</Property>
+        <Property name="appLogName">${sys:appType:-app}</Property>
         <Property name="logPattern">%d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n</Property>
     </Properties>
     <Appenders>
         <!-- Rolling file appender with timestamp in filename -->
         <!-- Logs go to target/logs which is cleaned with mvn clean -->
         <RollingFile name="RollingFile" 
-                     fileName="target/logs/${appType}.log"
-                     filePattern="target/logs/${appType}-%d{yyyy-MM-dd-HH-mm-ss}.log">
+                     fileName="target/logs/${appLogName}.log"
+                     filePattern="target/logs/${appLogName}-%d{yyyy-MM-dd-HH-mm-ss}.log">
             <PatternLayout pattern="${logPattern}"/>
             <Policies>
                 <OnStartupTriggeringPolicy />

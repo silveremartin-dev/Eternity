@@ -45,17 +45,43 @@ public class RedisConnectionManager {
     private final RedisClient redisClient;
     private final StatefulRedisConnection<String, String> connection;
     private final RedisAsyncCommands<String, String> asyncCommands;
+    private final boolean connected;
 
     public RedisConnectionManager(String host, int port) {
         RedisURI redisUri = RedisURI.Builder
                 .redis(host, port)
                 .build();
 
-        this.redisClient = RedisClient.create(redisUri);
-        this.connection = redisClient.connect();
-        this.asyncCommands = connection.async();
+        boolean success = false;
+        StatefulRedisConnection<String, String> conn = null;
+        RedisAsyncCommands<String, String> async = null;
+        RedisClient client = null;
 
-        logger.info("Redis connection established: {}:{}", host, port);
+        try {
+            client = RedisClient.create(redisUri);
+            conn = client.connect();
+            async = conn.async();
+            success = true;
+            logger.info("Redis connection established: {}:{}", host, port);
+        } catch (Exception e) {
+            logger.debug("Failed to connect to Redis at {}:{}", host, port, e);
+            if (client != null && !success) {
+                client.shutdown();
+                client = null;
+            }
+        }
+
+        this.redisClient = client;
+        this.connection = conn;
+        this.asyncCommands = async;
+        this.connected = success;
+    }
+
+    /**
+     * Check if the Redis connection is active.
+     */
+    public boolean isConnected() {
+        return connected;
     }
 
     public RedisConnectionManager() {

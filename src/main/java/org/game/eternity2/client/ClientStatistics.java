@@ -63,6 +63,16 @@ public class ClientStatistics {
 
     private BoardPrimitive bestBoard;
     private final long startTime;
+    private int boardWidth = 16; // Default
+    private int boardHeight = 16;
+
+    public void setBoardDimensions(int w, int h) {
+        this.boardWidth = w;
+        this.boardHeight = h;
+    }
+
+    public int getBoardWidth() { return boardWidth; }
+    public int getBoardHeight() { return boardHeight; }
 
     public ClientStatistics() {
         this.startTime = System.currentTimeMillis();
@@ -154,6 +164,11 @@ public class ClientStatistics {
         props.setProperty("totalPiecesPlaced", String.valueOf(totalPiecesPlaced.get()));
         props.setProperty("totalBacktrackCount", String.valueOf(totalBacktrackCount.get()));
         props.setProperty("totalComputeTimeMs", String.valueOf(totalComputeTimeMs.get()));
+
+        File parent = file.getParentFile();
+        if (parent != null && !parent.exists()) {
+            parent.mkdirs();
+        }
 
         try (FileOutputStream out = new FileOutputStream(file)) {
             props.store(out, "Eternity Client Statistics");

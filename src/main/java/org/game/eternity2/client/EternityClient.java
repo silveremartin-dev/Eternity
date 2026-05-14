@@ -140,12 +140,20 @@ public class EternityClient {
                 // Request job
                 sendPacket(new EternityPacket(user, EternityPacket.Command.JOB_REQUEST_NEW, null));
 
+                // Start statistics reporter
+                startStatisticsReporter();
+
                 // Listen for packets
                 while (isConnected) {
                     try {
                         Object obj = in.readObject();
                         if (obj instanceof EternityPacket) {
-                            processPacket((EternityPacket) obj);
+                            EternityPacket packet = (EternityPacket) obj;
+                            if (ui != null) {
+                                String packetIdShort = packet.getPacketId().substring(0, 8);
+                                logger.debug("Received packet [{}] {}", packetIdShort, packet.getCommand());
+                            }
+                            processPacket(packet);
                         }
                     } catch (ClassNotFoundException e) {
                         if (ui != null)
@@ -160,17 +168,48 @@ public class EternityClient {
         });
     }
 
+    private void startStatisticsReporter() {
+        Thread.ofVirtual().name("stats-reporter").start(() -> {
+            while (isConnected) {
+                try {
+                    Thread.sleep(2000); // Every 2 seconds
+                    if (isConnected) {
+                        double pps = statistics.getPiecesPerSecond();
+                        sendPacket(new EternityPacket(user, EternityPacket.Command.STATISTICS_UPDATE, pps));
+                    }
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    break;
+                } catch (Exception e) {
+                    logger.warn("Failed to send statistics update: {}", e.getMessage());
+                }
+            }
+        });
+    }
+
     public void disconnect() {
         isConnected = false;
+        if (executor != null) {
+            executor.cancel();
+        }
         // Save stats on disconnect
         statistics.save(new java.io.File("data/client-stats.properties"));
 
         try {
-            if (socket != null)
+            if (out != null) {
+                out.close();
+            }
+            if (in != null) {
+                in.close();
+            }
+            if (socket != null) {
                 socket.close();
-            if (grpcClient != null)
+            }
+            if (grpcClient != null) {
                 grpcClient.shutdown();
-        } catch (Exception ignored) {
+            }
+        } catch (Exception e) {
+            logger.warn("Error during disconnect: {}", e.getMessage());
         }
         if (ui != null) {
             ui.setConnected(false);
@@ -178,6 +217,15 @@ public class EternityClient {
         }
     }
 
+    public void setConnected(boolean connected) {
+        this.isConnected = connected;
+    }
+
+    public void setUseGPU(boolean useGPU) {
+        if (executor != null) {
+            executor.setUseGPU(useGPU);
+        }
+    }
     private void processPacket(EternityPacket packet) {
         switch (packet.getCommand()) {
             case JOB_DISPATCH:
@@ -195,6 +243,9 @@ public class EternityClient {
                 // New job format with JobExecutor - process in Virtual Thread
                 if (packet.getPayload() instanceof Job) {
                     Job job = (Job) packet.getPayload();
+                    if (job.getInitialBoard() != null) {
+                        statistics.setBoardDimensions(job.getInitialBoard().getWidth(), job.getInitialBoard().getHeight());
+                    }
                     if (ui != null) {
                         ui.log("Received job: " + job.getJobId() + " (" + job.getPositionsToFill().size()
                                 + " positions)");
@@ -207,8 +258,10 @@ public class EternityClient {
                             BoardPrimitive result = executor.executeJob(job);
 
                             if (result != null) {
-                                if (ui != null)
+                                if (ui != null) {
                                     ui.log("Job completed! Score: " + result.computeScore());
+                                    ui.updateBestBoard(result);
+                                }
                                 sendPacket(new EternityPacket(user, EternityPacket.Command.RESULT_SUBMISSION, result));
                             } else {
                                 if (ui != null)
@@ -254,6 +307,15 @@ public class EternityClient {
                 }
                 break;
 
+            case PUZZLE_DEFINITION:
+                if (packet.getPayload() instanceof long[]) {
+                    long[] pieces = (long[]) packet.getPayload();
+                    executor.setAllPieces(pieces);
+                    if (ui != null)
+                        ui.log("Received puzzle definition: " + pieces.length + " pieces");
+                }
+                break;
+
             default:
                 if (ui != null)
                     ui.log("Unknown command: " + packet.getCommand());
@@ -266,6 +328,10 @@ public class EternityClient {
         try {
             out.writeObject(packet);
             out.flush();
+            if (ui != null) {
+                String packetIdShort = packet.getPacketId().substring(0, 8);
+                logger.debug("Sent packet [{}] {}", packetIdShort, packet.getCommand());
+            }
         } catch (IOException e) {
             if (ui != null)
                 ui.log("Error sending packet: " + e.getMessage());

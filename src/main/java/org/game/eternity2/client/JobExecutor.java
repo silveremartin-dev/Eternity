@@ -29,6 +29,7 @@ import org.game.eternity2.model.BoardPrimitive;
 import org.game.eternity2.model.PiecePrimitive;
 import org.game.eternity2.io.PuzzleLoaderWriter;
 import org.game.eternity2.server.Job;
+import org.game.eternity2.solver.GPUEternitySolver;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -48,12 +49,32 @@ public class JobExecutor {
     private static final Logger logger = LogManager.getLogger(JobExecutor.class);
 
     private final ClientStatistics statistics;
-    private final long[] allPieces;
+    private long[] allPieces;
     private volatile boolean cancelled = false;
+    private boolean useGPU = false;
+    private GPUEternitySolver gpuSolver;
+    private final HybridSolver hybridSolver;
 
     public JobExecutor(ClientStatistics statistics) {
         this.statistics = statistics;
         this.allPieces = PuzzleLoaderWriter.generateEternity2Pieces();
+        this.hybridSolver = new HybridSolver();
+        try {
+            this.gpuSolver = new GPUEternitySolver(1024);
+        } catch (Throwable e) {
+            logger.warn("TornadoVM not available, GPU acceleration disabled: {}", e.getMessage());
+        }
+    }
+
+    public void setAllPieces(long[] pieces) {
+        if (pieces != null && pieces.length > 0) {
+            this.allPieces = pieces;
+            logger.info("Updated piece library with {} pieces", pieces.length);
+        }
+    }
+
+    public void setUseGPU(boolean useGPU) {
+        this.useGPU = useGPU && (gpuSolver != null);
     }
 
     public BoardPrimitive executeJob(Job job) {
@@ -61,27 +82,9 @@ public class JobExecutor {
         long startTime = System.currentTimeMillis();
 
         BoardPrimitive board = job.getInitialBoard();
-        List<Job.Position> positions = job.getPositionsToFill();
+        logger.info("Starting job {}: Hybrid solving mode", job.getJobId());
 
-        logger.info("Starting job {}: {} positions to fill", job.getJobId(), positions.size());
-
-        // Track used piece IDs
-        Set<Integer> usedIds = new HashSet<>();
-        for (long cell : board.getCells()) {
-            if (cell != 0) {
-                usedIds.add(PiecePrimitive.getId(cell));
-            }
-        }
-
-        // Available pieces list
-        List<Long> availableList = new ArrayList<>();
-        for (long p : allPieces) {
-            if (!usedIds.contains(PiecePrimitive.getId(p))) {
-                availableList.add(p);
-            }
-        }
-
-        BoardPrimitive result = backtrack(board, positions, availableList, 0);
+        BoardPrimitive result = hybridSolver.computeTessellation(board);
 
         long elapsed = System.currentTimeMillis() - startTime;
         statistics.addComputeTime(elapsed);
@@ -92,55 +95,10 @@ public class JobExecutor {
             logger.info("Job {} completed: score={}, time={}ms",
                     job.getJobId(), result.computeScore(), elapsed);
         } else {
-            logger.info("Job {} completed: no solution found, time={}ms", job.getJobId(), elapsed);
+            logger.info("Job {} completed: no full solution found, time={}ms", job.getJobId(), elapsed);
         }
 
         return result;
-    }
-
-    private BoardPrimitive backtrack(BoardPrimitive board,
-            List<Job.Position> positions,
-            List<Long> availableTiles,
-            int positionIndex) {
-        if (cancelled) {
-            return null;
-        }
-
-        if (positionIndex >= positions.size()) {
-            return board;
-        }
-
-        Job.Position pos = positions.get(positionIndex);
-        int row = pos.getRow();
-        int col = pos.getCol();
-
-        int[] constraints = board.getConstraints(col, row);
-
-        for (int i = 0; i < availableTiles.size(); i++) {
-            long piece = availableTiles.get(i);
-
-            // Try each rotation
-            for (int rotation = 0; rotation < 4; rotation++) {
-                if (PiecePrimitive.matches(piece, constraints[0], constraints[1], constraints[2], constraints[3])) {
-                    board.placePiece(col, row, piece);
-                    statistics.incrementPiecesPlaced(1);
-
-                    Long removed = availableTiles.remove(i);
-                    BoardPrimitive result = backtrack(board, positions, availableTiles, positionIndex + 1);
-
-                    if (result != null) {
-                        return result;
-                    }
-
-                    statistics.incrementBacktrackCount();
-                    board.removePiece(col, row);
-                    availableTiles.add(i, removed);
-                }
-                piece = PiecePrimitive.rotateCW(piece);
-            }
-        }
-
-        return null;
     }
 
     public void cancel() {

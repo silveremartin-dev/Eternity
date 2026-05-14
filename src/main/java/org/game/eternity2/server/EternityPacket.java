@@ -52,7 +52,9 @@ public class EternityPacket implements Serializable {
         JOB_REQUEST_NEW,
         JOB_DISPATCH_NEW,
         SERVER_STATUS_REQUEST,
-        SERVER_STATUS_RESPONSE
+        SERVER_STATUS_RESPONSE,
+        PUZZLE_DEFINITION,
+        STATISTICS_UPDATE
     }
 
     private String packetId;

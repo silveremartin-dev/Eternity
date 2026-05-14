@@ -29,6 +29,7 @@ import org.game.eternity2.server.Job;
 import org.game.eternity2.server.WorkStrategy;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
@@ -37,9 +38,9 @@ import java.util.UUID;
  * Generates jobs that explore different edge configurations.
  *
  * @author Silvere Martin-Michiellot
- * @version 2.1
-  * @author Antigravity
-  * @since 1.0
+ * @version 2.2
+ * @author Antigravity
+ * @since 1.0
  */
 public class BorderFirstStrategy implements WorkStrategy {
 
@@ -49,9 +50,6 @@ public class BorderFirstStrategy implements WorkStrategy {
         int width = puzzle.getWidth();
         int height = puzzle.getHeight();
 
-        // For now, create a simple job that fills positions row by row
-        // Starting with borders (top row, bottom row, left column, right column)
-        // Split into two jobs: Border and Interior
         List<Job.Position> borderPositions = new ArrayList<>();
         List<Job.Position> interiorPositions = new ArrayList<>();
 
@@ -79,17 +77,44 @@ public class BorderFirstStrategy implements WorkStrategy {
         // Interior
         for (int row = 1; row < height - 1; row++) {
             for (int col = 1; col < width - 1; col++) {
-                if (!isHintPosition(row, col, hints)) {
+                if (!isHintPosition(row, col, hints) && puzzle.getPiece(col, row) == 0) {
                     interiorPositions.add(new Job.Position(row, col));
                 }
             }
         }
 
-        String jobId1 = "BORDER_" + UUID.randomUUID().toString().substring(0, 8);
-        jobs.add(new Job(jobId1, puzzle, borderPositions, getName()));
+        // Generate many jobs for parallelism
+        // Find first empty position
+        boolean found = false;
+        for (int r = 0; r < height && !found; r++) {
+            for (int c = 0; c < width && !found; c++) {
+                if (!isHintPosition(r, c, hints) && puzzle.getPiece(c, r) == 0) {
+                    found = true;
+                }
+            }
+        }
 
-        String jobId2 = "INTERIOR_" + UUID.randomUUID().toString().substring(0, 8);
-        jobs.add(new Job(jobId2, puzzle, interiorPositions, getName()));
+        if (!found) {
+            // All filled? Just one interior job
+            jobs.add(new Job("FINAL_" + UUID.randomUUID().toString().substring(0, 8), puzzle, interiorPositions, getName()));
+            return jobs;
+        }
+
+        int jobCount = 32; // Create 32 jobs
+        for (int i = 0; i < jobCount; i++) {
+            String jobId = "JOB_" + i + "_" + UUID.randomUUID().toString().substring(0, 8);
+            // Each job takes a slice of the interior positions
+            List<Job.Position> jobPositions = new ArrayList<>(borderPositions);
+            jobPositions.addAll(interiorPositions);
+            
+            // To make jobs truly different, we could shuffle or offset the start
+            // But for now, let's just distribute the interior differently
+            if (!interiorPositions.isEmpty()) {
+                Collections.rotate(interiorPositions, Math.max(1, interiorPositions.size() / jobCount));
+            }
+            
+            jobs.add(new Job(jobId, puzzle, jobPositions, getName()));
+        }
 
         return jobs;
     }

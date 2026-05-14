@@ -62,6 +62,10 @@ public class BoardPrimitive implements Serializable {
         this.placedCount = other.placedCount;
     }
 
+    public BoardPrimitive copy() {
+        return new BoardPrimitive(this);
+    }
+
     /**
      * Get cell index from coordinates.
      */

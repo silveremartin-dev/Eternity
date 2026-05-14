@@ -1,26 +1,3 @@
-/*
- * MIT License
- *
- * Copyright (c) 2026 Silvere Martin-Michiellot, Antigravity
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in all
- * copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- * SOFTWARE.
- */
 package org.game.eternity2.io;
 
 import com.google.gson.Gson;
@@ -38,7 +15,7 @@ import java.nio.file.*;
 import java.util.*;
 
 /**
- * Loads and saves puzzles from JSON or Text format.
+ * Loads and saves puzzles exclusively in JSON format.
  * 
  * @author Silvere Martin-Michiellot
  * @author Antigravity
@@ -49,21 +26,12 @@ public class PuzzleLoaderWriter {
     private static final Logger LOGGER = LogManager.getLogger(PuzzleLoaderWriter.class);
 
     /**
-     * Load pieces from a file (JSON or text).
+     * Load pieces from a JSON file.
      * 
      * @param path Path to puzzle file
      * @return Array of piece primitives
      */
     public static long[] loadPieces(Path path) throws IOException {
-        String filename = path.getFileName().toString().toLowerCase();
-        if (filename.endsWith(".json")) {
-            return loadPiecesFromJson(path);
-        } else {
-            return loadPiecesFromText(path);
-        }
-    }
-
-    private static long[] loadPiecesFromJson(Path path) throws IOException {
         List<Long> pieces = new ArrayList<>();
         try (Reader reader = Files.newBufferedReader(path)) {
             JsonObject root = JsonParser.parseReader(reader).getAsJsonObject();
@@ -84,165 +52,134 @@ public class PuzzleLoaderWriter {
         return pieces.stream().mapToLong(Long::longValue).toArray();
     }
 
-    private static long[] loadPiecesFromText(Path path) throws IOException {
-        List<Long> pieces = new ArrayList<>();
-
-        try (BufferedReader reader = Files.newBufferedReader(path)) {
-            String line;
-            while ((line = reader.readLine()) != null) {
-                line = line.trim();
-                if (line.isEmpty() || line.startsWith("#"))
-                    continue;
-
-                String[] parts = line.split("\\s+");
-                if (parts.length < 5)
-                    continue;
-
-                int id = Integer.parseInt(parts[0]);
-                int north = Integer.parseInt(parts[1]);
-                int east = Integer.parseInt(parts[2]);
-                int south = Integer.parseInt(parts[3]);
-                int west = Integer.parseInt(parts[4]);
-
-                pieces.add(PiecePrimitive.create(id, north, east, south, west));
-            }
-        }
-
-        LOGGER.info("Loaded {} pieces from text {}", pieces.size(), path);
-        return pieces.stream().mapToLong(Long::longValue).toArray();
-    }
-
     /**
-     * Load pieces from classpath resource.
+     * Load pieces from classpath resource (JSON only).
      */
     public static long[] loadPiecesFromResource(String resourcePath) throws IOException {
-        if (resourcePath.endsWith(".json")) {
-            try (InputStream is = PuzzleLoaderWriter.class.getResourceAsStream(resourcePath)) {
-                if (is == null)
-                    throw new FileNotFoundException("Resource not found: " + resourcePath);
+        try (InputStream is = PuzzleLoaderWriter.class.getResourceAsStream(resourcePath)) {
+            if (is == null)
+                throw new FileNotFoundException("Resource not found: " + resourcePath);
 
-                try (Reader reader = new InputStreamReader(is)) {
-                    List<Long> pieces = new ArrayList<>();
-                    JsonObject root = JsonParser.parseReader(reader).getAsJsonObject();
-                    JsonArray jsonPieces = root.getAsJsonArray("pieces");
+            try (Reader reader = new InputStreamReader(is)) {
+                List<Long> pieces = new ArrayList<>();
+                JsonObject root = JsonParser.parseReader(reader).getAsJsonObject();
+                JsonArray jsonPieces = root.getAsJsonArray("pieces");
 
-                    for (JsonElement el : jsonPieces) {
-                        JsonObject p = el.getAsJsonObject();
-                        int id = p.get("id").getAsInt();
-                        int top = p.get("top").getAsInt();
-                        int right = p.get("right").getAsInt();
-                        int bottom = p.get("bottom").getAsInt();
-                        int left = p.get("left").getAsInt();
+                for (JsonElement el : jsonPieces) {
+                    JsonObject p = el.getAsJsonObject();
+                    int id = p.get("id").getAsInt();
+                    int top = p.get("top").getAsInt();
+                    int right = p.get("right").getAsInt();
+                    int bottom = p.get("bottom").getAsInt();
+                    int left = p.get("left").getAsInt();
 
-                        pieces.add(PiecePrimitive.create(id, top, right, bottom, left));
-                    }
-                    LOGGER.info("Loaded {} pieces from JSON resource {}", pieces.size(), resourcePath);
-                    return pieces.stream().mapToLong(Long::longValue).toArray();
+                    pieces.add(PiecePrimitive.create(id, top, right, bottom, left));
                 }
-            }
-        } else {
-            try (InputStream is = PuzzleLoaderWriter.class.getResourceAsStream(resourcePath)) {
-                if (is == null)
-                    throw new FileNotFoundException("Resource not found: " + resourcePath);
-
-                try (BufferedReader reader = new BufferedReader(new InputStreamReader(is))) {
-                    List<Long> pieces = new ArrayList<>();
-                    String line;
-                    while ((line = reader.readLine()) != null) {
-                        line = line.trim();
-                        if (line.isEmpty() || line.startsWith("#"))
-                            continue;
-
-                        String[] parts = line.split("\\s+");
-                        if (parts.length < 5)
-                            continue;
-
-                        int id = Integer.parseInt(parts[0]);
-                        int north = Integer.parseInt(parts[1]);
-                        int east = Integer.parseInt(parts[2]);
-                        int south = Integer.parseInt(parts[3]);
-                        int west = Integer.parseInt(parts[4]);
-
-                        pieces.add(PiecePrimitive.create(id, north, east, south, west));
-                    }
-
-                    LOGGER.info("Loaded {} pieces from resource {}", pieces.size(), resourcePath);
-                    return pieces.stream().mapToLong(Long::longValue).toArray();
-                }
+                LOGGER.info("Loaded {} pieces from JSON resource {}", pieces.size(), resourcePath);
+                return pieces.stream().mapToLong(Long::longValue).toArray();
             }
         }
     }
 
     /**
-     * Load board state from a file.
-     * Format: width height, then grid of piece IDs (-1 for empty).
-     */
-    public static BoardPrimitive loadBoard(Path path, long[] pieces) throws IOException {
-        try (BufferedReader reader = Files.newBufferedReader(path)) {
-            String header = reader.readLine().trim();
-            String[] dims = header.split("\\s+");
-            int width = Integer.parseInt(dims[0]);
-            int height = Integer.parseInt(dims[1]);
-
-            BoardPrimitive board = new BoardPrimitive(width, height);
-            Map<Integer, Long> pieceById = new HashMap<>();
-            for (long piece : pieces) {
-                pieceById.put(PiecePrimitive.getId(piece), piece);
-            }
-
-            for (int y = 0; y < height; y++) {
-                String line = reader.readLine().trim();
-                String[] ids = line.split("\\s+");
-                for (int x = 0; x < width && x < ids.length; x++) {
-                    int id = Integer.parseInt(ids[x]);
-                    if (id >= 0 && pieceById.containsKey(id)) {
-                        board.placePiece(x, y, pieceById.get(id));
-                    }
-                }
-            }
-
-            LOGGER.info("Loaded board {}x{} with {} pieces from {}",
-                    width, height, board.getPlacedCount(), path);
-            return board;
-        }
-    }
-
-    /**
-     * Generate standard Eternity II pieces by loading the official 16x16 puzzle
-     * file.
+     * Generate standard Eternity II pieces by loading the official 16x16 puzzle JSON.
      */
     public static long[] generateEternity2Pieces() {
         try {
-            // Load from the official JSON puzzle file
-            try {
-                return loadPiecesFromResource("/puzzles/puzzle_16x16_eternity2.json");
-            } catch (Exception e) {
-                // Try file system (dev mode fallback)
-                Path p = Paths.get("src/main/resources/puzzles/puzzle_16x16_eternity2.json");
-                if (Files.exists(p)) {
-                    return loadPiecesFromJson(p);
-                }
-                throw e;
-            }
+            return loadPiecesFromResource("/puzzles/puzzle_16x16_eternity2.json");
         } catch (Exception e) {
-            LOGGER.error("Failed to load Eternity II pieces, falling back to empty set", e);
+            LOGGER.error("Failed to load Eternity II pieces", e);
             return new long[0];
         }
     }
 
     /**
-     * Save pieces to file.
+     * Save board solution to JSON.
      */
-    public static void savePieces(Path path, long[] pieces) throws IOException {
-        String filename = path.getFileName().toString().toLowerCase();
-        if (filename.endsWith(".json")) {
-            savePiecesToJson(path, pieces);
-        } else {
-            savePiecesToText(path, pieces);
+    public static void saveSolution(Path path, BoardPrimitive board) throws IOException {
+        try (Writer writer = Files.newBufferedWriter(path)) {
+            JsonObject root = new JsonObject();
+            root.addProperty("timestamp", java.time.LocalDateTime.now().toString());
+            root.addProperty("boardSizeX", board.getWidth());
+            root.addProperty("boardSizeY", board.getHeight());
+            root.addProperty("score", board.computeScore());
+
+            JsonArray tiles = new JsonArray();
+            for (int y = 0; y < board.getHeight(); y++) {
+                for (int x = 0; x < board.getWidth(); x++) {
+                    long piece = board.getPiece(x, y);
+                    if (piece != 0) {
+                        JsonObject t = new JsonObject();
+                        t.addProperty("x", x);
+                        t.addProperty("y", y);
+                        t.addProperty("id", PiecePrimitive.getId(piece));
+                        t.addProperty("rotation", PiecePrimitive.getRotation(piece));
+                        tiles.add(t);
+                    }
+                }
+            }
+            root.add("tiles", tiles);
+
+            Gson gson = new com.google.gson.GsonBuilder().setPrettyPrinting().create();
+            gson.toJson(root, writer);
+        }
+        LOGGER.info("Saved solution to JSON {}", path);
+    }
+
+    /**
+     * Load board solution from JSON.
+     */
+    public static BoardPrimitive loadSolution(Path path, long[] library) throws IOException {
+        try (Reader reader = Files.newBufferedReader(path)) {
+            JsonObject root = JsonParser.parseReader(reader).getAsJsonObject();
+            
+            // Add robustness: check for multiple possible keys for dimensions
+            int width = 0;
+            if (root.has("boardSizeX")) width = root.get("boardSizeX").getAsInt();
+            else if (root.has("width")) width = root.get("width").getAsInt();
+            else if (root.has("sizeX")) width = root.get("sizeX").getAsInt();
+            
+            int height = 0;
+            if (root.has("boardSizeY")) height = root.get("boardSizeY").getAsInt();
+            else if (root.has("height")) height = root.get("height").getAsInt();
+            else if (root.has("sizeY")) height = root.get("sizeY").getAsInt();
+            
+            JsonArray tiles = root.has("tiles") ? root.getAsJsonArray("tiles") : new JsonArray();
+
+            BoardPrimitive board = new BoardPrimitive(width, height);
+            
+            // If library is null or no tiles, we only want the board dimensions/metadata
+            if (library == null || tiles.isEmpty()) return board;
+
+            Map<Integer, Long> pieceMap = new HashMap<>();
+            for (long p : library) {
+                pieceMap.put(PiecePrimitive.getId(p), p);
+            }
+
+            for (JsonElement el : tiles) {
+                JsonObject t = el.getAsJsonObject();
+                int x = t.has("x") ? t.get("x").getAsInt() : 0;
+                int y = t.has("y") ? t.get("y").getAsInt() : 0;
+                int id = t.has("id") ? t.get("id").getAsInt() : 0;
+                int rotation = t.has("rotation") ? t.get("rotation").getAsInt() : 0;
+
+                Long piece = pieceMap.get(id);
+                if (piece != null) {
+                    long rotatedPiece = piece;
+                    for (int i = 0; i < rotation; i++) {
+                        rotatedPiece = PiecePrimitive.rotateCW(rotatedPiece);
+                    }
+                    board.placePiece(x, y, rotatedPiece);
+                }
+            }
+            return board;
         }
     }
 
-    private static void savePiecesToJson(Path path, long[] pieces) throws IOException {
+    /**
+     * Save pieces to JSON file.
+     */
+    public static void savePieces(Path path, long[] pieces) throws IOException {
         try (Writer writer = Files.newBufferedWriter(path)) {
             JsonObject root = new JsonObject();
             JsonArray jsonPieces = new JsonArray();
@@ -255,22 +192,15 @@ public class PuzzleLoaderWriter {
                 p.addProperty("bottom", PiecePrimitive.getBottom(piece));
                 p.addProperty("left", PiecePrimitive.getLeft(piece));
 
-                // Infer type for completeness
                 int borderCount = 0;
-                if (PiecePrimitive.getTop(piece) == 0)
-                    borderCount++;
-                if (PiecePrimitive.getRight(piece) == 0)
-                    borderCount++;
-                if (PiecePrimitive.getBottom(piece) == 0)
-                    borderCount++;
-                if (PiecePrimitive.getLeft(piece) == 0)
-                    borderCount++;
+                if (PiecePrimitive.getTop(piece) == 0) borderCount++;
+                if (PiecePrimitive.getRight(piece) == 0) borderCount++;
+                if (PiecePrimitive.getBottom(piece) == 0) borderCount++;
+                if (PiecePrimitive.getLeft(piece) == 0) borderCount++;
 
                 String type = "inner";
-                if (borderCount == 1)
-                    type = "edge";
-                else if (borderCount == 2)
-                    type = "corner";
+                if (borderCount == 1) type = "edge";
+                else if (borderCount == 2) type = "corner";
                 p.addProperty("type", type);
 
                 jsonPieces.add(p);
@@ -281,20 +211,5 @@ public class PuzzleLoaderWriter {
             gson.toJson(root, writer);
         }
         LOGGER.info("Saved {} pieces to JSON {}", pieces.length, path);
-    }
-
-    private static void savePiecesToText(Path path, long[] pieces) throws IOException {
-        try (BufferedWriter writer = Files.newBufferedWriter(path)) {
-            writer.write("# Eternity II Pieces - Format: id north east south west\n");
-            for (long piece : pieces) {
-                writer.write(String.format("%d %d %d %d %d\n",
-                        PiecePrimitive.getId(piece),
-                        PiecePrimitive.getTop(piece),
-                        PiecePrimitive.getRight(piece),
-                        PiecePrimitive.getBottom(piece),
-                        PiecePrimitive.getLeft(piece)));
-            }
-        }
-        LOGGER.info("Saved {} pieces to {}", pieces.length, path);
     }
 }

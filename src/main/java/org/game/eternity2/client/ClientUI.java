@@ -36,4 +36,7 @@ public interface ClientUI {
     void setConnected(boolean connected);
 
     void setJobStatus(String status);
+
+    /** Update the display of the best board found so far. */
+    void updateBestBoard(org.game.eternity2.model.BoardPrimitive board);
 }

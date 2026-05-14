@@ -21,7 +21,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.game.eternity2.server.kernel;
+package org.game.eternity2.kernel;
 
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
@@ -30,9 +30,11 @@ import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 
 /**
  * Driver to execute the EternityKernel on GPU using TornadoVM.
-  * @author Silvere Martin-Michiellot
-  * @author Antigravity
-  * @since 1.0
+ * Optimized for Java 21+ with Execution Plans.
+ * 
+ * @author Silvere Martin-Michiellot
+ * @author Antigravity
+ * @since 1.0
  */
 public class TornadoEternityDriver {
 
@@ -62,7 +64,7 @@ public class TornadoEternityDriver {
         System.arraycopy(currentConstraints, 0, constraints, 0, 4);
         System.arraycopy(currentCandidates, 0, candidates, 0, currentResults.length * 4);
 
-        // Execute on GPU
+        // Execute on GPU using the modern Execution Plan API
         executionPlan.execute();
 
         // Copy results back
