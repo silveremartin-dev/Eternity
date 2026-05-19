@@ -33,59 +33,42 @@ package org.game.eternity2.kernel;
 public class EternityKernel {
 
     /**
-     * Checks which candidates are valid for a given set of constraints.
+     * Checks which candidates are valid for a given set of constraints using bitwise logic.
+     * Optimized for TornadoVM with Resident Pool strategy.
      * 
-     * @param constraints Array of 4 integers representing the required pattern for
-     *                    [Top, Right, Bottom, Left].
-     *                    Use -1 if there is no constraint (e.g., empty neighbor).
-     *                    For borders, use the specific border pattern value
-     *                    (usually 0).
-     * @param candidates  Flattened array of candidate tiles. Each tile is 4
-     *                    integers [Top, Right, Bottom, Left].
-     *                    Length = num_candidates * 4.
-     * @param results     Output array. 1 if valid, 0 if invalid. Length =
-     *                    num_candidates.
+     * @param packedConstraints Array of 1 int: (Top << 24 | Right << 16 | Bottom << 8 | Left)
+     * @param mask              Array of 1 int: Bitmask for active constraints.
+     * @param candidates        Array of packed pieces (Resident Pool).
+     * @param results           Output array.
+     */
+    public static void checkCandidatesBitwise(int[] packedConstraints, int[] mask, int[] candidates, int[] results) {
+        for (int i = 0; i < results.length; i++) {
+            results[i] = ((candidates[i] & mask[0]) == packedConstraints[0]) ? 1 : 0;
+        }
+    }
+
+    /**
+     * Legacy support for the 4-int array structure, internally using the bitwise logic.
      */
     public static void checkCandidates(int[] constraints, int[] candidates, int[] results) {
-        // CPU implementation (mimics the parallel kernel structure)
+        int packedConstraints = 0;
+        int mask = 0;
+
+        for (int i = 0; i < 4; i++) {
+            if (constraints[i] != -1) {
+                packedConstraints |= (constraints[i] & 0xFF) << (8 * (3 - i));
+                mask |= 0xFF << (8 * (3 - i));
+            }
+        }
+
         for (int i = 0; i < results.length; i++) {
             int baseIndex = i * 4;
-            int cTop = candidates[baseIndex];
-            int cRight = candidates[baseIndex + 1];
-            int cBottom = candidates[baseIndex + 2];
-            int cLeft = candidates[baseIndex + 3];
+            int packedCandidate = ((candidates[baseIndex] & 0xFF) << 24)
+                    | ((candidates[baseIndex + 1] & 0xFF) << 16)
+                    | ((candidates[baseIndex + 2] & 0xFF) << 8)
+                    | (candidates[baseIndex + 3] & 0xFF);
 
-            boolean valid = true;
-
-            // Check Top Constraint
-            if (constraints[0] != -1) {
-                if (cTop != constraints[0]) {
-                    valid = false;
-                }
-            }
-
-            // Check Right Constraint
-            if (valid && constraints[1] != -1) {
-                if (cRight != constraints[1]) {
-                    valid = false;
-                }
-            }
-
-            // Check Bottom Constraint
-            if (valid && constraints[2] != -1) {
-                if (cBottom != constraints[2]) {
-                    valid = false;
-                }
-            }
-
-            // Check Left Constraint
-            if (valid && constraints[3] != -1) {
-                if (cLeft != constraints[3]) {
-                    valid = false;
-                }
-            }
-
-            results[i] = valid ? 1 : 0;
+            results[i] = ((packedCandidate & mask) == packedConstraints) ? 1 : 0;
         }
     }
 }

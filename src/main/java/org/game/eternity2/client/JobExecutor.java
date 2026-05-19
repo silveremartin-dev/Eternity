@@ -23,6 +23,8 @@
  */
 package org.game.eternity2.client;
 
+import org.game.eternity2.solver.HybridSolver;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.game.eternity2.model.BoardPrimitive;
@@ -59,6 +61,7 @@ public class JobExecutor {
         this.statistics = statistics;
         this.allPieces = PuzzleLoaderWriter.generateEternity2Pieces();
         this.hybridSolver = new HybridSolver();
+        this.hybridSolver.setStatistics(statistics);
         try {
             this.gpuSolver = new GPUEternitySolver(1024);
         } catch (Throwable e) {
@@ -80,6 +83,7 @@ public class JobExecutor {
     public BoardPrimitive executeJob(Job job) {
         cancelled = false;
         long startTime = System.currentTimeMillis();
+        long startBacktracks = hybridSolver.getTotalBacktracks();
 
         BoardPrimitive board = job.getInitialBoard();
         logger.info("Starting job {}: Hybrid solving mode", job.getJobId());
@@ -87,13 +91,22 @@ public class JobExecutor {
         BoardPrimitive result = hybridSolver.computeTessellation(board);
 
         long elapsed = System.currentTimeMillis() - startTime;
+        long backtracksDone = hybridSolver.getTotalBacktracks() - startBacktracks;
+        
         statistics.addComputeTime(elapsed);
+        statistics.addBacktracks(backtracksDone);
         statistics.incrementJobsCompleted();
+        
+        // Update PPS based on backtracks for hybrid engine
+        if (elapsed > 0) {
+            int pps = (int) (backtracksDone * 1000 / elapsed);
+            statistics.setPiecesPerSecond(pps);
+        }
 
         if (result != null) {
             statistics.updateBestBoard(result);
-            logger.info("Job {} completed: score={}, time={}ms",
-                    job.getJobId(), result.computeScore(), elapsed);
+            logger.info("Job {} completed: score={}, pps={}, time={}ms",
+                    job.getJobId(), result.computeScore(), statistics.getPiecesPerSecond(), elapsed);
         } else {
             logger.info("Job {} completed: no full solution found, time={}ms", job.getJobId(), elapsed);
         }

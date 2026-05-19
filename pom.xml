@@ -383,7 +383,8 @@
                 </configuration>
             </plugin>
 
-            <!-- Jacoco for test coverage -->
+            <!-- Jacoco disabled temporarily due to Java 25 class version (69) incompatibility in preview builds -->
+            <!--
             <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
@@ -403,6 +404,7 @@
                     </execution>
                 </executions>
             </plugin>
+            -->
 
             <!-- Javadoc plugin -->
             <plugin>

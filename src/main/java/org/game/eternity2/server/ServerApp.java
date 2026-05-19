@@ -99,20 +99,60 @@ public class ServerApp extends Application {
         statusBar.setPadding(new Insets(5));
 
         // Configuration Panel
+        // Configuration Panel
         Label configTitle = new Label("Configuration");
         configTitle.setStyle("-fx-font-weight: bold;");
         ComboBox<String> puzzleCombo = new ComboBox<>();
-        puzzleCombo.getItems().addAll("Eternity II (16x16)", "Demo 4x4", "Training 6x6", "Custom (.json)");
+        
+        // Dynamic scanning of resources
+        java.io.File puzzlesDir = new java.io.File("src/main/resources/puzzles/");
+        refreshPuzzleList(puzzleCombo, puzzlesDir);
+        
+        puzzleCombo.getItems().add("Custom (.json)");
         puzzleCombo.getSelectionModel().select(0);
 
         browseBtn = new Button("Browse...");
         browseBtn.setDisable(true);
-        selectedFileLabel = new Label("Official 16x16");
+        selectedFileLabel = new Label("Selected: " + puzzleCombo.getValue());
+
+        Button consolidateBtn = new Button("Consolidate All");
+        consolidateBtn.setStyle("-fx-base: #e1f5fe;");
+        consolidateBtn.setOnAction(e -> {
+            try {
+                org.game.eternity2.io.PuzzleLoaderWriter.consolidateResources(puzzlesDir.toPath());
+                refreshPuzzleList(puzzleCombo, puzzlesDir);
+                new Alert(Alert.AlertType.INFORMATION, "Consolidation complete! Legacy files merged into JSON.").show();
+            } catch (Exception ex) {
+                new Alert(Alert.AlertType.ERROR, "Consolidation failed: " + ex.getMessage()).show();
+            }
+        });
+
+        Button saveBestBtn = new Button("Save Best Solution");
+        saveBestBtn.setStyle("-fx-base: #e8f5e9;");
+        saveBestBtn.setOnAction(e -> {
+            org.game.eternity2.model.BoardPrimitive best = server.getMasterBoard();
+            if (best == null || best.computeScore() == 0) {
+                new Alert(Alert.AlertType.WARNING, "No solution found yet to save.").show();
+                return;
+            }
+            javafx.stage.FileChooser fileChooser = new javafx.stage.FileChooser();
+            fileChooser.setTitle("Save Current Best Solution");
+            fileChooser.setInitialFileName("puzzle_" + puzzleCombo.getValue() + "_best.json");
+            java.io.File file = fileChooser.showSaveDialog(primaryStage);
+            if (file != null) {
+                try {
+                    org.game.eternity2.io.PuzzleLoaderWriter.saveUnifiedSolution(file.toPath(), best, 22); // Assuming 22 patterns for E2
+                    new Alert(Alert.AlertType.INFORMATION, "Best solution saved to " + file.getName()).show();
+                } catch (Exception ex) {
+                    new Alert(Alert.AlertType.ERROR, "Save failed: " + ex.getMessage()).show();
+                }
+            }
+        });
 
         puzzleCombo.setOnAction(e -> {
             boolean isCustom = "Custom (.json)".equals(puzzleCombo.getValue());
             browseBtn.setDisable(!isCustom);
-            selectedFileLabel.setText(isCustom ? "No file selected" : puzzleCombo.getValue());
+            selectedFileLabel.setText(isCustom ? "No file selected" : "Selected: " + puzzleCombo.getValue());
         });
 
         browseBtn.setOnAction(e -> {
@@ -122,7 +162,9 @@ public class ServerApp extends Application {
             if (selectedPuzzleFile != null) selectedFileLabel.setText(selectedPuzzleFile.getName());
         });
 
-        VBox configPanel = new VBox(8, configTitle, new HBox(10, puzzleCombo, browseBtn, selectedFileLabel));
+        VBox configPanel = new VBox(8, configTitle, 
+            new HBox(10, puzzleCombo, browseBtn, selectedFileLabel),
+            new HBox(10, consolidateBtn, saveBestBtn));
         configPanel.setPadding(new Insets(10));
         configPanel.setStyle("-fx-background-color: #fff3e0; -fx-border-color: #ff9800;");
 
@@ -159,26 +201,46 @@ public class ServerApp extends Application {
         startBtn.setOnAction(e -> {
             startTimeMillis = System.currentTimeMillis();
             String selectedPuzzle = puzzleCombo.getValue();
-            int x = 16, y = 16;
-            long[] pieces = null;
-
+            
             try {
+                org.game.eternity2.model.UnifiedPuzzle up;
                 if ("Custom (.json)".equals(selectedPuzzle)) {
                     if (selectedPuzzleFile == null) return;
-                    pieces = org.game.eternity2.io.PuzzleLoaderWriter.loadPieces(selectedPuzzleFile.toPath());
-                    if (pieces.length == 16) { x = 4; y = 4; }
-                    else if (pieces.length == 36) { x = 6; y = 6; }
+                    try {
+                        up = org.game.eternity2.io.PuzzleLoaderWriter.loadUnified(selectedPuzzleFile.toPath());
+                    } catch (Exception ex) {
+                        long[] pieces = org.game.eternity2.io.PuzzleLoaderWriter.loadPieces(selectedPuzzleFile.toPath());
+                        up = new org.game.eternity2.model.UnifiedPuzzle();
+                        up.pieces = new java.util.ArrayList<>();
+                        for (long p : pieces) {
+                            up.pieces.add(new org.game.eternity2.model.UnifiedPuzzle.PieceData(
+                                org.game.eternity2.model.PiecePrimitive.getId(p),
+                                org.game.eternity2.model.PiecePrimitive.getTop(p),
+                                org.game.eternity2.model.PiecePrimitive.getRight(p),
+                                org.game.eternity2.model.PiecePrimitive.getBottom(p),
+                                org.game.eternity2.model.PiecePrimitive.getLeft(p)
+                            ));
+                        }
+                        if (pieces.length == 16) { up.width = 4; up.height = 4; }
+                        else if (pieces.length == 256) { up.width = 16; up.height = 16; }
+                    }
                 } else {
-                    String resourcePath = "/puzzles/puzzle_16x16_eternity2.json";
-                    if (selectedPuzzle.contains("4x4")) { resourcePath = "/puzzles/puzzle_4x4_demo.json"; x = 4; y = 4; }
-                    else if (selectedPuzzle.contains("6x6")) { resourcePath = "/puzzles/puzzle_6x6_training.json"; x = 6; y = 6; }
-                    pieces = org.game.eternity2.io.PuzzleLoaderWriter.loadPiecesFromResource(resourcePath);
+                    up = org.game.eternity2.io.PuzzleLoaderWriter.loadSmart(selectedPuzzle);
                 }
-            } catch (Exception ex) { ex.printStackTrace(); return; }
 
-            server.initializeGame(x, y, "Scanline", new java.util.ArrayList<>(), pieces);
-            server.startServer();
-            updateStatus(true);
+                long[] pieces = org.game.eternity2.io.PuzzleLoaderWriter.toPrimitives(up);
+                java.util.List<org.game.eternity2.model.Hint> hints = new java.util.ArrayList<>();
+                for (org.game.eternity2.model.UnifiedPuzzle.HintData hd : up.hints) {
+                    hints.add(new org.game.eternity2.model.Hint(hd.x, hd.y, hd.pieceId, hd.rotation));
+                }
+
+                server.initializeGame(up.width, up.height, "Scanline", hints, pieces);
+                server.startServer();
+                updateStatus(true);
+            } catch (Exception ex) { 
+                ex.printStackTrace(); 
+                javafx.application.Platform.runLater(() -> logArea.appendText("Error loading puzzle: " + ex.getMessage() + "\n"));
+            }
         });
 
         stopBtn.setOnAction(e -> {
@@ -194,11 +256,12 @@ public class ServerApp extends Application {
 
         // Board Display
         boardDisplay = new GridPane();
-        boardDisplay.setStyle("-fx-background-color: #1a1a2e;");
+        boardDisplay.setStyle("-fx-background-color: #eeeeee;");
         javafx.scene.Group boardGroup = new javafx.scene.Group(boardDisplay);
         boardScroll = new ScrollPane(boardGroup);
         boardScroll.setFitToWidth(true);
         boardScroll.setFitToHeight(true);
+        boardScroll.setStyle("-fx-background: #eeeeee;");
         
         boardScroll.setOnScroll(e -> {
             if (e.isControlDown()) {
@@ -297,5 +360,28 @@ public class ServerApp extends Application {
     public static void main(String[] args) {
         System.setProperty("appType", "server");
         launch(args);
+    }
+
+    private void refreshPuzzleList(ComboBox<String> combo, java.io.File dir) {
+        combo.getItems().clear();
+        if (dir.exists()) {
+            java.io.File[] files = dir.listFiles((d, name) -> name.endsWith(".json"));
+            if (files != null) {
+                for (java.io.File f : files) {
+                    String name = f.getName().replace(".json", "");
+                    if (!combo.getItems().contains(name)) combo.getItems().add(name);
+                }
+            }
+            java.io.File[] legacy = dir.listFiles((d, name) -> name.endsWith(".puzzle"));
+            if (legacy != null) {
+                for (java.io.File f : legacy) {
+                    String name = f.getName().replace(".puzzle", "");
+                    if (!combo.getItems().contains(name)) combo.getItems().add(name);
+                }
+            }
+        }
+        if (combo.getItems().isEmpty()) {
+            combo.getItems().addAll("16x16_eternity2", "4x4_demo", "6x6_training");
+        }
     }
 }

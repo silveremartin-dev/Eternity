@@ -92,7 +92,7 @@ public class EternityClient {
 
     private void connectGrpc() {
         // Virtual Thread for gRPC client connection
-        Thread.ofVirtual().name("grpc-client-connection").start(() -> {
+        Thread.ofVirtual().start(() -> {
             try {
                 if (ui != null)
                     ui.log("Connecting to gRPC server at " + DEFAULT_SERVER_IP + ":" + DEFAULT_GRPC_PORT + "...");
@@ -122,7 +122,7 @@ public class EternityClient {
 
     private void connectSocket() {
         // Virtual Thread for client connection (lightweight, non-blocking)
-        Thread.ofVirtual().name("client-connection").start(() -> {
+        Thread.ofVirtual().start(() -> {
             try {
                 if (ui != null)
                     ui.log("Connecting to " + DEFAULT_SERVER_IP + ":" + DEFAULT_PORT + "...");
@@ -169,7 +169,7 @@ public class EternityClient {
     }
 
     private void startStatisticsReporter() {
-        Thread.ofVirtual().name("stats-reporter").start(() -> {
+        Thread.ofVirtual().start(() -> {
             while (isConnected) {
                 try {
                     Thread.sleep(2000); // Every 2 seconds
@@ -253,7 +253,7 @@ public class EternityClient {
                     }
 
                     // Process job in Virtual Thread (lightweight background processing)
-                    Thread.ofVirtual().name("job-executor-" + job.getJobId()).start(() -> {
+                    Thread.ofVirtual().start(() -> {
                         try {
                             BoardPrimitive result = executor.executeJob(job);
 

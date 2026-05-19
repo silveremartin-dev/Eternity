@@ -86,7 +86,7 @@ public class EternityServer {
         this.statistics = new ServerStatistics();
 
         // Start throughput reporter
-        Thread throughputThread = Thread.ofVirtual().name("throughput-reporter").unstarted(() -> {
+        Thread throughputThread = new Thread(() -> {
             while (true) {
                 try {
                     Thread.sleep(1000);
@@ -119,6 +119,10 @@ public class EternityServer {
         } catch (Exception e) {
             logger.warn("Redis not available. Constraint Cache will be disabled.", e);
         }
+    }
+ 
+    public boolean isRunning() {
+        return isRunning;
     }
 
     public void initializeGame(int sizeX, int sizeY, String strategyName, List<Hint> hints, long[] pieces) {
@@ -169,15 +173,15 @@ public class EternityServer {
         }
         isRunning = true;
 
-        // Virtual Threads executor - unlimited concurrency with minimal overhead
-        clientExecutor = Executors.newVirtualThreadPerTaskExecutor();
-
-        // Accept loop in Virtual Thread (non-blocking for other work)
-        Thread acceptThread = Thread.ofVirtual().name("server-accept").unstarted(() -> {
+        // Virtual thread per task executor
+        this.clientExecutor = Executors.newVirtualThreadPerTaskExecutor();
+        this.isRunning = true;
+        
+        Thread serverThread = new Thread(() -> {
             try {
                 serverSocket = new ServerSocket(port);
                 if (gui != null) {
-                    gui.log(timestamp() + " Server started on port " + port + " (Virtual Threads)");
+                    gui.log(timestamp() + " Server started on port " + port + " (Fixed Thread Pool)");
                     gui.setServerStatus(true);
                 }
                 while (isRunning) {
@@ -211,8 +215,8 @@ public class EternityServer {
                 stopServer();
             }
         });
-        acceptThread.setDaemon(true);
-        acceptThread.start();
+        serverThread.setDaemon(true);
+        serverThread.start();
 
         // Start gRPC Server
         try {
@@ -239,9 +243,9 @@ public class EternityServer {
             if (serverSocket != null && !serverSocket.isClosed()) {
                 serverSocket.close();
             }
-            if (clientExecutor != null) {
-                clientExecutor.close(); // Close Virtual Thread executor (graceful shutdown)
-            }
+            if (clientExecutor != null) clientExecutor.shutdown();
+            // Close Virtual Thread executor (graceful shutdown)
+            
             if (webSocketServer != null) {
                 try {
                     webSocketServer.stop();

@@ -14,12 +14,17 @@ public class StochasticRefinement {
     private final int height;
     private final Random random;
     private long[] board;
+    private org.game.eternity2.client.ClientStatistics statistics;
 
     public StochasticRefinement(int width, int height) {
         this.width = width;
         this.height = height;
         this.random = new Random();
         this.board = new long[width * height];
+    }
+
+    public void setStatistics(org.game.eternity2.client.ClientStatistics stats) {
+        this.statistics = stats;
     }
 
     public void initializeRandom(long[] allPieces) {
@@ -34,6 +39,20 @@ public class StochasticRefinement {
         System.arraycopy(shuffled, 0, board, 0, Math.min(shuffled.length, board.length));
     }
 
+    public void initializeFromBoard(BoardPrimitive initialBoard, long[] allPieces) {
+        for (int i = 0; i < board.length; i++) {
+            board[i] = initialBoard.getPiece(i % width, i / width);
+        }
+    }
+
+    public BoardPrimitive getBestBoard() {
+        BoardPrimitive res = new BoardPrimitive(width, height);
+        for (int i = 0; i < board.length; i++) {
+            res.placePiece(i % width, i / width, board[i]);
+        }
+        return res;
+    }
+
     /**
      * Perform local search to minimize mismatches.
      */
@@ -41,6 +60,10 @@ public class StochasticRefinement {
         int currentMismatches = countMismatches();
         
         for (int i = 0; i < maxIterations; i++) {
+            if (statistics != null && i % 10000 == 0) {
+                statistics.addBacktracks(10000);
+            }
+
             // Pick two random positions
             int p1 = random.nextInt(board.length);
             int p2 = random.nextInt(board.length);
@@ -49,8 +72,6 @@ public class StochasticRefinement {
             long t1 = board[p1];
             long t2 = board[p2];
             
-            // Try all rotation combinations? Too expensive.
-            // Just swap and maybe rotate one randomly.
             board[p1] = t2;
             board[p2] = t1;
             
@@ -58,6 +79,7 @@ public class StochasticRefinement {
             
             if (newMismatches < currentMismatches) {
                 currentMismatches = newMismatches;
+                if (statistics != null) statistics.updateBestBoard(getBestBoard());
                 if (i % 1000 == 0) {
                     System.out.println("Iteration " + i + ", Mismatches: " + currentMismatches);
                 }

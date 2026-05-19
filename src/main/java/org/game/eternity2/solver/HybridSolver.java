@@ -19,24 +19,39 @@ public class HybridSolver implements EternitySolverInterface {
         this.stochastic = new StochasticRefinement(16, 16);
     }
 
+    public void setStatistics(org.game.eternity2.client.ClientStatistics stats) {
+        backtracker.setStatistics(stats);
+        stochastic.setStatistics(stats);
+    }
+
     @Override
     public BoardPrimitive computeTessellation(BoardPrimitive startingBoard) {
         System.out.println("Starting Hybrid Solver Search...");
         
-        // 1. Try backtracking for a limited time/iterations
+        // 1. Try backtracking
         backtracker.loadState(startingBoard);
-        backtracker.solve(); // Runs until exhausted or best score found
+        backtracker.solve(); 
 
+        BoardPrimitive bestBacktrack = backtracker.getBestBoard();
         int backtrackingBest = backtracker.getBestScore();
         System.out.println("Backtracking finished. Best score: " + backtrackingBest);
 
-        // 2. If not solved, try stochastic refinement around the best configuration
-        if (backtrackingBest < 256) {
+        // 2. Stochastic refinement
+        if (backtrackingBest < (startingBoard.getWidth() * startingBoard.getHeight())) {
             System.out.println("Switching to Stochastic Refinement...");
-            stochastic.initializeRandom(allPieces);
-            stochastic.refine(1000000); // 1M iterations of local search
+            stochastic.initializeFromBoard(bestBacktrack, allPieces);
+            stochastic.refine(1000000); 
+            
+            BoardPrimitive bestStochastic = stochastic.getBestBoard();
+            if (bestStochastic.computeScore() > backtrackingBest) {
+                return bestStochastic;
+            }
         }
 
-        return null; // The actual results are stored in stats and logs for now
+        return bestBacktrack;
+    }
+
+    public long getTotalBacktracks() {
+        return backtracker.getIterations();
     }
 }

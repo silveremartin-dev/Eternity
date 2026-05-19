@@ -60,6 +60,11 @@ public class PuzzleDesigner extends Stage {
     private int sizeX = 16;
     private int sizeY = 16;
     private double cellSize = 30;
+    private Spinner<Integer> patternSpinner;
+    private ListView<Long> pieceListView;
+    private List<Long> pieceLibrary = new ArrayList<>();
+    private double zoomFactor = 1.0;
+    private GridPane motifsGrid;
 
     public PuzzleDesigner() {
         setTitle("Eternity II - Puzzle Designer");
@@ -71,10 +76,12 @@ public class PuzzleDesigner extends Stage {
 
         BorderPane root = new BorderPane();
         root.setPadding(new Insets(10));
+        root.setStyle("-fx-background-color: #f4f4f4;");
 
         // Toolbar
         HBox toolbar = new HBox(10);
-        toolbar.setPadding(new Insets(0, 0, 10, 0));
+        toolbar.setPadding(new Insets(5));
+        toolbar.setStyle("-fx-background-color: #e8e8e8; -fx-border-color: #cccccc; -fx-border-width: 0 0 1px 0;");
 
         ComboBox<String> sizeCombo = new ComboBox<>();
         sizeCombo.getItems().addAll("4x4", "6x6", "12x6", "16x16");
@@ -93,79 +100,49 @@ public class PuzzleDesigner extends Stage {
         Button saveBtn = new Button("Save Design");
         saveBtn.setOnAction(e -> saveDesign());
 
-        Spinner<Integer> patternSpinner = new Spinner<>(2, 22, 22);
-        patternSpinner.setPrefWidth(60);
-        this.patternSpinner = patternSpinner;
+        this.patternSpinner = new Spinner<>(2, 256, 22);
+        patternSpinner.setPrefWidth(80);
+        patternSpinner.valueProperty().addListener((obs, oldVal, newVal) -> refreshMotifsDisplay());
 
         Button generateBtn = new Button("Generate Random");
         generateBtn.setOnAction(e -> generateRandomPuzzle());
 
-        Button hintBtn = new Button("Add Hint (ID)");
-        hintBtn.setOnAction(e -> {
-            TextInputDialog dialog = new TextInputDialog("1,0,0,0");
-            dialog.setTitle("Add Hint by Piece ID");
-            dialog.setHeaderText("Enter Piece ID, Rotation, Row, Col");
-            dialog.setContentText("Format: ID,Rot,Row,Col (e.g. 1,0,5,5):");
-            dialog.showAndWait().ifPresent(result -> {
-                try {
-                    String[] parts = result.split(",");
-                    if (parts.length == 4) {
-                        int id = Integer.parseInt(parts[0].trim());
-                        int rot = Integer.parseInt(parts[1].trim());
-                        int row = Integer.parseInt(parts[2].trim());
-                        int col = Integer.parseInt(parts[3].trim());
-                        hints.add(new Hint(row, col, id, rot));
-                        drawGrid();
-                    }
-                } catch (Exception ex) {}
-            });
-        });
-
-        toolbar.getChildren().addAll(new Label("Size:"), sizeCombo, new Label("Patterns:"), patternSpinner, clearBtn, generateBtn, hintBtn, loadBtn, saveBtn);
+        toolbar.getChildren().addAll(new Label("Size:"), sizeCombo, new Label("Patterns:"), patternSpinner, clearBtn, generateBtn, loadBtn, saveBtn);
         root.setTop(toolbar);
 
-        // Canvas
+        // Main Content Area with SplitPane
+        SplitPane splitPane = new SplitPane();
+        
+        // Canvas (Left)
         boardCanvas = new Canvas(sizeX * cellSize, sizeY * cellSize);
         boardCanvas.setOnMouseClicked(e -> handleMouseClick(e.getX(), e.getY()));
-        ScrollPane scrollPane = new ScrollPane(boardCanvas);
-        root.setCenter(scrollPane);
-
-        // Piece Library / Palette
-        VBox rightPanel = new VBox(10);
+        setupDragAndDrop();
+        
+        ScrollPane boardScroll = new ScrollPane(boardCanvas);
+        boardScroll.setStyle("-fx-background: #ffffff;");
+        
+        // Piece Library & Details (Right)
+        VBox rightPanel = new VBox(15);
         rightPanel.setPadding(new Insets(10));
-        rightPanel.setPrefWidth(250);
-        rightPanel.setStyle("-fx-background-color: #f0f0f0; -fx-border-color: #cccccc;");
-
+        rightPanel.setMinWidth(300);
+        
         Label paletteTitle = new Label("Piece Library");
         paletteTitle.setStyle("-fx-font-weight: bold; -fx-font-size: 14px;");
 
         pieceListView = new ListView<>();
-        pieceListView.setPrefHeight(300);
-        pieceListView.setCellFactory(lv -> new ListCell<Long>() {
-            @Override
-            protected void updateItem(Long piece, boolean empty) {
-                super.updateItem(piece, empty);
-                if (empty || piece == null) {
-                    setText(null);
-                } else {
-                    setText(String.format("ID: %d (%d/%d/%d/%d)", 
-                        PiecePrimitive.getId(piece),
-                        PiecePrimitive.getTop(piece), PiecePrimitive.getRight(piece),
-                        PiecePrimitive.getBottom(piece), PiecePrimitive.getLeft(piece)));
-                }
-            }
-        });
+        pieceListView.setPrefHeight(400);
+        setupPieceListView();
 
-        Button addPieceBtn = new Button("Add Piece");
+        Button addPieceBtn = new Button("Add");
         addPieceBtn.setOnAction(e -> showPieceDialog(null));
         
-        Button editPieceBtn = new Button("Edit Piece");
+        Button editPieceBtn = new Button("Edit");
         editPieceBtn.setOnAction(e -> {
             Long selected = pieceListView.getSelectionModel().getSelectedItem();
             if (selected != null) showPieceDialog(selected);
         });
 
-        Button removePieceBtn = new Button("Remove Piece");
+        Button removePieceBtn = new Button("Remove");
         removePieceBtn.setOnAction(e -> {
             Long selected = pieceListView.getSelectionModel().getSelectedItem();
             if (selected != null) {
@@ -175,51 +152,140 @@ public class PuzzleDesigner extends Stage {
         });
 
         HBox pieceOps = new HBox(5, addPieceBtn, editPieceBtn, removePieceBtn);
+        pieceOps.setPadding(new Insets(5, 0, 5, 0));
 
-        VBox motifsPanel = new VBox(5);
-        addMotifsDisplay(motifsPanel);
+        // Piece Detail Panel (New)
+        VBox detailPanel = new VBox(5);
+        detailPanel.setStyle("-fx-border-color: #cccccc; -fx-padding: 10; -fx-background-color: #ffffff;");
+        Label detailTitle = new Label("Selected Piece Details:");
+        detailTitle.setStyle("-fx-font-weight: bold;");
+        HBox detailVisual = new HBox(10);
+        detailVisual.setMinHeight(80);
+        detailPanel.getChildren().addAll(detailTitle, detailVisual);
+        
+        pieceListView.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> updateDetailPanel(detailVisual, newVal));
 
-        rightPanel.getChildren().addAll(paletteTitle, pieceListView, pieceOps, new Label("Click grid to place piece"), motifsPanel);
-        root.setRight(rightPanel);
+        // Available Motifs Panel (Dynamic)
+        VBox motifsContainer = new VBox(5);
+        Label motifsTitle = new Label("Available Motifs (Patterns):");
+        motifsTitle.setStyle("-fx-font-weight: bold;");
+        ScrollPane motifsScroll = new ScrollPane();
+        motifsScroll.setPrefHeight(200);
+        GridPane motifsGrid = new GridPane();
+        motifsGrid.setHgap(3);
+        motifsGrid.setVgap(3);
+        motifsScroll.setContent(motifsGrid);
+        motifsContainer.getChildren().addAll(motifsTitle, motifsScroll);
 
-        Scene scene = new Scene(root, 1200, 850);
+        rightPanel.getChildren().addAll(paletteTitle, pieceListView, pieceOps, detailPanel, motifsContainer);
+        
+        splitPane.getItems().addAll(boardScroll, rightPanel);
+        splitPane.setDividerPositions(0.7); // 70% for the grid
+
+        root.setCenter(splitPane);
+
+        Scene scene = new Scene(root, 1300, 900);
         setScene(scene);
-
-        // Add Zoom support
-        boardCanvas.setOnScroll(e -> {
-            if (e.isControlDown()) {
-                double delta = e.getDeltaY();
-                if (delta > 0) zoomFactor *= 1.1;
-                else zoomFactor /= 1.1;
-                boardCanvas.setScaleX(zoomFactor);
-                boardCanvas.setScaleY(zoomFactor);
-                e.consume();
-            }
-        });
-
+        
+        this.motifsGrid = motifsGrid; // Store reference
+        refreshMotifsDisplay();
         drawGrid();
     }
 
-    private void addMotifsDisplay(VBox parent) {
-        Label motifsTitle = new Label("Available Motifs (Patterns):");
-        motifsTitle.setStyle("-fx-font-weight: bold;");
-        
-        GridPane motifsGrid = new GridPane();
-        motifsGrid.setHgap(5);
-        motifsGrid.setVgap(5);
-        motifsGrid.setPadding(new Insets(5));
-        
-        for (int i = 0; i < 23; i++) {
-            javafx.scene.canvas.Canvas motifCanvas = new javafx.scene.canvas.Canvas(30, 30);
-            javafx.scene.canvas.GraphicsContext gc = motifCanvas.getGraphicsContext2D();
-            org.game.eternity2.util.BoardRenderer.drawTriangle(gc, i, 0, 30); 
-            
-            int row = i / 6;
-            int col = i % 6;
-            motifsGrid.add(motifCanvas, col, row);
-            Tooltip.install(motifCanvas, new Tooltip("Pattern ID: " + i + " (" + org.game.eternity2.util.BoardRenderer.PATTERN_NAMES[i] + ")"));
+    private void refreshMotifsDisplay() {
+        if (motifsGrid == null) return;
+        motifsGrid.getChildren().clear();
+        int count = patternSpinner.getValue();
+        for (int i = 0; i < count; i++) {
+            Canvas m = new Canvas(25, 25);
+            GraphicsContext gc = m.getGraphicsContext2D();
+            org.game.eternity2.util.BoardRenderer.drawTriangle(gc, i, 0, 25);
+            int row = i / 8;
+            int col = i % 8;
+            motifsGrid.add(m, col, row);
+            Tooltip.install(m, new Tooltip("ID: " + i));
         }
-        parent.getChildren().addAll(motifsTitle, motifsGrid);
+    }
+
+    private void updateDetailPanel(HBox container, Long piece) {
+        container.getChildren().clear();
+        if (piece == null) return;
+        int[] sides = {
+            PiecePrimitive.getTop(piece),
+            PiecePrimitive.getRight(piece),
+            PiecePrimitive.getBottom(piece),
+            PiecePrimitive.getLeft(piece)
+        };
+        for (int side : sides) {
+            VBox box = new VBox(2);
+            Canvas c = new Canvas(40, 40);
+            org.game.eternity2.util.BoardRenderer.drawTriangle(c.getGraphicsContext2D(), side, 0, 40);
+            box.getChildren().addAll(c, new Label("ID: " + side));
+            container.getChildren().add(box);
+        }
+    }
+
+    private void setupDragAndDrop() {
+        pieceListView.setOnDragDetected(event -> {
+            Long selected = pieceListView.getSelectionModel().getSelectedItem();
+            if (selected != null) {
+                javafx.scene.input.Dragboard db = pieceListView.startDragAndDrop(javafx.scene.input.TransferMode.COPY);
+                javafx.scene.input.ClipboardContent content = new javafx.scene.input.ClipboardContent();
+                content.putString(selected.toString());
+                db.setContent(content);
+                event.consume();
+            }
+        });
+
+        boardCanvas.setOnDragOver(event -> {
+            if (event.getGestureSource() != boardCanvas && event.getDragboard().hasString()) {
+                event.acceptTransferModes(javafx.scene.input.TransferMode.COPY);
+            }
+            event.consume();
+        });
+
+        boardCanvas.setOnDragDropped(event -> {
+            javafx.scene.input.Dragboard db = event.getDragboard();
+            boolean success = false;
+            if (db.hasString()) {
+                try {
+                    long piece = Long.parseLong(db.getString());
+                    int col = (int) (event.getX() / (cellSize * zoomFactor));
+                    int row = (int) (event.getY() / (cellSize * zoomFactor));
+                    if (col >= 0 && col < sizeX && row >= 0 && row < sizeY) {
+                        hints.removeIf(h -> h.row() == row && h.col() == col);
+                        hints.add(new Hint(row, col, PiecePrimitive.getId(piece), PiecePrimitive.getRotation(piece)));
+                        drawGrid();
+                        success = true;
+                    }
+                } catch (Exception e) {}
+            }
+            event.setDropCompleted(success);
+            event.consume();
+        });
+    }
+
+    private void setupPieceListView() {
+        pieceListView.setCellFactory(lv -> new ListCell<Long>() {
+            @Override
+            protected void updateItem(Long piece, boolean empty) {
+                super.updateItem(piece, empty);
+                if (empty || piece == null) {
+                    setText(null);
+                    setGraphic(null);
+                } else {
+                    setText(String.format("ID: %3d (%d,%d,%d,%d)", 
+                        PiecePrimitive.getId(piece),
+                        PiecePrimitive.getTop(piece), PiecePrimitive.getRight(piece),
+                        PiecePrimitive.getBottom(piece), PiecePrimitive.getLeft(piece)));
+                    
+                    // Small preview icon
+                    Canvas preview = new Canvas(20, 20);
+                    org.game.eternity2.util.BoardRenderer.drawTriangle(preview.getGraphicsContext2D(), PiecePrimitive.getTop(piece), 0, 20);
+                    setGraphic(preview);
+                }
+            }
+        });
     }
 
     private void handleMouseClick(double x, double y) {
@@ -405,83 +471,99 @@ public class PuzzleDesigner extends Stage {
         gc.clearRect(0, 0, boardCanvas.getWidth(), boardCanvas.getHeight());
 
         for (Hint hint : hints) {
-            gc.setFill(Color.LIGHTBLUE);
-            gc.fillRect(hint.col() * cellSize, hint.row() * cellSize, cellSize, cellSize);
-            gc.setFill(Color.BLACK);
-            gc.fillText(hint.tileId() + "", hint.col() * cellSize + 5, hint.row() * cellSize + 15);
-            gc.fillText("r" + hint.rotation(), hint.col() * cellSize + 5, hint.row() * cellSize + 25);
+            double x = hint.col() * cellSize;
+            double y = hint.row() * cellSize;
+            
+            // Find piece in library to draw it properly
+            long piece = 0;
+            for (long p : pieceLibrary) {
+                if (org.game.eternity2.model.PiecePrimitive.getId(p) == hint.tileId()) {
+                    piece = p;
+                    for (int i = 0; i < hint.rotation(); i++) piece = org.game.eternity2.model.PiecePrimitive.rotateCW(piece);
+                    break;
+                }
+            }
+
+            if (piece != 0) {
+                // Draw actual motifs if piece is found
+                org.game.eternity2.util.BoardRenderer.drawPiece(gc, piece, (int)x, (int)y, (int)cellSize);
+            } else {
+                // Fallback for unknown pieces
+                gc.setFill(Color.LIGHTBLUE);
+                gc.fillRect(x, y, cellSize, cellSize);
+                gc.setFill(Color.BLACK);
+                gc.fillText(String.valueOf(hint.tileId()), x + 5, y + 15);
+            }
         }
 
-        gc.setStroke(Color.GRAY);
-        gc.setLineWidth(1);
-
-        for (int x = 0; x <= sizeX; x++) {
-            gc.strokeLine(x * cellSize, 0, x * cellSize, sizeY * cellSize);
-        }
-        for (int y = 0; y <= sizeY; y++) {
-            gc.strokeLine(0, y * cellSize, sizeX * cellSize, y * cellSize);
-        }
+        gc.setStroke(Color.LIGHTGRAY);
+        gc.setLineWidth(0.5);
+        for (int x = 0; x <= sizeX; x++) gc.strokeLine(x * cellSize, 0, x * cellSize, sizeY * cellSize);
+        for (int y = 0; y <= sizeY; y++) gc.strokeLine(0, y * cellSize, sizeX * cellSize, y * cellSize);
     }
 
     private void saveDesign() {
         javafx.stage.FileChooser fileChooser = new javafx.stage.FileChooser();
-        fileChooser.setTitle("Save Puzzle Design");
+        fileChooser.setTitle("Save Unified Design");
         fileChooser.setInitialDirectory(new File("."));
-        fileChooser.getExtensionFilters().add(new javafx.stage.FileChooser.ExtensionFilter("Puzzle Files", "*.json"));
+        fileChooser.getExtensionFilters().add(new javafx.stage.FileChooser.ExtensionFilter("Unified Puzzle", "*.json"));
         File file = fileChooser.showSaveDialog(this);
 
         if (file != null) {
             try {
-                org.game.eternity2.model.BoardPrimitive board = new org.game.eternity2.model.BoardPrimitive(sizeX, sizeY);
-                for (Hint h : hints) {
-                    long piece = org.game.eternity2.model.PiecePrimitive.create(h.tileId(), 1, 1, 1, 1);
-                    for (int i = 0; i < h.rotation(); i++) {
-                        piece = org.game.eternity2.model.PiecePrimitive.rotateCW(piece);
-                    }
-                    board.placePiece(h.col(), h.row(), piece);
+                org.game.eternity2.model.UnifiedPuzzle up = new org.game.eternity2.model.UnifiedPuzzle();
+                up.width = sizeX;
+                up.height = sizeY;
+                up.pieces = new ArrayList<>();
+                for (long p : pieceLibrary) {
+                    up.pieces.add(new org.game.eternity2.model.UnifiedPuzzle.PieceData(
+                        org.game.eternity2.model.PiecePrimitive.getId(p),
+                        org.game.eternity2.model.PiecePrimitive.getTop(p),
+                        org.game.eternity2.model.PiecePrimitive.getRight(p),
+                        org.game.eternity2.model.PiecePrimitive.getBottom(p),
+                        org.game.eternity2.model.PiecePrimitive.getLeft(p)
+                    ));
                 }
-                org.game.eternity2.io.PuzzleLoaderWriter.saveSolution(file.toPath(), board);
-                Alert alert = new Alert(Alert.AlertType.INFORMATION);
-                alert.setTitle("Success");
-                alert.showAndWait();
+                up.hints = new ArrayList<>();
+                for (Hint h : hints) {
+                    up.hints.add(new org.game.eternity2.model.UnifiedPuzzle.HintData(h.col(), h.row(), h.tileId(), h.rotation()));
+                }
+                org.game.eternity2.io.PuzzleLoaderWriter.saveUnified(file.toPath(), up);
+                new Alert(Alert.AlertType.INFORMATION, "Design saved successfully!").show();
             } catch (IOException ex) {
-                Alert alert = new Alert(Alert.AlertType.ERROR);
-                alert.setTitle("Error");
-                alert.showAndWait();
+                new Alert(Alert.AlertType.ERROR, "Failed to save design: " + ex.getMessage()).show();
             }
         }
     }
 
     private void loadDesign() {
         javafx.stage.FileChooser fileChooser = new javafx.stage.FileChooser();
-        fileChooser.setTitle("Load Puzzle Design");
+        fileChooser.setTitle("Load Unified Design");
         fileChooser.setInitialDirectory(new File("."));
-        fileChooser.getExtensionFilters().add(new javafx.stage.FileChooser.ExtensionFilter("Puzzle Files", "*.json"));
+        fileChooser.getExtensionFilters().add(new javafx.stage.FileChooser.ExtensionFilter("Unified Puzzle", "*.json"));
         File file = fileChooser.showOpenDialog(this);
 
         if (file != null) {
             try {
-                org.game.eternity2.model.BoardPrimitive board = org.game.eternity2.io.PuzzleLoaderWriter.loadSolution(file.toPath(), null);
-                sizeX = board.getWidth();
-                sizeY = board.getHeight();
+                org.game.eternity2.model.UnifiedPuzzle up = org.game.eternity2.io.PuzzleLoaderWriter.loadUnified(file.toPath());
+                sizeX = up.width;
+                sizeY = up.height;
                 hints.clear();
                 pieceLibrary.clear();
-                for (int y = 0; y < sizeY; y++) {
-                    for (int x = 0; x < sizeX; x++) {
-                        long piece = board.getPiece(x, y);
-                        if (piece != 0) {
-                            hints.add(new Hint(y, x, org.game.eternity2.model.PiecePrimitive.getId(piece), org.game.eternity2.model.PiecePrimitive.getRotation(piece)));
-                            if (!pieceLibrary.contains(piece)) pieceLibrary.add(piece);
-                        }
-                    }
+                
+                for (org.game.eternity2.model.UnifiedPuzzle.PieceData pd : up.pieces) {
+                    pieceLibrary.add(org.game.eternity2.model.PiecePrimitive.create(pd.id, pd.top, pd.right, pd.bottom, pd.left));
                 }
+                
+                for (org.game.eternity2.model.UnifiedPuzzle.HintData hd : up.hints) {
+                    hints.add(new Hint(hd.y, hd.x, hd.pieceId, hd.rotation));
+                }
+                
                 updatePieceList();
                 updateSize(sizeX + "x" + sizeY);
                 drawGrid();
             } catch (Exception ex) {
-                Alert alert = new Alert(Alert.AlertType.ERROR);
-                alert.setTitle("Error");
-                alert.showAndWait();
+                new Alert(Alert.AlertType.ERROR, "Failed to load design: " + ex.getMessage()).show();
             }
         }
     }

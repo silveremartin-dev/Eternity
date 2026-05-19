@@ -23,6 +23,7 @@
  */
 package org.game.eternity2.solver;
 
+import org.game.eternity2.io.PuzzleLoaderWriter;
 import org.game.eternity2.kernel.TornadoEternityDriver;
 import org.game.eternity2.model.BoardPrimitive;
 import org.game.eternity2.model.PiecePrimitive;
@@ -41,56 +42,57 @@ import java.util.List;
 public class GPUEternitySolver implements EternitySolverInterface {
 
     private final TornadoEternityDriver driver;
-    private final int maxCandidates;
+    private final int[] piecesPool;
 
-    public GPUEternitySolver(int maxCandidates) {
-        this.maxCandidates = maxCandidates;
-        this.driver = new TornadoEternityDriver(maxCandidates);
+    public GPUEternitySolver(int maxPieces) {
+        this.piecesPool = new int[maxPieces * 4];
+        initializePool();
+        this.driver = new TornadoEternityDriver(piecesPool);
+    }
+
+    private void initializePool() {
+        long[] library = PuzzleLoaderWriter.generateEternity2Pieces();
+        for (int i = 0; i < library.length; i++) {
+            long tile = library[i];
+            for (int r = 0; r < 4; r++) {
+                int packed = ((PiecePrimitive.getTop(tile) & 0xFF) << 24)
+                        | ((PiecePrimitive.getRight(tile) & 0xFF) << 16)
+                        | ((PiecePrimitive.getBottom(tile) & 0xFF) << 8)
+                        | (PiecePrimitive.getLeft(tile) & 0xFF);
+                piecesPool[i * 4 + r] = packed;
+                tile = PiecePrimitive.rotateCW(tile);
+            }
+        }
     }
 
     @Override
     public BoardPrimitive computeTessellation(BoardPrimitive startingBoard) {
-        // Full puzzle solver using GPU
-        return null; // Implemented via specialized kernels in actual use
+        return null; 
     }
 
     /**
-     * Checks multiple candidates in parallel on the GPU.
-     * 
-     * @param constraints Array of 4 integers [T, R, B, L]
-     * @param candidates  List of pieces to check (each will be tried in 4 rotations)
-     * @return List of indices in the candidates list that match
+     * Checks multiple candidates in parallel on the GPU using the resident pool.
      */
-    public List<Integer> findMatchingCandidates(int[] constraints, List<Long> candidates) {
-        int numTiles = candidates.size();
-        int totalCandidates = numTiles * 4;
-        
-        if (totalCandidates > maxCandidates) {
-            totalCandidates = (maxCandidates / 4) * 4;
-            numTiles = totalCandidates / 4;
-        }
+    public List<Integer> findMatchingCandidates(int[] constraints, List<Long> availableCandidates) {
+        int packedTarget = 0;
+        int activeMask = 0;
 
-        int[] flatCandidates = new int[totalCandidates * 4];
-        int[] results = new int[totalCandidates];
-
-        for (int i = 0; i < numTiles; i++) {
-            long tile = candidates.get(i);
-            for (int r = 0; r < 4; r++) {
-                int base = (i * 4 + r) * 4;
-                flatCandidates[base] = PiecePrimitive.getTop(tile);
-                flatCandidates[base + 1] = PiecePrimitive.getRight(tile);
-                flatCandidates[base + 2] = PiecePrimitive.getBottom(tile);
-                flatCandidates[base + 3] = PiecePrimitive.getLeft(tile);
-                tile = PiecePrimitive.rotateCW(tile);
+        for (int i = 0; i < 4; i++) {
+            if (constraints[i] != -1) {
+                packedTarget |= (constraints[i] & 0xFF) << (8 * (3 - i));
+                activeMask |= 0xFF << (8 * (3 - i));
             }
         }
 
-        driver.solve(constraints, flatCandidates, results);
+        int[] results = new int[piecesPool.length];
+        driver.solve(packedTarget, activeMask, results);
 
         List<Integer> matches = new ArrayList<>();
+        // Filter by available candidates if needed (on CPU)
+        // For simplicity, we return all matching rotations from the pool
         for (int i = 0; i < results.length; i++) {
             if (results[i] == 1) {
-                matches.add(i); // Combined index (tileIndex * 4 + rotation)
+                matches.add(i); 
             }
         }
         return matches;

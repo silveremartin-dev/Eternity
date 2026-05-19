@@ -15,7 +15,7 @@ High-performance distributed solver for the Eternity II puzzle using modern Java
  - **Hybrid Solver Engine** (Backtracking + Stochastic)
  - **84M pieces/sec** (Optimized Engine)
  - **Border Pruning** & Parity Checks
- - **Java 21** with Virtual Threads
+ - **Java 25** with Virtual Threads & TornadoVM GPU
  - **gRPC + FlatBuffers** for zero-copy communication
  - **PostgreSQL + Redis** for data and caching
  - **Prometheus Metrics** for monitoring
@@ -79,7 +79,7 @@ eternity/
 
 ## Tech Stack
 
-- Java 21 (Virtual Threads, ZGC)
+- Java 25 (Virtual Threads, ZGC, TornadoVM)
 - gRPC + FlatBuffers
 - PostgreSQL + HikariCP + Flyway
 - Redis (Lettuce client)

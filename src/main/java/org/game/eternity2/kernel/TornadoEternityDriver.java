@@ -30,7 +30,7 @@ import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 
 /**
  * Driver to execute the EternityKernel on GPU using TornadoVM.
- * Optimized for Java 21+ with Execution Plans.
+ * Optimized for Java 25 with Execution Plans.
  * 
  * @author Silvere Martin-Michiellot
  * @author Antigravity
@@ -41,33 +41,35 @@ public class TornadoEternityDriver {
     private final TaskGraph taskGraph;
     private final TornadoExecutionPlan executionPlan;
 
-    private final int[] constraints;
+    private final int[] packedConstraints;
+    private final int[] mask;
     private final int[] candidates;
     private final int[] results;
 
-    public TornadoEternityDriver(int maxCandidates) {
-        this.constraints = new int[4];
-        this.candidates = new int[maxCandidates * 4];
-        this.results = new int[maxCandidates];
+    public TornadoEternityDriver(int[] piecesPool) {
+        this.packedConstraints = new int[1];
+        this.mask = new int[1];
+        this.candidates = piecesPool;
+        this.results = new int[piecesPool.length];
 
         this.taskGraph = new TaskGraph("eternity")
-                .transferToDevice(DataTransferMode.EVERY_EXECUTION, constraints, candidates)
-                .task("check", EternityKernel::checkCandidates, constraints, candidates, results)
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, packedConstraints, mask)
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, candidates)
+                .task("check", EternityKernel::checkCandidatesBitwise, packedConstraints, mask, candidates, results)
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, results);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         this.executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
     }
 
-    public void solve(int[] currentConstraints, int[] currentCandidates, int[] currentResults) {
-        // Copy to internal arrays (TornadoVM works best with fixed buffers)
-        System.arraycopy(currentConstraints, 0, constraints, 0, 4);
-        System.arraycopy(currentCandidates, 0, candidates, 0, currentResults.length * 4);
+    public void solve(int packedTarget, int activeMask, int[] currentResults) {
+        this.packedConstraints[0] = packedTarget;
+        this.mask[0] = activeMask;
 
         // Execute on GPU using the modern Execution Plan API
         executionPlan.execute();
 
         // Copy results back
-        System.arraycopy(results, 0, currentResults, 0, currentResults.length);
+        System.arraycopy(results, 0, currentResults, 0, results.length);
     }
 }

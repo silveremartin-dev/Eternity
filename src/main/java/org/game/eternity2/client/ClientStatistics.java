@@ -135,7 +135,18 @@ public class ClientStatistics {
         return System.currentTimeMillis() - startTime;
     }
 
+    public void addBacktracks(long count) {
+        backtrackCount.addAndGet(count);
+        totalBacktrackCount.addAndGet(count);
+    }
+
+    private final AtomicLong manualPPS = new AtomicLong(0);
+    public void setPiecesPerSecond(int pps) {
+        manualPPS.set(pps);
+    }
+
     public double getPiecesPerSecond() {
+        if (manualPPS.get() > 0) return manualPPS.get();
         long uptimeSec = getUptimeMs() / 1000;
         return uptimeSec > 0 ? (double) piecesPlaced.get() / uptimeSec : 0.0;
     }

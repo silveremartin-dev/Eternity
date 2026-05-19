@@ -131,13 +131,13 @@ public class ClientApp extends Application implements ClientUI {
         bestScoreLabel = new Label("Best Score: 0");
         bestScoreLabel.setStyle("-fx-font-weight: bold;");
         boardGrid = new GridPane();
-        boardGrid.setStyle("-fx-background-color: #1a1a2e;");
+        boardGrid.setStyle("-fx-background-color: #eeeeee;");
         
         javafx.scene.Group boardGroup = new javafx.scene.Group(boardGrid);
         boardScroll = new ScrollPane(boardGroup);
         boardScroll.setFitToWidth(true);
         boardScroll.setFitToHeight(true);
-        boardScroll.setStyle("-fx-background: #1a1a2e;");
+        boardScroll.setStyle("-fx-background: #eeeeee;");
 
         // Zoom support
         boardScroll.setOnScroll(e -> {
