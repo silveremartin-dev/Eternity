@@ -62,6 +62,7 @@ public class StochasticRefinement {
         for (int i = 0; i < maxIterations; i++) {
             if (statistics != null && i % 10000 == 0) {
                 statistics.addBacktracks(10000);
+                statistics.incrementPiecesPlaced(10000);
             }
 
             // Pick two random positions

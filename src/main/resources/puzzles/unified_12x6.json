@@ -1,7 +1,7 @@
 {
   "width": 12,
   "height": 6,
-  "patterns": 0,
+  "patterns": 8,
   "pieces": [
     {
       "id": 1,
@@ -508,5 +508,9 @@
       "left": 0
     }
   ],
-  "hints": []
+  "hints": [],
+  "currentBoard": {
+    "placements": []
+  },
+  "pendingJobs": []
 }

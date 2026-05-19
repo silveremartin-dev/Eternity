@@ -27,6 +27,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.game.eternity2.model.BoardPrimitive;
 import org.game.eternity2.model.Hint;
+import org.game.eternity2.model.PiecePrimitive;
 import org.game.eternity2.server.strategy.BorderFirstStrategy;
 import org.game.eternity2.server.redis.ConstraintCache;
 import org.game.eternity2.server.redis.RedisConnectionManager;
@@ -133,6 +134,26 @@ public class EternityServer {
             hints = new ArrayList<>();
         }
 
+        // Apply hints onto masterBoard
+        if (pieces != null) {
+            for (Hint hint : hints) {
+                long matchedPiece = 0;
+                for (long p : pieces) {
+                    if (PiecePrimitive.getId(p) == hint.tileId()) {
+                        matchedPiece = p;
+                        break;
+                    }
+                }
+                if (matchedPiece != 0) {
+                    long rotatedPiece = matchedPiece;
+                    for (int r = 0; r < hint.rotation(); r++) {
+                        rotatedPiece = PiecePrimitive.rotateCW(rotatedPiece);
+                    }
+                    masterBoard.placePiece(hint.col(), hint.row(), rotatedPiece);
+                }
+            }
+        }
+
         // Select strategy
         WorkStrategy strategy;
         if ("Scanline".equalsIgnoreCase(strategyName)) {
@@ -161,6 +182,10 @@ public class EternityServer {
             }
         } catch (Exception e) {
             logger.warn("Could not load checkpoint: {}", e.getMessage());
+        }
+
+        if (gui != null) {
+            gui.updateBestBoard(masterBoard);
         }
 
         logger.info("Game initialized: {}x{} board, Strategy: {}, Jobs: {}",
@@ -316,6 +341,7 @@ public class EternityServer {
         private ObjectOutputStream out;
         private ObjectInputStream in;
         private boolean connected;
+        private String username;
 
         public ClientHandler(Socket socket) {
             this.socket = socket;
@@ -368,6 +394,7 @@ public class EternityServer {
                             if (gui != null) {
                                 gui.log(timestamp() + " User auto-registered: " + packet.getUser().getLogin());
                             }
+                            username = packet.getUser().getLogin();
                             sendPacket(new EternityPacket(packet.getUser(),
                                     EternityPacket.Command.MESSAGE,
                                     "Welcome (auto-registered) " + packet.getUser().getLogin()));
@@ -379,6 +406,7 @@ public class EternityServer {
                         if (gui != null) {
                             gui.log(timestamp() + " User logged in: " + packet.getUser().getLogin());
                         }
+                        username = packet.getUser().getLogin();
                         sendPacket(new EternityPacket(packet.getUser(),
                                 EternityPacket.Command.MESSAGE, "Welcome " + packet.getUser().getLogin()));
                     }
@@ -416,6 +444,14 @@ public class EternityServer {
                 case RESULT_SUBMISSION:
                 case JOB_REQUEST:
                 case JOB_REQUEST_NEW:
+                    if (packet.getCommand() == EternityPacket.Command.RESULT_SUBMISSION) {
+                        BoardPrimitive resultBoard = null;
+                        if (packet.getPayload() instanceof BoardPrimitive) {
+                            resultBoard = (BoardPrimitive) packet.getPayload();
+                        }
+                        jobManager.markClientJobCompleted(packet.getUser().getLogin(), resultBoard);
+                    }
+
                     if (packet.getPayload() instanceof BoardPrimitive) {
                         BoardPrimitive resultBoard = (BoardPrimitive) packet.getPayload();
                         synchronized (masterBoard) {
@@ -501,6 +537,9 @@ public class EternityServer {
         public void close() {
             connected = false;
             statistics.decrementActiveClients();
+            if (username != null) {
+                jobManager.markClientJobFailed(username);
+            }
             try {
                 if (socket != null) {
                     socket.close();

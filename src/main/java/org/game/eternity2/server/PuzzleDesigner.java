@@ -116,7 +116,6 @@ public class PuzzleDesigner extends Stage {
         // Canvas (Left)
         boardCanvas = new Canvas(sizeX * cellSize, sizeY * cellSize);
         boardCanvas.setOnMouseClicked(e -> handleMouseClick(e.getX(), e.getY()));
-        setupDragAndDrop();
         
         ScrollPane boardScroll = new ScrollPane(boardCanvas);
         boardScroll.setStyle("-fx-background: #ffffff;");
@@ -132,6 +131,7 @@ public class PuzzleDesigner extends Stage {
         pieceListView = new ListView<>();
         pieceListView.setPrefHeight(400);
         setupPieceListView();
+        setupDragAndDrop();
 
         Button addPieceBtn = new Button("Add");
         addPieceBtn.setOnAction(e -> showPieceDialog(null));

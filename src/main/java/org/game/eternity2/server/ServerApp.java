@@ -115,17 +115,7 @@ public class ServerApp extends Application {
         browseBtn.setDisable(true);
         selectedFileLabel = new Label("Selected: " + puzzleCombo.getValue());
 
-        Button consolidateBtn = new Button("Consolidate All");
-        consolidateBtn.setStyle("-fx-base: #e1f5fe;");
-        consolidateBtn.setOnAction(e -> {
-            try {
-                org.game.eternity2.io.PuzzleLoaderWriter.consolidateResources(puzzlesDir.toPath());
-                refreshPuzzleList(puzzleCombo, puzzlesDir);
-                new Alert(Alert.AlertType.INFORMATION, "Consolidation complete! Legacy files merged into JSON.").show();
-            } catch (Exception ex) {
-                new Alert(Alert.AlertType.ERROR, "Consolidation failed: " + ex.getMessage()).show();
-            }
-        });
+
 
         Button saveBestBtn = new Button("Save Best Solution");
         saveBestBtn.setStyle("-fx-base: #e8f5e9;");
@@ -164,7 +154,7 @@ public class ServerApp extends Application {
 
         VBox configPanel = new VBox(8, configTitle, 
             new HBox(10, puzzleCombo, browseBtn, selectedFileLabel),
-            new HBox(10, consolidateBtn, saveBestBtn));
+            new HBox(10, saveBestBtn));
         configPanel.setPadding(new Insets(10));
         configPanel.setStyle("-fx-background-color: #fff3e0; -fx-border-color: #ff9800;");
 
@@ -199,6 +189,8 @@ public class ServerApp extends Application {
 
         // Start Server Action
         startBtn.setOnAction(e -> {
+            throughputSeries.getData().clear();
+            bestScoreSeries.getData().clear();
             startTimeMillis = System.currentTimeMillis();
             String selectedPuzzle = puzzleCombo.getValue();
             
@@ -308,16 +300,20 @@ public class ServerApp extends Application {
                 Platform.runLater(() -> {
                     org.game.eternity2.util.BoardRenderer.renderBoard(boardDisplay, board, 600, 600);
                     bestScoreLabel.setText("Best Score: " + org.game.eternity2.util.BoardRenderer.formatScore(board.computeScore(), board.getWidth(), board.getHeight()));
-                    double timeSec = (System.currentTimeMillis() - startTimeMillis) / 1000.0;
-                    bestScoreSeries.getData().add(new javafx.scene.chart.XYChart.Data<>(timeSec, board.computeScore()));
+                    if (server != null && server.isRunning()) {
+                        double timeSec = (System.currentTimeMillis() - startTimeMillis) / 1000.0;
+                        bestScoreSeries.getData().add(new javafx.scene.chart.XYChart.Data<>(timeSec, board.computeScore()));
+                    }
                 });
             }
             @Override
             public void updateThroughput(double totalPps) {
                 Platform.runLater(() -> {
-                    double timeSec = (System.currentTimeMillis() - startTimeMillis) / 1000.0;
-                    throughputSeries.getData().add(new javafx.scene.chart.XYChart.Data<>(timeSec, totalPps));
-                    if (throughputSeries.getData().size() > 100) throughputSeries.getData().remove(0);
+                    if (server != null && server.isRunning()) {
+                        double timeSec = (System.currentTimeMillis() - startTimeMillis) / 1000.0;
+                        throughputSeries.getData().add(new javafx.scene.chart.XYChart.Data<>(timeSec, totalPps));
+                        if (throughputSeries.getData().size() > 100) throughputSeries.getData().remove(0);
+                    }
                 });
             }
         });

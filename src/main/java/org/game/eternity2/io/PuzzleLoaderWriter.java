@@ -26,7 +26,11 @@ public class PuzzleLoaderWriter {
 
     public static UnifiedPuzzle loadUnified(Path path) throws IOException {
         try (Reader reader = Files.newBufferedReader(path)) {
-            return GSON.fromJson(reader, UnifiedPuzzle.class);
+            UnifiedPuzzle up = GSON.fromJson(reader, UnifiedPuzzle.class);
+            if (up != null && up.patterns <= 0) {
+                up.getPatterns();
+            }
+            return up;
         }
     }
 
@@ -34,12 +38,19 @@ public class PuzzleLoaderWriter {
         try (InputStream is = PuzzleLoaderWriter.class.getResourceAsStream(resourcePath)) {
             if (is == null) throw new FileNotFoundException("Resource not found: " + resourcePath);
             try (Reader reader = new InputStreamReader(is)) {
-                return GSON.fromJson(reader, UnifiedPuzzle.class);
+                UnifiedPuzzle up = GSON.fromJson(reader, UnifiedPuzzle.class);
+                if (up != null && up.patterns <= 0) {
+                    up.getPatterns();
+                }
+                return up;
             }
         }
     }
 
     public static void saveUnified(Path path, UnifiedPuzzle puzzle) throws IOException {
+        if (puzzle != null) {
+            puzzle.getPatterns();
+        }
         try (Writer writer = Files.newBufferedWriter(path)) {
             GSON.toJson(puzzle, writer);
         }
@@ -76,70 +87,95 @@ public class PuzzleLoaderWriter {
         }
     }
 
+    public static UnifiedPuzzle loadFromSeparateFiles(String puzzleName) throws IOException {
+        UnifiedPuzzle up = new UnifiedPuzzle();
+        String base = "/puzzles/";
+        
+        // Load pieces
+        try (InputStream is = PuzzleLoaderWriter.class.getResourceAsStream(base + "puzzle_" + puzzleName + ".json")) {
+            if (is != null) {
+                JsonObject root = JsonParser.parseReader(new InputStreamReader(is)).getAsJsonObject();
+                JsonArray pieces = root.getAsJsonArray("pieces");
+                for (JsonElement el : pieces) {
+                    JsonObject p = el.getAsJsonObject();
+                    up.pieces.add(new UnifiedPuzzle.PieceData(
+                        p.get("id").getAsInt(), p.get("top").getAsInt(), p.get("right").getAsInt(),
+                        p.get("bottom").getAsInt(), p.get("left").getAsInt()
+                    ));
+                }
+                int count = up.pieces.size();
+                up.width = (int)Math.sqrt(count);
+                up.height = up.width;
+                if (count == 72) { up.width = 12; up.height = 6; }
+            } else {
+                throw new FileNotFoundException("Base puzzle pieces not found: " + puzzleName);
+            }
+        }
+
+        // Load hints
+        try (InputStream is = PuzzleLoaderWriter.class.getResourceAsStream(base + "hints_" + puzzleName + ".json")) {
+            if (is != null) {
+                JsonObject root = JsonParser.parseReader(new InputStreamReader(is)).getAsJsonObject();
+                JsonArray hintsArray = null;
+                if (root.has("hints")) {
+                    hintsArray = root.getAsJsonArray("hints");
+                } else if (root.has("tiles")) {
+                    hintsArray = root.getAsJsonArray("tiles");
+                }
+                if (hintsArray != null) {
+                    for (JsonElement el : hintsArray) {
+                        JsonObject h = el.getAsJsonObject();
+                        UnifiedPuzzle.HintData hd = new UnifiedPuzzle.HintData();
+                        hd.x = h.get("x").getAsInt();
+                        hd.y = h.get("y").getAsInt();
+                        hd.pieceId = h.get("id").getAsInt();
+                        hd.rotation = h.has("rotation") ? h.get("rotation").getAsInt() : 0;
+                        up.hints.add(hd);
+                    }
+                }
+            }
+        }
+
+        // Load solution
+        try (InputStream is = PuzzleLoaderWriter.class.getResourceAsStream(base + "solved_" + puzzleName + ".json")) {
+            if (is != null) {
+                JsonObject root = JsonParser.parseReader(new InputStreamReader(is)).getAsJsonObject();
+                JsonArray placementsArray = null;
+                if (root.has("placements")) {
+                    placementsArray = root.getAsJsonArray("placements");
+                } else if (root.has("tiles")) {
+                    placementsArray = root.getAsJsonArray("tiles");
+                }
+                if (placementsArray != null) {
+                    up.currentBoard = new UnifiedPuzzle.BoardData();
+                    for (JsonElement el : placementsArray) {
+                        JsonObject p = el.getAsJsonObject();
+                        UnifiedPuzzle.PlacementData pd = new UnifiedPuzzle.PlacementData();
+                        pd.x = p.get("x").getAsInt();
+                        pd.y = p.get("y").getAsInt();
+                        pd.pieceId = p.get("id").getAsInt();
+                        pd.rotation = p.has("rotation") ? p.get("rotation").getAsInt() : 0;
+                        up.currentBoard.placements.add(pd);
+                    }
+                }
+            }
+        }
+        
+        // Calculate patterns
+        up.patterns = up.getPatterns();
+        return up;
+    }
+
     public static UnifiedPuzzle loadSmart(String puzzleName) throws IOException {
         // Try unified first
         try {
-            return loadUnifiedFromResource("/puzzles/unified_" + puzzleName + ".json");
-        } catch (Exception e) {
-            UnifiedPuzzle up = new UnifiedPuzzle();
-            String base = "/puzzles/";
-            
-            // Load pieces
-            try (InputStream is = PuzzleLoaderWriter.class.getResourceAsStream(base + "puzzle_" + puzzleName + ".json")) {
-                if (is != null) {
-                    JsonObject root = JsonParser.parseReader(new InputStreamReader(is)).getAsJsonObject();
-                    JsonArray pieces = root.getAsJsonArray("pieces");
-                    for (JsonElement el : pieces) {
-                        JsonObject p = el.getAsJsonObject();
-                        up.pieces.add(new UnifiedPuzzle.PieceData(
-                            p.get("id").getAsInt(), p.get("top").getAsInt(), p.get("right").getAsInt(),
-                            p.get("bottom").getAsInt(), p.get("left").getAsInt()
-                        ));
-                    }
-                    int count = up.pieces.size();
-                    up.width = (int)Math.sqrt(count);
-                    up.height = up.width;
-                    if (count == 72) { up.width = 12; up.height = 6; }
-                }
-            }
-
-            // Load hints
-            try (InputStream is = PuzzleLoaderWriter.class.getResourceAsStream(base + "hints_" + puzzleName + ".json")) {
-                if (is != null) {
-                    JsonObject root = JsonParser.parseReader(new InputStreamReader(is)).getAsJsonObject();
-                    if (root.has("hints")) {
-                        for (JsonElement el : root.getAsJsonArray("hints")) {
-                            JsonObject h = el.getAsJsonObject();
-                            UnifiedPuzzle.HintData hd = new UnifiedPuzzle.HintData();
-                            hd.x = h.get("x").getAsInt();
-                            hd.y = h.get("y").getAsInt();
-                            hd.pieceId = h.get("id").getAsInt();
-                            hd.rotation = h.has("rotation") ? h.get("rotation").getAsInt() : 0;
-                            up.hints.add(hd);
-                        }
-                    }
-                }
-            }
-
-            // Load solution
-            try (InputStream is = PuzzleLoaderWriter.class.getResourceAsStream(base + "solved_" + puzzleName + ".json")) {
-                if (is != null) {
-                    JsonObject root = JsonParser.parseReader(new InputStreamReader(is)).getAsJsonObject();
-                    if (root.has("placements")) {
-                        up.currentBoard = new UnifiedPuzzle.BoardData();
-                        for (JsonElement el : root.getAsJsonArray("placements")) {
-                            JsonObject p = el.getAsJsonObject();
-                            UnifiedPuzzle.PlacementData pd = new UnifiedPuzzle.PlacementData();
-                            pd.x = p.get("x").getAsInt();
-                            pd.y = p.get("y").getAsInt();
-                            pd.pieceId = p.get("id").getAsInt();
-                            pd.rotation = p.has("rotation") ? p.get("rotation").getAsInt() : 0;
-                            up.currentBoard.placements.add(pd);
-                        }
-                    }
-                }
+            UnifiedPuzzle up = loadUnifiedFromResource("/puzzles/unified_" + puzzleName + ".json");
+            if (up != null && up.patterns <= 0) {
+                up.patterns = up.getPatterns();
             }
             return up;
+        } catch (Exception e) {
+            return loadFromSeparateFiles(puzzleName);
         }
     }
 
@@ -157,7 +193,7 @@ public class PuzzleLoaderWriter {
         for (String name : names) {
             Path unified = resourceDir.resolve("unified_" + name + ".json");
             try {
-                UnifiedPuzzle up = loadSmart(name);
+                UnifiedPuzzle up = loadFromSeparateFiles(name);
                 saveUnified(unified, up);
                 
                 // Final cleanup

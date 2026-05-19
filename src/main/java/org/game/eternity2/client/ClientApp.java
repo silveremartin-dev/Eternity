@@ -85,7 +85,12 @@ public class ClientApp extends Application implements ClientUI {
 
         // Controls
         connectBtn = new Button("Connect");
-        connectBtn.setOnAction(e -> client.connect());
+        connectBtn.setOnAction(e -> {
+            throughputSeries.getData().clear();
+            bestScoreSeries.getData().clear();
+            startTime = System.currentTimeMillis();
+            client.connect();
+        });
 
         disconnectBtn = new Button("Disconnect");
         disconnectBtn.setOnAction(e -> client.disconnect());

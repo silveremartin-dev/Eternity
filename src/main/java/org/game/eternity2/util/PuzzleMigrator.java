@@ -15,21 +15,10 @@ import java.util.*;
 public class PuzzleMigrator {
 
     public static void main(String[] args) {
-        String resourcesPath = "src/main/resources/puzzles/";
-        String outputPath = "src/main/resources/puzzles/unified/";
-        
         try {
-            Files.createDirectories(Paths.get(outputPath));
-            
-            // List of puzzles to migrate
-            String[] sizes = {"4x4", "6x6", "12x6", "16x16"};
-            
-            for (String size : sizes) {
-                migrate(resourcesPath, outputPath, size);
-            }
-            
-            System.out.println("Migration complete!");
-        } catch (IOException e) {
+            org.game.eternity2.io.PuzzleLoaderWriter.consolidateResources(java.nio.file.Paths.get("src/main/resources/puzzles"));
+            System.out.println("Consolidation of resources complete!");
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }

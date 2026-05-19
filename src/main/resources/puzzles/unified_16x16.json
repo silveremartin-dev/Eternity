@@ -1,7 +1,7 @@
 {
   "width": 16,
   "height": 16,
-  "patterns": 0,
+  "patterns": 22,
   "pieces": [
     {
       "id": 1,
@@ -1796,5 +1796,25 @@
       "left": 22
     }
   ],
-  "hints": []
+  "hints": [
+    {
+      "x": 9,
+      "y": 8,
+      "pieceId": 139,
+      "rotation": 0
+    },
+    {
+      "x": 14,
+      "y": 3,
+      "pieceId": 181,
+      "rotation": 1
+    },
+    {
+      "x": 3,
+      "y": 4,
+      "pieceId": 255,
+      "rotation": 1
+    }
+  ],
+  "pendingJobs": []
 }

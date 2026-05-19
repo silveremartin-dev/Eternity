@@ -132,6 +132,39 @@ public class JobManager {
     }
 
     /**
+     * Mark the active job assigned to the given client as completed.
+     *
+     * @param clientId ID of the client
+     * @param result Result board
+     */
+    public void markClientJobCompleted(String clientId, BoardPrimitive result) {
+        for (JobStatus status : jobStatuses.values()) {
+            if (status.getState() == JobState.DISPATCHED && clientId.equals(status.assignedClientId)) {
+                status.markCompleted(result);
+                logger.info("Job {} completed by client {}", status.getJob().getJobId(), clientId);
+                return;
+            }
+        }
+        logger.warn("Received result from client {} but no active dispatched job was found", clientId);
+    }
+
+    /**
+     * Mark the active job assigned to the given client as failed and re-queue it.
+     *
+     * @param clientId ID of the client
+     */
+    public void markClientJobFailed(String clientId) {
+        for (JobStatus status : jobStatuses.values()) {
+            if (status.getState() == JobState.DISPATCHED && clientId.equals(status.assignedClientId)) {
+                status.markFailed();
+                pendingJobs.offer(status.getJob());
+                logger.warn("Job {} failed (client {} disconnected), re-queued", status.getJob().getJobId(), clientId);
+                return;
+            }
+        }
+    }
+
+    /**
      * Get statistics about job progress.
      *
      * @return Job statistics

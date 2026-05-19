@@ -1,7 +1,7 @@
 {
   "width": 4,
   "height": 4,
-  "patterns": 0,
+  "patterns": 4,
   "pieces": [
     {
       "id": 1,
@@ -116,5 +116,106 @@
       "left": 3
     }
   ],
-  "hints": []
+  "hints": [],
+  "currentBoard": {
+    "placements": [
+      {
+        "x": 0,
+        "y": 0,
+        "pieceId": 1,
+        "rotation": 0
+      },
+      {
+        "x": 1,
+        "y": 0,
+        "pieceId": 2,
+        "rotation": 0
+      },
+      {
+        "x": 2,
+        "y": 0,
+        "pieceId": 3,
+        "rotation": 0
+      },
+      {
+        "x": 3,
+        "y": 0,
+        "pieceId": 4,
+        "rotation": 0
+      },
+      {
+        "x": 0,
+        "y": 1,
+        "pieceId": 5,
+        "rotation": 0
+      },
+      {
+        "x": 1,
+        "y": 1,
+        "pieceId": 6,
+        "rotation": 0
+      },
+      {
+        "x": 2,
+        "y": 1,
+        "pieceId": 7,
+        "rotation": 0
+      },
+      {
+        "x": 3,
+        "y": 1,
+        "pieceId": 8,
+        "rotation": 0
+      },
+      {
+        "x": 0,
+        "y": 2,
+        "pieceId": 9,
+        "rotation": 0
+      },
+      {
+        "x": 1,
+        "y": 2,
+        "pieceId": 10,
+        "rotation": 0
+      },
+      {
+        "x": 2,
+        "y": 2,
+        "pieceId": 11,
+        "rotation": 0
+      },
+      {
+        "x": 3,
+        "y": 2,
+        "pieceId": 12,
+        "rotation": 0
+      },
+      {
+        "x": 0,
+        "y": 3,
+        "pieceId": 13,
+        "rotation": 0
+      },
+      {
+        "x": 1,
+        "y": 3,
+        "pieceId": 14,
+        "rotation": 0
+      },
+      {
+        "x": 2,
+        "y": 3,
+        "pieceId": 15,
+        "rotation": 0
+      },
+      {
+        "x": 3,
+        "y": 3,
+        "pieceId": 16,
+        "rotation": 0
+      }
+    ]
+  },
+  "pendingJobs": []
 }

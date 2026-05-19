@@ -74,7 +74,7 @@ public class EternityClient {
         this.user = new EternityUser("User_" + System.currentTimeMillis() % 1000, "password");
         this.statistics = new ClientStatistics();
         // Load stats on startup
-        this.statistics.load(new java.io.File("data/client-stats.properties"));
+        this.statistics.load(new java.io.File("data/client_stats.properties"));
         this.executor = new JobExecutor(statistics);
     }
 
@@ -193,7 +193,7 @@ public class EternityClient {
             executor.cancel();
         }
         // Save stats on disconnect
-        statistics.save(new java.io.File("data/client-stats.properties"));
+        statistics.save(new java.io.File("data/client_stats.properties"));
 
         try {
             if (out != null) {
