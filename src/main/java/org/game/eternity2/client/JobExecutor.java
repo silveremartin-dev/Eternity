@@ -101,7 +101,7 @@ public class JobExecutor {
 
         // Update PPS based on backtracks for hybrid engine
         if (elapsed > 0) {
-            int pps = (int) (backtracksDone * 1000 / elapsed);
+            long pps = backtracksDone * 1000L / elapsed;
             statistics.setPiecesPerSecond(pps);
         }
 

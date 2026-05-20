@@ -508,9 +508,444 @@
       "left": 0
     }
   ],
-  "hints": [],
+  "hints": [
+
+  ],
   "currentBoard": {
-    "placements": []
+    "placements": [
+        {
+          "x": 0,
+          "y": 0,
+          "pieceId": 1,
+          "rotation": 0
+        },
+        {
+          "x": 1,
+          "y": 0,
+          "pieceId": 2,
+          "rotation": 0
+        },
+        {
+          "x": 2,
+          "y": 0,
+          "pieceId": 3,
+          "rotation": 0
+        },
+        {
+          "x": 3,
+          "y": 0,
+          "pieceId": 4,
+          "rotation": 0
+        },
+        {
+          "x": 4,
+          "y": 0,
+          "pieceId": 5,
+          "rotation": 0
+        },
+        {
+          "x": 5,
+          "y": 0,
+          "pieceId": 6,
+          "rotation": 0
+        },
+        {
+          "x": 6,
+          "y": 0,
+          "pieceId": 7,
+          "rotation": 0
+        },
+        {
+          "x": 7,
+          "y": 0,
+          "pieceId": 8,
+          "rotation": 0
+        },
+        {
+          "x": 8,
+          "y": 0,
+          "pieceId": 9,
+          "rotation": 0
+        },
+        {
+          "x": 9,
+          "y": 0,
+          "pieceId": 10,
+          "rotation": 0
+        },
+        {
+          "x": 10,
+          "y": 0,
+          "pieceId": 11,
+          "rotation": 0
+        },
+        {
+          "x": 11,
+          "y": 0,
+          "pieceId": 12,
+          "rotation": 0
+        },
+        {
+          "x": 0,
+          "y": 1,
+          "pieceId": 13,
+          "rotation": 0
+        },
+        {
+          "x": 1,
+          "y": 1,
+          "pieceId": 14,
+          "rotation": 0
+        },
+        {
+          "x": 2,
+          "y": 1,
+          "pieceId": 15,
+          "rotation": 0
+        },
+        {
+          "x": 3,
+          "y": 1,
+          "pieceId": 16,
+          "rotation": 0
+        },
+        {
+          "x": 4,
+          "y": 1,
+          "pieceId": 17,
+          "rotation": 0
+        },
+        {
+          "x": 5,
+          "y": 1,
+          "pieceId": 18,
+          "rotation": 0
+        },
+        {
+          "x": 6,
+          "y": 1,
+          "pieceId": 19,
+          "rotation": 0
+        },
+        {
+          "x": 7,
+          "y": 1,
+          "pieceId": 20,
+          "rotation": 0
+        },
+        {
+          "x": 8,
+          "y": 1,
+          "pieceId": 21,
+          "rotation": 0
+        },
+        {
+          "x": 9,
+          "y": 1,
+          "pieceId": 22,
+          "rotation": 0
+        },
+        {
+          "x": 10,
+          "y": 1,
+          "pieceId": 23,
+          "rotation": 0
+        },
+        {
+          "x": 11,
+          "y": 1,
+          "pieceId": 24,
+          "rotation": 0
+        },
+        {
+          "x": 0,
+          "y": 2,
+          "pieceId": 25,
+          "rotation": 0
+        },
+        {
+          "x": 1,
+          "y": 2,
+          "pieceId": 26,
+          "rotation": 0
+        },
+        {
+          "x": 2,
+          "y": 2,
+          "pieceId": 27,
+          "rotation": 0
+        },
+        {
+          "x": 3,
+          "y": 2,
+          "pieceId": 28,
+          "rotation": 0
+        },
+        {
+          "x": 4,
+          "y": 2,
+          "pieceId": 29,
+          "rotation": 0
+        },
+        {
+          "x": 5,
+          "y": 2,
+          "pieceId": 30,
+          "rotation": 0
+        },
+        {
+          "x": 6,
+          "y": 2,
+          "pieceId": 31,
+          "rotation": 0
+        },
+        {
+          "x": 7,
+          "y": 2,
+          "pieceId": 32,
+          "rotation": 0
+        },
+        {
+          "x": 8,
+          "y": 2,
+          "pieceId": 33,
+          "rotation": 0
+        },
+        {
+          "x": 9,
+          "y": 2,
+          "pieceId": 34,
+          "rotation": 0
+        },
+        {
+          "x": 10,
+          "y": 2,
+          "pieceId": 35,
+          "rotation": 0
+        },
+        {
+          "x": 11,
+          "y": 2,
+          "pieceId": 36,
+          "rotation": 0
+        },
+        {
+          "x": 0,
+          "y": 3,
+          "pieceId": 37,
+          "rotation": 0
+        },
+        {
+          "x": 1,
+          "y": 3,
+          "pieceId": 38,
+          "rotation": 0
+        },
+        {
+          "x": 2,
+          "y": 3,
+          "pieceId": 39,
+          "rotation": 0
+        },
+        {
+          "x": 3,
+          "y": 3,
+          "pieceId": 40,
+          "rotation": 0
+        },
+        {
+          "x": 4,
+          "y": 3,
+          "pieceId": 41,
+          "rotation": 0
+        },
+        {
+          "x": 5,
+          "y": 3,
+          "pieceId": 42,
+          "rotation": 0
+        },
+        {
+          "x": 6,
+          "y": 3,
+          "pieceId": 43,
+          "rotation": 0
+        },
+        {
+          "x": 7,
+          "y": 3,
+          "pieceId": 44,
+          "rotation": 0
+        },
+        {
+          "x": 8,
+          "y": 3,
+          "pieceId": 45,
+          "rotation": 0
+        },
+        {
+          "x": 9,
+          "y": 3,
+          "pieceId": 46,
+          "rotation": 0
+        },
+        {
+          "x": 10,
+          "y": 3,
+          "pieceId": 47,
+          "rotation": 0
+        },
+        {
+          "x": 11,
+          "y": 3,
+          "pieceId": 48,
+          "rotation": 0
+        },
+        {
+          "x": 0,
+          "y": 4,
+          "pieceId": 49,
+          "rotation": 0
+        },
+        {
+          "x": 1,
+          "y": 4,
+          "pieceId": 50,
+          "rotation": 0
+        },
+        {
+          "x": 2,
+          "y": 4,
+          "pieceId": 51,
+          "rotation": 0
+        },
+        {
+          "x": 3,
+          "y": 4,
+          "pieceId": 52,
+          "rotation": 0
+        },
+        {
+          "x": 4,
+          "y": 4,
+          "pieceId": 53,
+          "rotation": 0
+        },
+        {
+          "x": 5,
+          "y": 4,
+          "pieceId": 54,
+          "rotation": 0
+        },
+        {
+          "x": 6,
+          "y": 4,
+          "pieceId": 55,
+          "rotation": 0
+        },
+        {
+          "x": 7,
+          "y": 4,
+          "pieceId": 56,
+          "rotation": 0
+        },
+        {
+          "x": 8,
+          "y": 4,
+          "pieceId": 57,
+          "rotation": 0
+        },
+        {
+          "x": 9,
+          "y": 4,
+          "pieceId": 58,
+          "rotation": 0
+        },
+        {
+          "x": 10,
+          "y": 4,
+          "pieceId": 59,
+          "rotation": 0
+        },
+        {
+          "x": 11,
+          "y": 4,
+          "pieceId": 60,
+          "rotation": 0
+        },
+        {
+          "x": 0,
+          "y": 5,
+          "pieceId": 61,
+          "rotation": 0
+        },
+        {
+          "x": 1,
+          "y": 5,
+          "pieceId": 62,
+          "rotation": 0
+        },
+        {
+          "x": 2,
+          "y": 5,
+          "pieceId": 63,
+          "rotation": 0
+        },
+        {
+          "x": 3,
+          "y": 5,
+          "pieceId": 64,
+          "rotation": 0
+        },
+        {
+          "x": 4,
+          "y": 5,
+          "pieceId": 65,
+          "rotation": 0
+        },
+        {
+          "x": 5,
+          "y": 5,
+          "pieceId": 66,
+          "rotation": 0
+        },
+        {
+          "x": 6,
+          "y": 5,
+          "pieceId": 67,
+          "rotation": 0
+        },
+        {
+          "x": 7,
+          "y": 5,
+          "pieceId": 68,
+          "rotation": 0
+        },
+        {
+          "x": 8,
+          "y": 5,
+          "pieceId": 69,
+          "rotation": 0
+        },
+        {
+          "x": 9,
+          "y": 5,
+          "pieceId": 70,
+          "rotation": 0
+        },
+        {
+          "x": 10,
+          "y": 5,
+          "pieceId": 71,
+          "rotation": 0
+        },
+        {
+          "x": 11,
+          "y": 5,
+          "pieceId": 72,
+          "rotation": 0
+        }
+    ]
   },
   "pendingJobs": []
 }

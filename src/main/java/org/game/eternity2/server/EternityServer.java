@@ -380,7 +380,8 @@ public class EternityServer {
         }
 
         private void processPacket(EternityPacket packet) throws IOException {
-            statistics.incrementPacketsReceived();
+            boolean isStat = (packet.getCommand() == EternityPacket.Command.STATISTICS_UPDATE);
+            statistics.incrementPacketsReceived(isStat);
 
             String packetIdShort = packet.getPacketId().substring(0, 8);
 
@@ -508,8 +509,8 @@ public class EternityServer {
                             statistics.getAverageComputeTimePerClient(),
                             statistics.getPiecesPerSecond(),
                             masterBoard != null ? masterBoard.computeScore() : 0,
-                            statistics.getPacketsSent(),
-                            statistics.getPacketsReceived());
+                            statistics.getDataPacketsSent() + statistics.getStatPacketsSent(),
+                            statistics.getDataPacketsReceived() + statistics.getStatPacketsReceived());
                     sendPacket(new EternityPacket(packet.getUser(),
                             EternityPacket.Command.SERVER_STATUS_RESPONSE, status));
                     break;
@@ -536,7 +537,8 @@ public class EternityServer {
         }
 
         public void sendPacket(EternityPacket packet) throws IOException {
-            statistics.incrementPacketsSent();
+            boolean isStat = (packet.getCommand() == EternityPacket.Command.STATISTICS_UPDATE);
+            statistics.incrementPacketsSent(isStat);
             out.writeObject(packet);
             out.flush();
         }

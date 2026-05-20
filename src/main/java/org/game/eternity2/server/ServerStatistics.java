@@ -37,11 +37,13 @@ import java.util.concurrent.atomic.AtomicLong;
 public class ServerStatistics {
     private final AtomicInteger activeClients = new AtomicInteger(0);
     private final AtomicInteger totalClients = new AtomicInteger(0);
-    private final AtomicLong packetsSent = new AtomicLong(0);
-    private final AtomicLong packetsReceived = new AtomicLong(0);
+    private final AtomicLong dataPacketsSent = new AtomicLong(0);
+    private final AtomicLong dataPacketsReceived = new AtomicLong(0);
+    private final AtomicLong statPacketsSent = new AtomicLong(0);
+    private final AtomicLong statPacketsReceived = new AtomicLong(0);
     private final AtomicLong totalComputeTimeMs = new AtomicLong(0);
-    private final AtomicInteger piecesSolved = new AtomicInteger(0);
-    private final AtomicInteger currentPiecesPerSecond = new AtomicInteger(0);
+    private final AtomicLong piecesSolved = new AtomicLong(0);
+    private final AtomicLong currentPiecesPerSecond = new AtomicLong(0);
     private org.game.eternity2.model.BoardPrimitive bestBoard;
     private final long startTime;
 
@@ -79,19 +81,21 @@ public class ServerStatistics {
         activeClients.decrementAndGet();
     }
 
-    public void incrementPacketsSent() {
-        packetsSent.incrementAndGet();
+    public void incrementPacketsSent(boolean isStat) {
+        if (isStat) statPacketsSent.incrementAndGet();
+        else dataPacketsSent.incrementAndGet();
     }
 
-    public void incrementPacketsReceived() {
-        packetsReceived.incrementAndGet();
+    public void incrementPacketsReceived(boolean isStat) {
+        if (isStat) statPacketsReceived.incrementAndGet();
+        else dataPacketsReceived.incrementAndGet();
     }
 
     public void addComputeTime(long milliseconds) {
         totalComputeTimeMs.addAndGet(milliseconds);
     }
 
-    public void incrementPiecesSolved(int count) {
+    public void incrementPiecesSolved(long count) {
         piecesSolved.addAndGet(count);
     }
 
@@ -103,19 +107,16 @@ public class ServerStatistics {
         return totalClients.get();
     }
 
-    public long getPacketsSent() {
-        return packetsSent.get();
-    }
-
-    public long getPacketsReceived() {
-        return packetsReceived.get();
-    }
+    public long getDataPacketsSent() { return dataPacketsSent.get(); }
+    public long getStatPacketsSent() { return statPacketsSent.get(); }
+    public long getDataPacketsReceived() { return dataPacketsReceived.get(); }
+    public long getStatPacketsReceived() { return statPacketsReceived.get(); }
 
     public long getTotalComputeTimeMs() {
         return totalComputeTimeMs.get();
     }
 
-    public int getPiecesSolved() {
+    public long getPiecesSolved() {
         return piecesSolved.get();
     }
 
@@ -137,11 +138,11 @@ public class ServerStatistics {
         return activeClients.get();
     }
 
-    public void setPiecesPerSecond(int pps) {
+    public void setPiecesPerSecond(long pps) {
         currentPiecesPerSecond.set(pps);
     }
 
-    public int getCurrentPiecesPerSecond() {
+    public long getCurrentPiecesPerSecond() {
         return currentPiecesPerSecond.get();
     }
 

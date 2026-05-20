@@ -59,7 +59,8 @@ public class ServerApp extends Application {
     private ScrollPane boardScroll;
     private javafx.scene.chart.LineChart<Number, Number> throughputChart;
     private javafx.scene.chart.XYChart.Series<Number, Number> throughputSeries;
-    private javafx.scene.chart.XYChart.Series<Number, Number> bestScoreSeries;
+    private javafx.scene.chart.LineChart<Number, Number> clientCountChart;
+    private javafx.scene.chart.XYChart.Series<Number, Number> clientCountSeries;
     private long startTimeMillis;
     private long lastTickTimeMillis = 0;
     private Label connectedTimeLabel;
@@ -145,6 +146,10 @@ public class ServerApp extends Application {
         });
 
         puzzleCombo.setOnAction(e -> {
+            if (server != null && server.isRunning()) {
+                server.stopServer();
+                updateStatus(false);
+            }
             boolean isCustom = "Custom (.json)".equals(puzzleCombo.getValue());
             browseBtn.setDisable(!isCustom);
             selectedFileLabel.setText(isCustom ? "No file selected" : "Selected: " + puzzleCombo.getValue());
@@ -180,27 +185,39 @@ public class ServerApp extends Application {
         statsPanel.setPadding(new Insets(10));
         statsPanel.setStyle("-fx-background-color: #e8f4f8; -fx-border-color: #4a90e2;");
 
-        // Throughput Chart
-        javafx.scene.chart.NumberAxis xAxis = new javafx.scene.chart.NumberAxis();
-        xAxis.setLabel("Time (s)");
-        javafx.scene.chart.NumberAxis yAxis = new javafx.scene.chart.NumberAxis();
-        yAxis.setLabel("Value");
+        // Charts
+        javafx.scene.chart.NumberAxis xClient = new javafx.scene.chart.NumberAxis();
+        xClient.setLabel("Time (s)");
+        javafx.scene.chart.NumberAxis yClient = new javafx.scene.chart.NumberAxis();
+        yClient.setLabel("Clients");
 
-        throughputChart = new javafx.scene.chart.LineChart<>(xAxis, yAxis);
+        clientCountChart = new javafx.scene.chart.LineChart<>(xClient, yClient);
+        clientCountChart.setTitle("Connected Clients");
+        clientCountChart.setCreateSymbols(false);
+        clientCountChart.setPrefHeight(180);
+
+        clientCountSeries = new javafx.scene.chart.XYChart.Series<>();
+        clientCountSeries.setName("Clients");
+        clientCountChart.getData().add(clientCountSeries);
+
+        javafx.scene.chart.NumberAxis xPerf = new javafx.scene.chart.NumberAxis();
+        xPerf.setLabel("Time (s)");
+        javafx.scene.chart.NumberAxis yPerf = new javafx.scene.chart.NumberAxis();
+        yPerf.setLabel("Throughput (PPS)");
+
+        throughputChart = new javafx.scene.chart.LineChart<>(xPerf, yPerf);
         throughputChart.setTitle("System Performance");
         throughputChart.setCreateSymbols(false);
-        throughputChart.setPrefHeight(250);
+        throughputChart.setPrefHeight(180);
 
         throughputSeries = new javafx.scene.chart.XYChart.Series<>();
         throughputSeries.setName("Throughput (PPS)");
-        bestScoreSeries = new javafx.scene.chart.XYChart.Series<>();
-        bestScoreSeries.setName("Best Score");
-        throughputChart.getData().addAll(throughputSeries, bestScoreSeries);
+        throughputChart.getData().add(throughputSeries);
 
         // Start Server Action
         startBtn.setOnAction(e -> {
             throughputSeries.getData().clear();
-            bestScoreSeries.getData().clear();
+            clientCountSeries.getData().clear();
             startTimeMillis = System.currentTimeMillis();
             lastTickTimeMillis = System.currentTimeMillis();
             String selectedPuzzle = puzzleCombo.getValue();
@@ -282,7 +299,7 @@ public class ServerApp extends Application {
         VBox.setVgrow(boardScroll, javafx.scene.layout.Priority.ALWAYS);
 
         // Layout
-        VBox leftPanel = new VBox(10, configPanel, statsPanel, throughputChart, logArea);
+        VBox leftPanel = new VBox(10, configPanel, statsPanel, clientCountChart, throughputChart, logArea);
         HBox mainContent = new HBox(10, leftPanel, rightPanel);
         HBox.setHgrow(leftPanel, javafx.scene.layout.Priority.ALWAYS);
         HBox.setHgrow(rightPanel, javafx.scene.layout.Priority.ALWAYS);
@@ -313,10 +330,6 @@ public class ServerApp extends Application {
                 Platform.runLater(() -> {
                     org.game.eternity2.util.BoardRenderer.renderBoard(boardDisplay, board, 600, 600);
                     bestScoreLabel.setText("Best Score: " + org.game.eternity2.util.BoardRenderer.formatScore(board.computeScore(), board.getWidth(), board.getHeight()));
-                    if (server != null && server.isRunning()) {
-                        double timeSec = (System.currentTimeMillis() - startTimeMillis) / 1000.0;
-                        bestScoreSeries.getData().add(new javafx.scene.chart.XYChart.Data<>(timeSec, board.computeScore()));
-                    }
                 });
             }
             @Override
@@ -353,10 +366,16 @@ public class ServerApp extends Application {
                     ServerStatistics stats = server.getStatistics();
                     JobManager.JobStatistics jobStats = server.getJobManager().getStatistics();
                     jobsLabel.setText(String.format("Jobs: %d/%d (%.1f%%)", jobStats.completed(), jobStats.total(), jobStats.getCompletionPercentage()));
-                    packetsLabel.setText(String.format("Packets: %d sent, %d received", stats.getPacketsSent(), stats.getPacketsReceived()));
+                    packetsLabel.setText(String.format("Data Packets: %d sent, %d received | Stat Packets: %d sent, %d received", 
+                            stats.getDataPacketsSent(), stats.getDataPacketsReceived(), 
+                            stats.getStatPacketsSent(), stats.getStatPacketsReceived()));
 
                     connectedTimeLabel.setText("\u23F1 Temps connecté (\u22651 client) : " + formatDuration(stats.getConnectedTimeMs()));
                     cumulativeTimeLabel.setText("\u26A1 Temps cumulé clients        : " + formatDuration(stats.getCumulativeClientTimeMs()));
+                    
+                    double timeSec = (System.currentTimeMillis() - startTimeMillis) / 1000.0;
+                    clientCountSeries.getData().add(new javafx.scene.chart.XYChart.Data<>(timeSec, stats.getConnectedClients()));
+                    if (clientCountSeries.getData().size() > 100) clientCountSeries.getData().remove(0);
                 });
             } else {
                 lastTickTimeMillis = System.currentTimeMillis();

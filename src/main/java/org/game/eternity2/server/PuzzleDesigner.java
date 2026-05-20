@@ -91,6 +91,20 @@ public class PuzzleDesigner extends Stage {
     private ComboBox<String> sizeCombo;
     private ComboBox<String> rightSizeCombo;
     private boolean isUpdatingSize = false;
+    private Label statusMessage;
+
+    private void showStatusMessage(String msg, boolean isError) {
+        javafx.application.Platform.runLater(() -> {
+            statusMessage.setText(msg);
+            statusMessage.setStyle("-fx-font-weight: bold; -fx-text-fill: " + (isError ? "#d32f2f" : "#388e3c") + ";");
+            new Thread(() -> {
+                try { Thread.sleep(4000); } catch(Exception e){}
+                javafx.application.Platform.runLater(() -> {
+                    if (statusMessage.getText().equals(msg)) statusMessage.setText("");
+                });
+            }).start();
+        });
+    }
 
     public PuzzleDesigner() {
         setTitle("Eternity II - Puzzle Designer & Editor");
@@ -135,7 +149,10 @@ public class PuzzleDesigner extends Stage {
             } else {
                 loadDesignFromResource(selected);
             }
-            javafx.application.Platform.runLater(() -> knownPuzzlesCombo.setValue(null));
+            javafx.application.Platform.runLater(() -> {
+                knownPuzzlesCombo.getSelectionModel().clearSelection();
+                knownPuzzlesCombo.setPromptText("Load Puzzle...");
+            });
         });
 
         Button clearBtn = new Button("Clear Board");
@@ -162,10 +179,13 @@ public class PuzzleDesigner extends Stage {
         saveBtn.setStyle("-fx-background-color: #2196f3; -fx-text-fill: white; -fx-font-weight: bold;");
         saveBtn.setOnAction(e -> saveDesign());
 
+        statusMessage = new Label();
+        statusMessage.setPadding(new Insets(0, 0, 0, 10));
+
         toolbar.getChildren().addAll(
             knownPuzzlesCombo,
             new Label("|"), clearBtn, undoBtn, generateBtn,
-            new Label("|"), saveBtn
+            new Label("|"), saveBtn, statusMessage
         );
         root.setTop(toolbar);
         BorderPane.setMargin(toolbar, new Insets(0, 0, 10, 0));
@@ -173,12 +193,12 @@ public class PuzzleDesigner extends Stage {
         // Canvas (Left)
         boardCanvas = new Canvas(sizeX * cellSize, sizeY * cellSize);
         boardCanvas.setOnMouseClicked(e -> {
-            if (e.getButton() == javafx.scene.input.MouseButton.SECONDARY) {
-                int col = (int) (e.getX() / (cellSize * zoomFactor));
-                int row = (int) (e.getY() / (cellSize * zoomFactor));
+            int col = (int) (e.getX() / (cellSize * zoomFactor));
+            int row = (int) (e.getY() / (cellSize * zoomFactor));
+            if (e.getClickCount() == 2) {
                 removePlacementAt(row, col);
-            } else {
-                handleMouseClick(e.getX(), e.getY());
+            } else if (e.getClickCount() == 1) {
+                handleMouseClick(row, col);
             }
         });
         
@@ -332,7 +352,7 @@ public class PuzzleDesigner extends Stage {
             drawGrid();
             pieceTableView.refresh();
         } else {
-            new Alert(Alert.AlertType.INFORMATION, "Nothing to undo.").show();
+            showStatusMessage("Nothing to undo.", false);
         }
     }
 
@@ -673,7 +693,7 @@ public class PuzzleDesigner extends Stage {
                     if (col >= 0 && col < sizeX && row >= 0 && row < sizeY) {
                         PlacedPiece existing = getPlacementForPiece(id);
                         if (existing != null && (existing.row != row || existing.col != col)) {
-                            new Alert(Alert.AlertType.WARNING, "This piece is already placed on the board!").show();
+                            showStatusMessage("This piece is already placed on the board!", true);
                             event.setDropCompleted(false);
                             event.consume();
                             return;
@@ -702,7 +722,7 @@ public class PuzzleDesigner extends Stage {
                             pieceTableView.refresh();
                             success = true;
                         } else {
-                            new Alert(Alert.AlertType.ERROR, "No valid rotation for this piece fits at this cell!").show();
+                            showStatusMessage("No valid rotation for this piece fits at this cell!", true);
                         }
                     }
                 } catch (Exception e) {}
@@ -712,25 +732,33 @@ public class PuzzleDesigner extends Stage {
         });
     }
 
-    private void handleMouseClick(double x, double y) {
-        int col = (int) (x / (cellSize * zoomFactor));
-        int row = (int) (y / (cellSize * zoomFactor));
-
+    private void handleMouseClick(int row, int col) {
         if (col >= 0 && col < sizeX && row >= 0 && row < sizeY) {
             PlacedPiece pp = getPlacementAt(row, col);
             if (pp != null) {
-                // Click on occupied cell: remove piece, reset its state to unplaced, and deselect the cell
-                saveToUndoStack();
-                placements.remove(pp);
-                selectedRow = -1;
-                selectedCol = -1;
-                pieceTableView.getSelectionModel().clearSelection();
-            } else {
-                // Click on empty cell: toggle selection or select and place if a piece is selected
+                // Click on occupied cell: select or deselect
                 if (selectedRow == row && selectedCol == col) {
-                    // Toggle / deselect if already active
                     selectedRow = -1;
                     selectedCol = -1;
+                    updatePieceList();
+                    pieceTableView.getSelectionModel().clearSelection();
+                } else {
+                    selectedRow = row;
+                    selectedCol = col;
+                    long pieceToSelect = getPieceFromLibrary(pp.pieceId);
+                    updatePieceList();
+                    if (pieceToSelect != 0) {
+                        pieceTableView.getSelectionModel().select(pieceToSelect);
+                        pieceTableView.scrollTo(pieceToSelect);
+                    }
+                }
+            } else {
+                // Click on empty cell
+                if (selectedRow == row && selectedCol == col) {
+                    selectedRow = -1;
+                    selectedCol = -1;
+                    updatePieceList();
+                    pieceTableView.getSelectionModel().clearSelection();
                 } else {
                     selectedRow = row;
                     selectedCol = col;
@@ -740,7 +768,8 @@ public class PuzzleDesigner extends Stage {
                         int id = PiecePrimitive.getId(selectedPiece);
                         PlacedPiece existing = getPlacementForPiece(id);
                         if (existing != null) {
-                            new Alert(Alert.AlertType.WARNING, "This piece is already placed on the board!").show();
+                            showStatusMessage("This piece is already placed on the board!", true);
+                            updatePieceList();
                         } else {
                             long pieceToPlace = selectedPiece;
                             boolean placedValid = false;
@@ -758,25 +787,27 @@ public class PuzzleDesigner extends Stage {
                                 saveToUndoStack();
                                 placements.removeIf(p -> p.row == row && p.col == col);
                                 placements.add(new PlacedPiece(row, col, id, bestRot, false));
-                                selectedRow = -1;
-                                selectedCol = -1;
-                                pieceTableView.getSelectionModel().clearSelection();
+                                updatePieceList();
+                                pieceTableView.getSelectionModel().select(selectedPiece);
+                                pieceTableView.scrollTo(selectedPiece);
                             } else {
-                                new Alert(Alert.AlertType.ERROR, "No valid rotation for this piece fits at this cell!").show();
+                                showStatusMessage("No valid rotation for this piece fits at this cell!", true);
+                                updatePieceList();
                             }
                         }
+                    } else {
+                        updatePieceList();
                     }
                 }
             }
-            updatePieceList();
             drawGrid();
             pieceTableView.refresh();
         } else {
             // Click outside puzzle resets selection
             selectedRow = -1;
             selectedCol = -1;
-            pieceTableView.getSelectionModel().clearSelection();
             updatePieceList();
+            pieceTableView.getSelectionModel().clearSelection();
             drawGrid();
             pieceTableView.refresh();
         }
@@ -880,8 +911,64 @@ public class PuzzleDesigner extends Stage {
         }
     }
 
+    private boolean canFitAnyRot(int row, int col, long piece) {
+        long p = piece;
+        for (int i=0; i<4; i++) {
+            if (isValidPlacement(row, col, p)) return true;
+            p = PiecePrimitive.rotateCW(p);
+        }
+        return false;
+    }
+
     private void updatePieceList() {
-        pieceTableView.getItems().setAll(pieceLibrary);
+        List<Long> filtered = new ArrayList<>();
+        
+        if (selectedRow == -1 && selectedCol == -1) {
+            // Unselected: show all unplaced pieces
+            for (Long p : pieceLibrary) {
+                if (getPlacementForPiece(PiecePrimitive.getId(p)) == null) {
+                    filtered.add(p);
+                }
+            }
+        } else {
+            PlacedPiece pp = getPlacementAt(selectedRow, selectedCol);
+            if (pp == null) {
+                // Empty cell selected: show only unplaced pieces that fit here
+                for (Long p : pieceLibrary) {
+                    if (getPlacementForPiece(PiecePrimitive.getId(p)) != null) continue;
+                    if (canFitAnyRot(selectedRow, selectedCol, p)) {
+                        filtered.add(p);
+                    }
+                }
+            } else {
+                // Occupied cell selected: show unplaced pieces that fit in adjacent empty cells
+                long self = getPieceFromLibrary(pp.pieceId);
+                if (self != 0) filtered.add(self);
+                
+                for (Long p : pieceLibrary) {
+                    if (getPlacementForPiece(PiecePrimitive.getId(p)) != null) continue;
+                    
+                    boolean fitsAdjacent = false;
+                    if (selectedRow > 0 && getPlacementAt(selectedRow - 1, selectedCol) == null) {
+                        if (canFitAnyRot(selectedRow - 1, selectedCol, p)) fitsAdjacent = true;
+                    }
+                    if (!fitsAdjacent && selectedRow < sizeY - 1 && getPlacementAt(selectedRow + 1, selectedCol) == null) {
+                        if (canFitAnyRot(selectedRow + 1, selectedCol, p)) fitsAdjacent = true;
+                    }
+                    if (!fitsAdjacent && selectedCol > 0 && getPlacementAt(selectedRow, selectedCol - 1) == null) {
+                        if (canFitAnyRot(selectedRow, selectedCol - 1, p)) fitsAdjacent = true;
+                    }
+                    if (!fitsAdjacent && selectedCol < sizeX - 1 && getPlacementAt(selectedRow, selectedCol + 1) == null) {
+                        if (canFitAnyRot(selectedRow, selectedCol + 1, p)) fitsAdjacent = true;
+                    }
+                    
+                    if (fitsAdjacent) {
+                        filtered.add(p);
+                    }
+                }
+            }
+        }
+        pieceTableView.getItems().setAll(filtered);
     }
 
     private void showPieceDialog(Long existing) {
@@ -1101,11 +1188,10 @@ public class PuzzleDesigner extends Stage {
                         up.hints.add(new org.game.eternity2.model.UnifiedPuzzle.HintData(pp.col, pp.row, pp.pieceId, pp.rotation));
                     }
                 }
-                up.patterns = up.getPatterns();
                 PuzzleLoaderWriter.saveUnified(file.toPath(), up);
-                new Alert(Alert.AlertType.INFORMATION, "Design saved successfully!").show();
+                showStatusMessage("Design saved successfully!", false);
             } catch (IOException ex) {
-                new Alert(Alert.AlertType.ERROR, "Failed to save design: " + ex.getMessage()).show();
+                showStatusMessage("Failed to save design: " + ex.getMessage(), true);
             }
         }
     }
@@ -1161,8 +1247,9 @@ public class PuzzleDesigner extends Stage {
                 
                 drawGrid();
                 pieceTableView.refresh();
+                showStatusMessage("Puzzle loaded successfully!", false);
             } catch (Exception ex) {
-                new Alert(Alert.AlertType.ERROR, "Failed to load design: " + ex.getMessage()).show();
+                showStatusMessage("Failed to load design: " + ex.getMessage(), true);
             }
         }
     }
@@ -1211,8 +1298,9 @@ public class PuzzleDesigner extends Stage {
             
             drawGrid();
             pieceTableView.refresh();
+            showStatusMessage("Puzzle loaded successfully!", false);
         } catch (Exception ex) {
-            new Alert(Alert.AlertType.ERROR, "Failed to load resource design: " + ex.getMessage()).show();
+            showStatusMessage("Failed to load resource design: " + ex.getMessage(), true);
         }
     }
 }

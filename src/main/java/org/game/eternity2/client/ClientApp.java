@@ -106,73 +106,39 @@ public class ClientApp extends Application implements ClientUI {
         controls.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
         controls.setPadding(new Insets(5));
 
-        // Dual Y-Axis performance chart overlay
+        // Performance chart
         javafx.scene.chart.NumberAxis xAxis1 = new javafx.scene.chart.NumberAxis();
         xAxis1.setLabel("Time (s)");
         javafx.scene.chart.NumberAxis yAxis1 = new javafx.scene.chart.NumberAxis();
         yAxis1.setLabel("Throughput (PPS)");
-        yAxis1.setSide(javafx.geometry.Side.LEFT);
         
         throughputChart = new javafx.scene.chart.LineChart<>(xAxis1, yAxis1);
-        throughputChart.setTitle("Performance Over Time");
+        throughputChart.setTitle("Performance");
         throughputChart.setCreateSymbols(false);
-        throughputChart.setLegendVisible(false);
-        throughputChart.setPrefHeight(200);
+        throughputChart.setLegendVisible(true);
+        throughputChart.setPrefHeight(180);
 
         throughputSeries = new javafx.scene.chart.XYChart.Series<>();
         throughputSeries.setName("Throughput (PPS)");
         throughputChart.getData().add(throughputSeries);
 
+        // Score chart
         javafx.scene.chart.NumberAxis xAxis2 = new javafx.scene.chart.NumberAxis();
-        xAxis2.setTickLabelsVisible(false);
-        xAxis2.setTickMarkVisible(false);
-        xAxis2.setMinorTickVisible(false);
-        xAxis2.setOpacity(0.0);
-
+        xAxis2.setLabel("Time (s)");
         javafx.scene.chart.NumberAxis yAxis2 = new javafx.scene.chart.NumberAxis();
         yAxis2.setLabel("Best Score");
-        yAxis2.setSide(javafx.geometry.Side.RIGHT);
 
         scoreChart = new javafx.scene.chart.LineChart<>(xAxis2, yAxis2);
+        scoreChart.setTitle("Best Score Progression");
         scoreChart.setCreateSymbols(false);
-        scoreChart.setLegendVisible(false);
-        scoreChart.setHorizontalGridLinesVisible(false);
-        scoreChart.setVerticalGridLinesVisible(false);
-        scoreChart.setAlternativeRowFillVisible(false);
-        scoreChart.setAlternativeColumnFillVisible(false);
-        scoreChart.getStyleClass().add("transparent-chart");
-        scoreChart.setPrefHeight(200);
+        scoreChart.setLegendVisible(true);
+        scoreChart.setPrefHeight(180);
 
         bestScoreSeries = new javafx.scene.chart.XYChart.Series<>();
         bestScoreSeries.setName("Best Score");
         scoreChart.getData().add(bestScoreSeries);
 
-        // Bind X-axis bounds to align them
-        xAxis2.setAutoRanging(false);
-        xAxis2.lowerBoundProperty().bind(xAxis1.lowerBoundProperty());
-        xAxis2.upperBoundProperty().bind(xAxis1.upperBoundProperty());
-        xAxis2.tickUnitProperty().bind(xAxis1.tickUnitProperty());
-
-        // StackPane to overlay both charts
-        javafx.scene.layout.StackPane chartPane = new javafx.scene.layout.StackPane(throughputChart, scoreChart);
-        chartPane.setPrefHeight(200);
-
-        // Custom Colored Legend HBox
-        Label throughputDot = new Label("●");
-        throughputDot.setStyle("-fx-text-fill: #f39c12; -fx-font-size: 14px; -fx-padding: 0 4 0 0;");
-        Label throughputText = new Label("Throughput (PPS)   ");
-        throughputText.setStyle("-fx-font-weight: bold;");
-
-        Label scoreDot = new Label("●");
-        scoreDot.setStyle("-fx-text-fill: #2ecc71; -fx-font-size: 14px; -fx-padding: 0 4 0 0;");
-        Label scoreText = new Label("Best Score");
-        scoreText.setStyle("-fx-font-weight: bold;");
-
-        HBox customLegend = new HBox(throughputDot, throughputText, scoreDot, scoreText);
-        customLegend.setAlignment(javafx.geometry.Pos.CENTER);
-        customLegend.setPadding(new Insets(5, 0, 5, 0));
-
-        VBox chartContainer = new VBox(chartPane, customLegend);
+        VBox chartContainer = new VBox(10, throughputChart, scoreChart);
 
         // Statistics panel
         statsLabel = new Label("Waiting for connection...");
@@ -255,8 +221,7 @@ public class ClientApp extends Application implements ClientUI {
         try {
             org.game.eternity2.util.BoardRenderer.renderBoard(boardGrid, new org.game.eternity2.model.BoardPrimitive(
                     statistics.getBoardWidth(), statistics.getBoardHeight()), 600, 600);
-            bestScoreLabel.setText("Best Score: " + org.game.eternity2.util.BoardRenderer
-                    .formatScore(statistics.getBestScore(), statistics.getBoardWidth(), statistics.getBoardHeight()));
+            bestScoreLabel.setText("Best Score: -");
         } catch (Exception ignored) {
         }
         startStatsPoller();
@@ -284,10 +249,12 @@ public class ClientApp extends Application implements ClientUI {
                 Platform.runLater(() -> {
                     ClientStatistics stats = client.getStatistics();
                     statsLabel.setText(String.format(
-                            "SESSION:\nJobs: %d | Pieces: %d\nBacktracks: %d | Best: %s\n\nTOTAL:\nJobs: %d | Pieces: %d\nBacktracks: %d",
+                            "SESSION:\nCompleted Jobs: %d | Pieces: %d\nBacktracks: %d | Best: %s\nPackets: %d data (S: %d, R: %d) / %d stat (S: %d, R: %d)\n\nTOTAL:\nCompleted Jobs: %d | Pieces: %d\nBacktracks: %d",
                             stats.getJobsCompleted(), stats.getPiecesPlaced(), stats.getBacktrackCount(),
                             org.game.eternity2.util.BoardRenderer.formatScore(stats.getBestScore(),
                                     stats.getBoardWidth(), stats.getBoardHeight()),
+                            stats.getDataPacketsSent() + stats.getDataPacketsReceived(), stats.getDataPacketsSent(), stats.getDataPacketsReceived(),
+                            stats.getStatPacketsSent() + stats.getStatPacketsReceived(), stats.getStatPacketsSent(), stats.getStatPacketsReceived(),
                             stats.getTotalJobsCompleted(), stats.getTotalPiecesPlaced(),
                             stats.getTotalBacktrackCount()));
 

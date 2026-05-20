@@ -69,13 +69,13 @@ public class BoardRenderer {
         gc.translate(x, y);
 
         if (piece == 0) {
-            gc.setFill(Color.web("#1a1a2e"));
+            gc.setFill(Color.web("#333333")); // Dark grey background
             gc.fillRect(0, 0, s, s);
-            gc.setStroke(Color.web("#2a2a3e"));
-            gc.setLineWidth(0.5);
+            gc.setStroke(Color.BLACK); // Black grid lines
+            gc.setLineWidth(1.0);
             gc.strokeRect(0, 0, s, s);
         } else {
-            gc.setFill(Color.web("#2d2d44"));
+            gc.setFill(Color.web("#555555")); // Grey background
             gc.fillRect(0, 0, s, s);
 
             drawTriangle(gc, PiecePrimitive.getTop(piece), 0, s);
@@ -83,8 +83,8 @@ public class BoardRenderer {
             drawTriangle(gc, PiecePrimitive.getBottom(piece), 2, s);
             drawTriangle(gc, PiecePrimitive.getLeft(piece), 3, s);
 
-            gc.setStroke(Color.web("#444466"));
-            gc.setLineWidth(0.5);
+            gc.setStroke(Color.BLACK); // Black grid lines
+            gc.setLineWidth(1.0);
             gc.strokeRect(0, 0, s, s);
         }
         gc.restore();

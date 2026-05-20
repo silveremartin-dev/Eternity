@@ -154,6 +154,8 @@ public class EternityClient {
                                 String packetIdShort = packet.getPacketId().substring(0, 8);
                                 logger.debug("Received packet [{}] {}", packetIdShort, packet.getCommand());
                             }
+                            boolean isStat = (packet.getCommand() == EternityPacket.Command.STATISTICS_UPDATE);
+                            statistics.incrementPacketsReceived(isStat);
                             processPacket(packet);
                         }
                     } catch (ClassNotFoundException e) {
@@ -339,6 +341,8 @@ public class EternityClient {
         if (!isConnected)
             return;
         try {
+            boolean isStat = (packet.getCommand() == EternityPacket.Command.STATISTICS_UPDATE);
+            statistics.incrementPacketsSent(isStat);
             out.writeObject(packet);
             out.flush();
             if (ui != null) {

@@ -50,10 +50,16 @@ public class ClientStatistics {
 
     // Session stats
     private final AtomicInteger jobsCompleted = new AtomicInteger(0);
-    private final AtomicInteger piecesPlaced = new AtomicInteger(0);
+    private final AtomicLong piecesPlaced = new AtomicLong(0);
     private final AtomicLong backtrackCount = new AtomicLong(0);
     private final AtomicInteger bestScore = new AtomicInteger(0);
     private final AtomicLong computeTimeMs = new AtomicLong(0);
+
+    // Session packet stats
+    private final AtomicLong dataPacketsSent = new AtomicLong(0);
+    private final AtomicLong dataPacketsReceived = new AtomicLong(0);
+    private final AtomicLong statPacketsSent = new AtomicLong(0);
+    private final AtomicLong statPacketsReceived = new AtomicLong(0);
 
     // Total stats (persistent)
     private final AtomicLong totalJobsCompleted = new AtomicLong(0);
@@ -73,6 +79,10 @@ public class ClientStatistics {
         bestScore.set(0);
         computeTimeMs.set(0);
         manualPPS.set(0);
+        dataPacketsSent.set(0);
+        dataPacketsReceived.set(0);
+        statPacketsSent.set(0);
+        statPacketsReceived.set(0);
         synchronized (this) {
             bestBoard = null;
         }
@@ -96,7 +106,7 @@ public class ClientStatistics {
         totalJobsCompleted.incrementAndGet();
     }
 
-    public void incrementPiecesPlaced(int count) {
+    public void incrementPiecesPlaced(long count) {
         piecesPlaced.addAndGet(count);
         totalPiecesPlaced.addAndGet(count);
     }
@@ -124,7 +134,7 @@ public class ClientStatistics {
         return jobsCompleted.get();
     }
 
-    public int getPiecesPlaced() {
+    public long getPiecesPlaced() {
         return piecesPlaced.get();
     }
 
@@ -148,13 +158,28 @@ public class ClientStatistics {
         return System.currentTimeMillis() - startTime;
     }
 
+    public void incrementPacketsSent(boolean isStat) {
+        if (isStat) statPacketsSent.incrementAndGet();
+        else dataPacketsSent.incrementAndGet();
+    }
+
+    public void incrementPacketsReceived(boolean isStat) {
+        if (isStat) statPacketsReceived.incrementAndGet();
+        else dataPacketsReceived.incrementAndGet();
+    }
+
+    public long getDataPacketsSent() { return dataPacketsSent.get(); }
+    public long getStatPacketsSent() { return statPacketsSent.get(); }
+    public long getDataPacketsReceived() { return dataPacketsReceived.get(); }
+    public long getStatPacketsReceived() { return statPacketsReceived.get(); }
+
     public void addBacktracks(long count) {
         backtrackCount.addAndGet(count);
         totalBacktrackCount.addAndGet(count);
     }
 
     private final AtomicLong manualPPS = new AtomicLong(0);
-    public void setPiecesPerSecond(int pps) {
+    public void setPiecesPerSecond(long pps) {
         manualPPS.set(pps);
     }
 
