@@ -149,10 +149,6 @@ public class PuzzleDesigner extends Stage {
             } else {
                 loadDesignFromResource(selected);
             }
-            javafx.application.Platform.runLater(() -> {
-                knownPuzzlesCombo.getSelectionModel().clearSelection();
-                knownPuzzlesCombo.setPromptText("Load Puzzle...");
-            });
         });
 
         Button clearBtn = new Button("Clear Board");
@@ -193,8 +189,8 @@ public class PuzzleDesigner extends Stage {
         // Canvas (Left)
         boardCanvas = new Canvas(sizeX * cellSize, sizeY * cellSize);
         boardCanvas.setOnMouseClicked(e -> {
-            int col = (int) (e.getX() / (cellSize * zoomFactor));
-            int row = (int) (e.getY() / (cellSize * zoomFactor));
+            int col = (int) (e.getX() / cellSize);
+            int row = (int) (e.getY() / cellSize);
             if (e.getClickCount() == 2) {
                 removePlacementAt(row, col);
             } else if (e.getClickCount() == 1) {
@@ -688,8 +684,8 @@ public class PuzzleDesigner extends Stage {
                 try {
                     long piece = Long.parseLong(db.getString());
                     int id = PiecePrimitive.getId(piece);
-                    int col = (int) (event.getX() / (cellSize * zoomFactor));
-                    int row = (int) (event.getY() / (cellSize * zoomFactor));
+                    int col = (int) (event.getX() / cellSize);
+                    int row = (int) (event.getY() / cellSize);
                     if (col >= 0 && col < sizeX && row >= 0 && row < sizeY) {
                         PlacedPiece existing = getPlacementForPiece(id);
                         if (existing != null && (existing.row != row || existing.col != col)) {
@@ -738,6 +734,7 @@ public class PuzzleDesigner extends Stage {
             if (pp != null) {
                 // Click on occupied cell: select or deselect
                 if (selectedRow == row && selectedCol == col) {
+                    // Deselect
                     selectedRow = -1;
                     selectedCol = -1;
                     updatePieceList();
@@ -755,6 +752,7 @@ public class PuzzleDesigner extends Stage {
             } else {
                 // Click on empty cell
                 if (selectedRow == row && selectedCol == col) {
+                    // Deselect
                     selectedRow = -1;
                     selectedCol = -1;
                     updatePieceList();
@@ -796,7 +794,7 @@ public class PuzzleDesigner extends Stage {
                             }
                         }
                     } else {
-                        updatePieceList();
+                        selectedRow = row; selectedCol = col; updatePieceList();
                     }
                 }
             }
@@ -818,8 +816,8 @@ public class PuzzleDesigner extends Stage {
         if (pp != null) {
             saveToUndoStack();
             placements.remove(pp);
-            selectedRow = row;
-            selectedCol = col;
+            selectedRow = -1;
+            selectedCol = -1;
             updatePieceList();
             drawGrid();
             pieceTableView.refresh();
@@ -921,54 +919,8 @@ public class PuzzleDesigner extends Stage {
     }
 
     private void updatePieceList() {
-        List<Long> filtered = new ArrayList<>();
-        
-        if (selectedRow == -1 && selectedCol == -1) {
-            // Unselected: show all unplaced pieces
-            for (Long p : pieceLibrary) {
-                if (getPlacementForPiece(PiecePrimitive.getId(p)) == null) {
-                    filtered.add(p);
-                }
-            }
-        } else {
-            PlacedPiece pp = getPlacementAt(selectedRow, selectedCol);
-            if (pp == null) {
-                // Empty cell selected: show only unplaced pieces that fit here
-                for (Long p : pieceLibrary) {
-                    if (getPlacementForPiece(PiecePrimitive.getId(p)) != null) continue;
-                    if (canFitAnyRot(selectedRow, selectedCol, p)) {
-                        filtered.add(p);
-                    }
-                }
-            } else {
-                // Occupied cell selected: show unplaced pieces that fit in adjacent empty cells
-                long self = getPieceFromLibrary(pp.pieceId);
-                if (self != 0) filtered.add(self);
-                
-                for (Long p : pieceLibrary) {
-                    if (getPlacementForPiece(PiecePrimitive.getId(p)) != null) continue;
-                    
-                    boolean fitsAdjacent = false;
-                    if (selectedRow > 0 && getPlacementAt(selectedRow - 1, selectedCol) == null) {
-                        if (canFitAnyRot(selectedRow - 1, selectedCol, p)) fitsAdjacent = true;
-                    }
-                    if (!fitsAdjacent && selectedRow < sizeY - 1 && getPlacementAt(selectedRow + 1, selectedCol) == null) {
-                        if (canFitAnyRot(selectedRow + 1, selectedCol, p)) fitsAdjacent = true;
-                    }
-                    if (!fitsAdjacent && selectedCol > 0 && getPlacementAt(selectedRow, selectedCol - 1) == null) {
-                        if (canFitAnyRot(selectedRow, selectedCol - 1, p)) fitsAdjacent = true;
-                    }
-                    if (!fitsAdjacent && selectedCol < sizeX - 1 && getPlacementAt(selectedRow, selectedCol + 1) == null) {
-                        if (canFitAnyRot(selectedRow, selectedCol + 1, p)) fitsAdjacent = true;
-                    }
-                    
-                    if (fitsAdjacent) {
-                        filtered.add(p);
-                    }
-                }
-            }
-        }
-        pieceTableView.getItems().setAll(filtered);
+        pieceTableView.getItems().setAll(pieceLibrary);
+        pieceTableView.refresh();
     }
 
     private void showPieceDialog(Long existing) {

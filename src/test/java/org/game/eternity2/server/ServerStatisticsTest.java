@@ -54,11 +54,13 @@ class ServerStatisticsTest {
     @Test
     void testPacketTracking() {
         ServerStatistics stats = new ServerStatistics();
-        stats.incrementPacketsSent();
-        stats.incrementPacketsSent();
-        stats.incrementPacketsReceived();
-        assertEquals(2, stats.getPacketsSent());
-        assertEquals(1, stats.getPacketsReceived());
+        stats.incrementPacketsSent(false);
+        stats.incrementPacketsSent(true);
+        stats.incrementPacketsReceived(false);
+        assertEquals(1, stats.getDataPacketsSent());
+        assertEquals(1, stats.getStatPacketsSent());
+        assertEquals(1, stats.getDataPacketsReceived());
+        assertEquals(0, stats.getStatPacketsReceived());
     }
 
     @Test

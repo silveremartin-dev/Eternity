@@ -259,6 +259,29 @@ public class EternityServer {
         } catch (IOException e) {
             logger.error("Failed to start gRPC server", e);
         }
+
+        // Start Prometheus metrics HTTP endpoint
+        try {
+            int metricsPort = port + 3;
+            com.sun.net.httpserver.HttpServer metricsServer =
+                com.sun.net.httpserver.HttpServer.create(new java.net.InetSocketAddress(metricsPort), 0);
+            metricsServer.createContext("/metrics", exchange -> {
+                String body = org.game.eternity2.server.monitoring.MetricsProvider.getInstance().scrape();
+                byte[] bytes = body.getBytes(java.nio.charset.StandardCharsets.UTF_8);
+                exchange.getResponseHeaders().set("Content-Type", "text/plain; version=0.0.4; charset=utf-8");
+                exchange.sendResponseHeaders(200, bytes.length);
+                exchange.getResponseBody().write(bytes);
+                exchange.getResponseBody().close();
+            });
+            metricsServer.setExecutor(null);
+            metricsServer.start();
+            logger.info("Prometheus metrics endpoint started on http://localhost:{}/metrics", metricsPort);
+            if (gui != null) {
+                gui.log(timestamp() + " Prometheus metrics on http://localhost:" + metricsPort + "/metrics");
+            }
+        } catch (IOException e) {
+            logger.warn("Failed to start Prometheus metrics endpoint: {}", e.getMessage());
+        }
     }
 
     public void stopServer() {
@@ -337,6 +360,20 @@ public class EternityServer {
 
     private String timestamp() {
         return "[" + LocalTime.now().format(TIME_FORMATTER) + "]";
+    }
+
+    public void broadcastPacket(EternityPacket packet) {
+        List<ClientHandler> clientsCopy;
+        synchronized (clients) {
+            clientsCopy = new ArrayList<>(clients);
+        }
+        for (ClientHandler client : clientsCopy) {
+            try {
+                client.sendPacket(packet);
+            } catch (IOException e) {
+                logger.warn("Failed to broadcast packet to " + client.username);
+            }
+        }
     }
 
     /** Handles communication with a single client. */
@@ -474,6 +511,12 @@ public class EternityServer {
                                     gui.log(timestamp() + " [NEW BEST] " + formatted + " from " + packet.getUser().getLogin());
                                     gui.updateBestBoard(masterBoard);
                                 }
+                                // Broadcast new best board to all connected clients
+                                EternityServer.this.broadcastPacket(new EternityPacket(
+                                    new EternityUser("SERVER", "SERVER"),
+                                    EternityPacket.Command.BEST_BOARD_UPDATE,
+                                    masterBoard
+                                ));
                                 // Save checkpoint
                                 try {
                                     java.io.File dataDir = new java.io.File("data");

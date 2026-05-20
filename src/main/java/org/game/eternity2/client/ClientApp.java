@@ -58,6 +58,7 @@ public class ClientApp extends Application implements ClientUI {
     private EternityClient client;
     private GridPane boardGrid;
     private ScrollPane boardScroll;
+    private Label ppsLabel;
     private javafx.scene.chart.LineChart<Number, Number> throughputChart;
     private javafx.scene.chart.LineChart<Number, Number> scoreChart;
     private javafx.scene.chart.XYChart.Series<Number, Number> throughputSeries;
@@ -143,9 +144,12 @@ public class ClientApp extends Application implements ClientUI {
         // Statistics panel
         statsLabel = new Label("Waiting for connection...");
         statsLabel.setStyle("-fx-font-family: 'Consolas'; -fx-font-size: 12px;");
-        VBox statsPanel = new VBox(statsLabel);
+        ppsLabel = new Label("Pieces/sec: 0");
+        ppsLabel.setStyle("-fx-font-family: 'Consolas'; -fx-font-size: 12px; -fx-font-weight: bold;");
+        VBox statsPanel = new VBox(5, statsLabel, ppsLabel);
         statsPanel.setPadding(new Insets(10));
         statsPanel.setStyle("-fx-background-color: #e8f8e8; -fx-border-color: #4caf50;");
+        statsPanel.setMinHeight(140); // Ensures it is never squished
 
         // Log area
         logArea = new TextArea();
@@ -258,10 +262,20 @@ public class ClientApp extends Application implements ClientUI {
                             stats.getTotalJobsCompleted(), stats.getTotalPiecesPlaced(),
                             stats.getTotalBacktrackCount()));
 
+                    // Update pieces/sec label
+                    double pps = stats.getPiecesPerSecond();
+                    if (pps >= 1_000_000) {
+                        ppsLabel.setText(String.format("⚡ Pieces/sec: %.2fM", pps / 1_000_000));
+                    } else if (pps >= 1_000) {
+                        ppsLabel.setText(String.format("⚡ Pieces/sec: %.1fK", pps / 1_000));
+                    } else {
+                        ppsLabel.setText(String.format("⚡ Pieces/sec: %.0f", pps));
+                    }
+
                     // Update throughput chart
                     double timeSec = (System.currentTimeMillis() - startTime) / 1000.0;
                     throughputSeries.getData()
-                            .add(new javafx.scene.chart.XYChart.Data<>(timeSec, stats.getPiecesPerSecond()));
+                            .add(new javafx.scene.chart.XYChart.Data<>(timeSec, pps));
                     if (throughputSeries.getData().size() > 100)
                         throughputSeries.getData().remove(0);
 

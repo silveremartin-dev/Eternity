@@ -48,6 +48,10 @@ public class BasicEternitySolver implements EternitySolverInterface {
         this.allPieces = PuzzleLoaderWriter.generateEternity2Pieces();
     }
 
+    public BasicEternitySolver(long[] pieces) {
+        this.allPieces = pieces;
+    }
+
     @Override
     public BoardPrimitive computeTessellation(BoardPrimitive startingBoard) {
         List<Long> unusedTiles = getUnusedTiles(startingBoard);

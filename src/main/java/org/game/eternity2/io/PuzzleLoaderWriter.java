@@ -116,8 +116,7 @@ public class PuzzleLoaderWriter {
 
     public static long[] generateEternity2Pieces() {
         String[] paths = {
-            "/puzzles/unified_16x16_eternity2.json",
-            "/puzzles/unified_16x16.json"
+            "/puzzles/puzzle_16x16_empty_board.json"
         };
         for (String path : paths) {
             try {
@@ -304,20 +303,31 @@ public class PuzzleLoaderWriter {
         }
     }
 
-    public static void saveUnifiedSolution(Path path, BoardPrimitive board, int patterns) throws IOException {
+    public static void saveUnifiedSolution(Path path, UnifiedPuzzle original, BoardPrimitive board, int patterns) throws IOException {
+        if (original == null) {
+            throw new IllegalArgumentException("Original puzzle cannot be null");
+        }
         UnifiedPuzzle up = new UnifiedPuzzle();
         up.width = board.getWidth();
         up.height = board.getHeight();
         up.patterns = patterns;
+        
+        // Copy pieces and hints from original
+        up.pieces = new ArrayList<>(original.pieces);
+        up.hints = new ArrayList<>(original.hints);
+        
+        // Output the placements!
+        up.currentBoard = new UnifiedPuzzle.BoardData();
         for (int y = 0; y < up.height; y++) {
             for (int x = 0; x < up.width; x++) {
                 long p = board.getPiece(x, y);
                 if (p != 0) {
-                    up.pieces.add(new UnifiedPuzzle.PieceData(
-                        PiecePrimitive.getId(p), PiecePrimitive.getTop(p), PiecePrimitive.getRight(p),
-                        PiecePrimitive.getBottom(p), PiecePrimitive.getLeft(p)
-                    ));
-                    up.hints.add(new UnifiedPuzzle.HintData(x, y, PiecePrimitive.getId(p), PiecePrimitive.getRotation(p)));
+                    UnifiedPuzzle.PlacementData pd = new UnifiedPuzzle.PlacementData();
+                    pd.x = x;
+                    pd.y = y;
+                    pd.pieceId = PiecePrimitive.getId(p);
+                    pd.rotation = PiecePrimitive.getRotation(p);
+                    up.currentBoard.placements.add(pd);
                 }
             }
         }

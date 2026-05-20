@@ -70,6 +70,7 @@ public class ServerApp extends Application {
     private Button browseBtn;
     private Label selectedFileLabel;
     private java.io.File selectedPuzzleFile;
+    private org.game.eternity2.model.UnifiedPuzzle currentPuzzle;
 
     public void start(Stage primaryStage) {
         primaryStage.setTitle("Eternity Server - Distributed Solver");
@@ -126,6 +127,10 @@ public class ServerApp extends Application {
         Button saveBestBtn = new Button("Save Best Solution");
         saveBestBtn.setStyle("-fx-base: #e8f5e9;");
         saveBestBtn.setOnAction(e -> {
+            if (server == null || !server.isRunning()) {
+                new Alert(Alert.AlertType.WARNING, "Server is not running.").show();
+                return;
+            }
             org.game.eternity2.model.BoardPrimitive best = server.getMasterBoard();
             if (best == null || best.getPlacedCount() == 0) {
                 new Alert(Alert.AlertType.WARNING, "No solution found yet to save.").show();
@@ -137,7 +142,7 @@ public class ServerApp extends Application {
             java.io.File file = fileChooser.showSaveDialog(primaryStage);
             if (file != null) {
                 try {
-                    org.game.eternity2.io.PuzzleLoaderWriter.saveUnifiedSolution(file.toPath(), best, 22); // Assuming 22 patterns for E2
+                    org.game.eternity2.io.PuzzleLoaderWriter.saveUnifiedSolution(file.toPath(), currentPuzzle, best, 22);
                     new Alert(Alert.AlertType.INFORMATION, "Best solution saved to " + file.getName()).show();
                 } catch (Exception ex) {
                     new Alert(Alert.AlertType.ERROR, "Save failed: " + ex.getMessage()).show();
@@ -227,13 +232,13 @@ public class ServerApp extends Application {
                 if ("Custom (.json)".equals(selectedPuzzle)) {
                     if (selectedPuzzleFile == null) return;
                     try {
-                        up = org.game.eternity2.io.PuzzleLoaderWriter.loadUnified(selectedPuzzleFile.toPath());
+                        currentPuzzle = org.game.eternity2.io.PuzzleLoaderWriter.loadUnified(selectedPuzzleFile.toPath());
                     } catch (Exception ex) {
                         long[] pieces = org.game.eternity2.io.PuzzleLoaderWriter.loadPieces(selectedPuzzleFile.toPath());
-                        up = new org.game.eternity2.model.UnifiedPuzzle();
-                        up.pieces = new java.util.ArrayList<>();
+                        currentPuzzle = new org.game.eternity2.model.UnifiedPuzzle();
+                        currentPuzzle.pieces = new java.util.ArrayList<>();
                         for (long p : pieces) {
-                            up.pieces.add(new org.game.eternity2.model.UnifiedPuzzle.PieceData(
+                            currentPuzzle.pieces.add(new org.game.eternity2.model.UnifiedPuzzle.PieceData(
                                 org.game.eternity2.model.PiecePrimitive.getId(p),
                                 org.game.eternity2.model.PiecePrimitive.getTop(p),
                                 org.game.eternity2.model.PiecePrimitive.getRight(p),
@@ -241,20 +246,20 @@ public class ServerApp extends Application {
                                 org.game.eternity2.model.PiecePrimitive.getLeft(p)
                             ));
                         }
-                        if (pieces.length == 16) { up.width = 4; up.height = 4; }
-                        else if (pieces.length == 256) { up.width = 16; up.height = 16; }
+                        if (pieces.length == 16) { currentPuzzle.width = 4; currentPuzzle.height = 4; }
+                        else if (pieces.length == 256) { currentPuzzle.width = 16; currentPuzzle.height = 16; }
                     }
                 } else {
-                    up = org.game.eternity2.io.PuzzleLoaderWriter.loadSmart(selectedPuzzle);
+                    currentPuzzle = org.game.eternity2.io.PuzzleLoaderWriter.loadSmart(selectedPuzzle);
                 }
 
-                long[] pieces = org.game.eternity2.io.PuzzleLoaderWriter.toPrimitives(up);
+                long[] pieces = org.game.eternity2.io.PuzzleLoaderWriter.toPrimitives(currentPuzzle);
                 java.util.List<org.game.eternity2.model.Hint> hints = new java.util.ArrayList<>();
-                for (org.game.eternity2.model.UnifiedPuzzle.HintData hd : up.hints) {
+                for (org.game.eternity2.model.UnifiedPuzzle.HintData hd : currentPuzzle.hints) {
                     hints.add(new org.game.eternity2.model.Hint(hd.x, hd.y, hd.pieceId, hd.rotation));
                 }
 
-                server.initializeGame(up.width, up.height, "Scanline", hints, pieces);
+                server.initializeGame(currentPuzzle.width, currentPuzzle.height, "Scanline", hints, pieces);
                 server.getStatistics().resetTimers();
                 server.startServer();
                 updateStatus(true);

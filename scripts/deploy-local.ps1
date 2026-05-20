@@ -6,16 +6,16 @@ Write-Host "🚀 Eternity II - Local Deployment" -ForegroundColor Cyan
 Write-Host "==================================" -ForegroundColor Cyan
 Write-Host ""
 
-# Vérifier Java
+# Vérifier Java 25+
 try {
-    $javaVersion = java -version 2>&1 | Select-String "version" | ForEach-Object { $_ -replace '.*"(\d+).*', '$1' }
-    if ([int]$javaVersion -lt 21) {
-        Write-Host "❌ Java 21+ required (found: $javaVersion)" -ForegroundColor Red
+    $javaVersion = (java -version 2>&1 | Select-String "version" | ForEach-Object { ($_ -replace '.*"(\d+).*', '$1') })
+    if ([int]$javaVersion -lt 25) {
+        Write-Host "❌ Java 25+ required (found: $javaVersion)" -ForegroundColor Red
         exit 1
     }
     Write-Host "✅ Java $javaVersion detected" -ForegroundColor Green
 } catch {
-    Write-Host "❌ Java not found. Please install Java 21" -ForegroundColor Red
+    Write-Host "❌ Java not found. Please install Java 25+" -ForegroundColor Red
     exit 1
 }
 
@@ -34,7 +34,6 @@ $useRedis = Read-Host "Deploy with Redis? (y/N)"
 if ($useRedis -eq "y" -or $useRedis -eq "Y") {
     Write-Host ""
     Write-Host "🔧 Starting Redis..." -ForegroundColor Yellow
-    
     try {
         docker-compose up -d
         Write-Host "✅ Redis started on localhost:6379" -ForegroundColor Green
@@ -57,16 +56,23 @@ if ($LASTEXITCODE -eq 0) {
     exit 1
 }
 
-# Run
+# Run with ZGC + Virtual Threads optimizations
 Write-Host ""
 Write-Host "🚀 Starting Eternity Server..." -ForegroundColor Cyan
-Write-Host "   - HTTP: http://localhost:8080" -ForegroundColor White
-Write-Host "   - gRPC: localhost:50051" -ForegroundColor White
+Write-Host "   - TCP Solver:         localhost:12345" -ForegroundColor White
+Write-Host "   - WebSocket:          ws://localhost:12346" -ForegroundColor White
+Write-Host "   - gRPC:               localhost:12347" -ForegroundColor White
+Write-Host "   - Prometheus metrics: http://localhost:12348/metrics" -ForegroundColor White
 if ($useRedis -eq "y" -or $useRedis -eq "Y") {
-    Write-Host "   - Redis: localhost:6379" -ForegroundColor White
+    Write-Host "   - Redis:              localhost:6379" -ForegroundColor White
 }
 Write-Host ""
 Write-Host "Press Ctrl+C to stop" -ForegroundColor Yellow
 Write-Host ""
 
-java -jar target/eternity-1.0-SNAPSHOT.jar
+java `
+  -XX:+UseZGC `
+  -XX:+ZGenerational `
+  -Xms512m -Xmx4g `
+  --enable-preview `
+  -jar target/eternity-1.0-SNAPSHOT.jar

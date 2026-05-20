@@ -54,7 +54,8 @@ public class EternityPacket implements Serializable {
         SERVER_STATUS_REQUEST,
         SERVER_STATUS_RESPONSE,
         PUZZLE_DEFINITION,
-        STATISTICS_UPDATE
+        STATISTICS_UPDATE,
+        BEST_BOARD_UPDATE
     }
 
     private String packetId;

@@ -299,6 +299,16 @@ public class EternityClient {
                 }
                 break;
 
+            case BEST_BOARD_UPDATE:
+                if (packet.getPayload() instanceof BoardPrimitive) {
+                    BoardPrimitive board = (BoardPrimitive) packet.getPayload();
+                    statistics.updateBestBoard(board);
+                    if (ui != null) {
+                        ui.updateBestBoard(board);
+                    }
+                }
+                break;
+
             case MESSAGE:
                 String msg = (String) packet.getPayload();
                 if (ui != null)

@@ -229,4 +229,5 @@ class BoardPrimitiveTest {
         long[] cells = board.getCells();
         assertEquals(board.getSize(), cells.length);
     }
+
 }

@@ -45,16 +45,17 @@ public class PiecePrimitive {
 
     // Bit positions
     private static final int ID_SHIFT = 0;
-    private static final int TOP_SHIFT = 8;
-    private static final int RIGHT_SHIFT = 16;
-    private static final int BOTTOM_SHIFT = 24;
-    private static final int LEFT_SHIFT = 32;
-    private static final int ROTATION_SHIFT = 40;
-    private static final int TYPE_SHIFT = 42;
-    private static final int PLACED_SHIFT = 44;
+    private static final int TOP_SHIFT = 10;
+    private static final int RIGHT_SHIFT = 18;
+    private static final int BOTTOM_SHIFT = 26;
+    private static final int LEFT_SHIFT = 34;
+    private static final int ROTATION_SHIFT = 42;
+    private static final int TYPE_SHIFT = 44;
+    private static final int PLACED_SHIFT = 46;
 
     // Masks
     private static final long BYTE_MASK = 0xFFL;
+    private static final long ID_MASK = 0x3FFL; // 10 bits (up to 1023)
     private static final long TWO_BIT_MASK = 0x3L;
     private static final long PLACED_MASK = 1L << PLACED_SHIFT;
 
@@ -68,7 +69,7 @@ public class PiecePrimitive {
      */
     public static long create(int id, int top, int right, int bottom, int left) {
         int type = determineType(top, right, bottom, left);
-        return ((long) id & BYTE_MASK) << ID_SHIFT
+        return ((long) id & ID_MASK) << ID_SHIFT
                 | ((long) top & BYTE_MASK) << TOP_SHIFT
                 | ((long) right & BYTE_MASK) << RIGHT_SHIFT
                 | ((long) bottom & BYTE_MASK) << BOTTOM_SHIFT
@@ -99,7 +100,7 @@ public class PiecePrimitive {
 
     // Getters
     public static int getId(long piece) {
-        return (int) ((piece >> ID_SHIFT) & BYTE_MASK);
+        return (int) ((piece >> ID_SHIFT) & ID_MASK);
     }
 
     public static int getTop(long piece) {

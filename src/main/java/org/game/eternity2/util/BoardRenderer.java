@@ -45,13 +45,16 @@ public class BoardRenderer {
         int bh = board.getHeight();
         double cellSize = Math.min(maxWidth / bw, maxHeight / bh);
 
+        // Use a single Canvas for the entire board — much faster than per-cell StackPanes
+        javafx.scene.canvas.Canvas canvas = new javafx.scene.canvas.Canvas(bw * cellSize, bh * cellSize);
+        javafx.scene.canvas.GraphicsContext gc = canvas.getGraphicsContext2D();
+
         for (int y = 0; y < bh; y++) {
             for (int x = 0; x < bw; x++) {
-                StackPane cell = createCell(board.getPiece(x, y), cellSize);
-                grid.add(cell, x, y);
-                GridPane.setMargin(cell, new Insets(0.2));
+                drawPiece(gc, board.getPiece(x, y), (int)(x * cellSize), (int)(y * cellSize), (int)cellSize);
             }
         }
+        grid.add(canvas, 0, 0);
     }
 
     private static StackPane createCell(long piece, double size) {
