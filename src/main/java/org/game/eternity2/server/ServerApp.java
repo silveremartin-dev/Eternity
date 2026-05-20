@@ -61,9 +61,9 @@ public class ServerApp extends Application {
     private javafx.scene.chart.XYChart.Series<Number, Number> throughputSeries;
     private javafx.scene.chart.XYChart.Series<Number, Number> bestScoreSeries;
     private long startTimeMillis;
-    private long accumulatedActiveTimeMs = 0;
-    private long accumulatedRelativeTimeMs = 0;
     private long lastTickTimeMillis = 0;
+    private Label connectedTimeLabel;
+    private Label cumulativeTimeLabel;
     private double zoomFactor = 1.0;
 
     private Button browseBtn;
@@ -173,9 +173,10 @@ public class ServerApp extends Application {
         jobsLabel = new Label("Jobs: 0/0");
         packetsLabel = new Label("Packets: 0/0");
         bestScoreLabel = new Label("Best Score: 0/0 (0.0%)");
-        solvingTimeLabel = new Label("Solving Time: 00:00:00");
+        connectedTimeLabel = new Label("⏱ Temps connecté (≥1 client) : 00:00:00");
+        cumulativeTimeLabel = new Label("⚡ Temps cumulé clients        : 00:00:00");
 
-        VBox statsPanel = new VBox(8, statsTitle, jobsLabel, packetsLabel, bestScoreLabel, solvingTimeLabel);
+        VBox statsPanel = new VBox(8, statsTitle, jobsLabel, packetsLabel, bestScoreLabel, connectedTimeLabel, cumulativeTimeLabel);
         statsPanel.setPadding(new Insets(10));
         statsPanel.setStyle("-fx-background-color: #e8f4f8; -fx-border-color: #4a90e2;");
 
@@ -201,8 +202,6 @@ public class ServerApp extends Application {
             throughputSeries.getData().clear();
             bestScoreSeries.getData().clear();
             startTimeMillis = System.currentTimeMillis();
-            accumulatedActiveTimeMs = 0;
-            accumulatedRelativeTimeMs = 0;
             lastTickTimeMillis = System.currentTimeMillis();
             String selectedPuzzle = puzzleCombo.getValue();
             
@@ -239,6 +238,7 @@ public class ServerApp extends Application {
                 }
 
                 server.initializeGame(up.width, up.height, "Scanline", hints, pieces);
+                server.getStatistics().resetTimers();
                 server.startServer();
                 updateStatus(true);
             } catch (Exception ex) { 
@@ -343,34 +343,20 @@ public class ServerApp extends Application {
 
         scheduler.scheduleAtFixedRate(() -> {
             if (server != null && server.isRunning()) {
+                long now = System.currentTimeMillis();
+                long delta = now - lastTickTimeMillis;
+                lastTickTimeMillis = now;
+
+                server.getStatistics().tickTime(delta);
+
                 Platform.runLater(() -> {
-                    long now = System.currentTimeMillis();
-                    long delta = now - lastTickTimeMillis;
-                    lastTickTimeMillis = now;
-                    
-                    int activeClients = server.getStatistics().getActiveClients();
-                    if (activeClients > 0) {
-                        accumulatedActiveTimeMs += delta;
-                        accumulatedRelativeTimeMs += (activeClients * delta);
-                    }
-                    
                     ServerStatistics stats = server.getStatistics();
                     JobManager.JobStatistics jobStats = server.getJobManager().getStatistics();
                     jobsLabel.setText(String.format("Jobs: %d/%d (%.1f%%)", jobStats.completed(), jobStats.total(), jobStats.getCompletionPercentage()));
                     packetsLabel.setText(String.format("Packets: %d sent, %d received", stats.getPacketsSent(), stats.getPacketsReceived()));
-                    
-                    long elapsedAbs = accumulatedActiveTimeMs;
-                    long sAbs = (elapsedAbs / 1000) % 60;
-                    long mAbs = (elapsedAbs / (1000 * 60)) % 60;
-                    long hAbs = (elapsedAbs / (1000 * 60 * 60));
 
-                    long elapsedRel = accumulatedRelativeTimeMs;
-                    long sRel = (elapsedRel / 1000) % 60;
-                    long mRel = (elapsedRel / (1000 * 60)) % 60;
-                    long hRel = (elapsedRel / (1000 * 60 * 60));
-
-                    solvingTimeLabel.setText(String.format("Solving Time: %02d:%02d:%02d (Abs) | %02d:%02d:%02d (Rel)",
-                            hAbs, mAbs, sAbs, hRel, mRel, sRel));
+                    connectedTimeLabel.setText("\u23F1 Temps connecté (\u22651 client) : " + formatDuration(stats.getConnectedTimeMs()));
+                    cumulativeTimeLabel.setText("\u26A1 Temps cumulé clients        : " + formatDuration(stats.getCumulativeClientTimeMs()));
                 });
             } else {
                 lastTickTimeMillis = System.currentTimeMillis();
@@ -440,4 +426,13 @@ public class ServerApp extends Application {
             });
         } catch (Exception ignored) {}
     }
+
+    /** Converts a millisecond duration to the HH:mm:ss display string. */
+    private static String formatDuration(long ms) {
+        long s = (ms / 1000) % 60;
+        long m = (ms / (1000 * 60)) % 60;
+        long h = ms / (1000 * 60 * 60);
+        return String.format("%02d:%02d:%02d", h, m, s);
+    }
 }
+

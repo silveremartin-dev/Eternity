@@ -45,6 +45,19 @@ public class ServerStatistics {
     private org.game.eternity2.model.BoardPrimitive bestBoard;
     private final long startTime;
 
+    /**
+     * Wall-clock time (ms) during which at least one client was connected.
+     * Incremented by {@code delta} whenever {@code activeClients > 0}.
+     */
+    private final AtomicLong connectedTimeMs = new AtomicLong(0);
+
+    /**
+     * Cumulative parallel compute time (ms) across all clients.
+     * Each tick adds {@code activeClients × delta}, so 3 clients working
+     * 1 minute each contribute 3 min to this counter.
+     */
+    private final AtomicLong cumulativeClientTimeMs = new AtomicLong(0);
+
     public void updateBestBoard(org.game.eternity2.model.BoardPrimitive board) {
         this.bestBoard = board;
     }
@@ -130,5 +143,35 @@ public class ServerStatistics {
 
     public int getCurrentPiecesPerSecond() {
         return currentPiecesPerSecond.get();
+    }
+
+    /**
+     * Called once per scheduler tick (typically every second).
+     * Updates both time accumulators based on the current active client count.
+     *
+     * @param deltaMs elapsed milliseconds since the last tick
+     */
+    public void tickTime(long deltaMs) {
+        int clients = activeClients.get();
+        if (clients > 0) {
+            connectedTimeMs.addAndGet(deltaMs);
+            cumulativeClientTimeMs.addAndGet((long) clients * deltaMs);
+        }
+    }
+
+    /** Time (ms) during which ≥1 client was connected. */
+    public long getConnectedTimeMs() {
+        return connectedTimeMs.get();
+    }
+
+    /** Cumulative parallel compute time (ms) across all clients (sum of activeClients × elapsed). */
+    public long getCumulativeClientTimeMs() {
+        return cumulativeClientTimeMs.get();
+    }
+
+    /** Reset both time counters (e.g. on server restart). */
+    public void resetTimers() {
+        connectedTimeMs.set(0);
+        cumulativeClientTimeMs.set(0);
     }
 }
