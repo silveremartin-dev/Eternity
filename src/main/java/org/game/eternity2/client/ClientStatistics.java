@@ -62,9 +62,22 @@ public class ClientStatistics {
     private final AtomicLong totalComputeTimeMs = new AtomicLong(0);
 
     private BoardPrimitive bestBoard;
-    private final long startTime;
+    private long startTime;
     private int boardWidth = 16; // Default
     private int boardHeight = 16;
+
+    public void resetSession() {
+        jobsCompleted.set(0);
+        piecesPlaced.set(0);
+        backtrackCount.set(0);
+        bestScore.set(0);
+        computeTimeMs.set(0);
+        manualPPS.set(0);
+        synchronized (this) {
+            bestBoard = null;
+        }
+        this.startTime = System.currentTimeMillis();
+    }
 
     public void setBoardDimensions(int w, int h) {
         this.boardWidth = w;

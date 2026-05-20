@@ -1,0 +1,9 @@
+.transparent-chart {
+    -fx-background-color: transparent;
+}
+.transparent-chart .chart-plot-background {
+    -fx-background-color: transparent;
+}
+.transparent-chart .chart-content {
+    -fx-background-color: transparent;
+}

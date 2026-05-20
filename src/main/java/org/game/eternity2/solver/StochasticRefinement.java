@@ -23,6 +23,17 @@ public class StochasticRefinement {
         this.board = new long[width * height];
     }
 
+    public StochasticRefinement(int width, int height, long seed) {
+        this.width = width;
+        this.height = height;
+        this.random = new Random(seed);
+        this.board = new long[width * height];
+    }
+
+    public void setSeed(long seed) {
+        this.random.setSeed(seed);
+    }
+
     public void setStatistics(org.game.eternity2.client.ClientStatistics stats) {
         this.statistics = stats;
     }

@@ -43,8 +43,8 @@ import java.net.Socket;
  *
  * @author Silvere Martin-Michiellot
  * @version 2.2 (Virtual Threads + gRPC)
-  * @author Antigravity
-  * @since 1.0
+ * @author Antigravity
+ * @since 1.0
  */
 public class EternityClient {
     private static final Logger logger = LogManager.getLogger(EternityClient.class);
@@ -69,6 +69,7 @@ public class EternityClient {
     private EternityUser user;
     private ClientStatistics statistics;
     private JobExecutor executor;
+    private int lastTransmittedScore = -1;
 
     public EternityClient() {
         this.user = new EternityUser("User_" + System.currentTimeMillis() % 1000, "password");
@@ -176,6 +177,14 @@ public class EternityClient {
                     if (isConnected) {
                         double pps = statistics.getPiecesPerSecond();
                         sendPacket(new EternityPacket(user, EternityPacket.Command.STATISTICS_UPDATE, pps));
+                        
+                        BoardPrimitive bestB = statistics.getBestBoard();
+                        if (bestB != null && bestB.computeScore() > lastTransmittedScore) {
+                            lastTransmittedScore = bestB.computeScore();
+                            EternityPacket intermediatePacket = new EternityPacket(user, EternityPacket.Command.RESULT_SUBMISSION, bestB);
+                            intermediatePacket.setStatus("INTERMEDIATE");
+                            sendPacket(intermediatePacket);
+                        }
                     }
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
@@ -226,6 +235,7 @@ public class EternityClient {
             executor.setUseGPU(useGPU);
         }
     }
+
     private void processPacket(EternityPacket packet) {
         switch (packet.getCommand()) {
             case JOB_DISPATCH:
@@ -243,8 +253,11 @@ public class EternityClient {
                 // New job format with JobExecutor - process in Virtual Thread
                 if (packet.getPayload() instanceof Job) {
                     Job job = (Job) packet.getPayload();
+                    statistics.resetSession();
+                    lastTransmittedScore = -1;
                     if (job.getInitialBoard() != null) {
-                        statistics.setBoardDimensions(job.getInitialBoard().getWidth(), job.getInitialBoard().getHeight());
+                        statistics.setBoardDimensions(job.getInitialBoard().getWidth(),
+                                job.getInitialBoard().getHeight());
                     }
                     if (ui != null) {
                         ui.log("Received job: " + job.getJobId() + " (" + job.getPositionsToFill().size()

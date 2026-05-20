@@ -45,6 +45,7 @@ public class Job implements Serializable {
     private final List<Position> positionsToFill;
     private final String strategyName;
     private final long createdTimestamp;
+    private final long seed;
 
     /**
      * Create a new job.
@@ -56,11 +57,26 @@ public class Job implements Serializable {
      */
     public Job(String jobId, BoardPrimitive initialBoard,
             List<Position> positionsToFill, String strategyName) {
+        this(jobId, initialBoard, positionsToFill, strategyName, 42L);
+    }
+
+    /**
+     * Create a new job with a seed.
+     *
+     * @param jobId           Unique identifier for this job
+     * @param initialBoard    Starting board state (may have some tiles placed)
+     * @param positionsToFill List of positions to fill in order
+     * @param strategyName    Name of the strategy being used
+     * @param seed            The deterministic seed for solvers
+     */
+    public Job(String jobId, BoardPrimitive initialBoard,
+            List<Position> positionsToFill, String strategyName, long seed) {
         this.jobId = jobId;
         this.initialBoard = initialBoard;
         this.positionsToFill = positionsToFill;
         this.strategyName = strategyName;
         this.createdTimestamp = System.currentTimeMillis();
+        this.seed = seed;
     }
 
     public String getJobId() {
@@ -81,6 +97,10 @@ public class Job implements Serializable {
 
     public long getCreatedTimestamp() {
         return createdTimestamp;
+    }
+
+    public long getSeed() {
+        return seed;
     }
 
     /**

@@ -44,8 +44,8 @@ import java.util.Set;
  *
  * @author Silvere Martin-Michiellot
  * @version 3.0
-  * @author Antigravity
-  * @since 1.0
+ * @author Antigravity
+ * @since 1.0
  */
 public class JobExecutor {
     private static final Logger logger = LogManager.getLogger(JobExecutor.class);
@@ -72,6 +72,7 @@ public class JobExecutor {
     public void setAllPieces(long[] pieces) {
         if (pieces != null && pieces.length > 0) {
             this.allPieces = pieces;
+            this.hybridSolver.setPieces(pieces);
             logger.info("Updated piece library with {} pieces", pieces.length);
         }
     }
@@ -86,17 +87,18 @@ public class JobExecutor {
         long startBacktracks = hybridSolver.getTotalBacktracks();
 
         BoardPrimitive board = job.getInitialBoard();
-        logger.info("Starting job {}: Hybrid solving mode", job.getJobId());
+        logger.info("Starting job {}: Hybrid solving mode with seed {}", job.getJobId(), job.getSeed());
+        hybridSolver.setSeed(job.getSeed());
 
         BoardPrimitive result = hybridSolver.computeTessellation(board);
 
         long elapsed = System.currentTimeMillis() - startTime;
         long backtracksDone = hybridSolver.getTotalBacktracks() - startBacktracks;
-        
+
         statistics.addComputeTime(elapsed);
         statistics.addBacktracks(backtracksDone);
         statistics.incrementJobsCompleted();
-        
+
         // Update PPS based on backtracks for hybrid engine
         if (elapsed > 0) {
             int pps = (int) (backtracksDone * 1000 / elapsed);

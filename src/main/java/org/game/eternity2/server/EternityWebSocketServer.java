@@ -103,7 +103,8 @@ public class EternityWebSocketServer extends WebSocketServer {
         response.addProperty("totalJobs", stats.total());
         response.addProperty("completedJobs", stats.completed());
         response.addProperty("completionPercentage", stats.getCompletionPercentage());
-        response.addProperty("bestScore", gameServer.getMasterBoard().computeScore());
+        org.game.eternity2.model.BoardPrimitive masterBoard = gameServer.getMasterBoard();
+        response.addProperty("bestScore", masterBoard != null ? masterBoard.computeScore() : 0);
         response.addProperty("uptimeMs", serverStats.getUptimeMs());
 
         conn.send(gson.toJson(response));

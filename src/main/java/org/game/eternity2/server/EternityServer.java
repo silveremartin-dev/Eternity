@@ -77,6 +77,7 @@ public class EternityServer {
     private RedisConnectionManager redisManager;
     private ConstraintCache constraintCache;
     private java.util.Map<String, Double> clientThroughput = new java.util.concurrent.ConcurrentHashMap<>();
+    private long[] activePieces;
 
     public EternityServer(int port) {
         this.port = port;
@@ -127,6 +128,7 @@ public class EternityServer {
     }
 
     public void initializeGame(int sizeX, int sizeY, String strategyName, List<Hint> hints, long[] pieces) {
+        this.activePieces = pieces;
         // Create board using primitives
         this.masterBoard = new BoardPrimitive(sizeX, sizeY);
 
@@ -326,8 +328,10 @@ public class EternityServer {
     }
 
     public BoardPrimitive getMasterBoard() {
-        synchronized (masterBoard) {
-            return masterBoard;
+        BoardPrimitive board = this.masterBoard;
+        if (board == null) return null;
+        synchronized (board) {
+            return board;
         }
     }
 
@@ -410,6 +414,9 @@ public class EternityServer {
                         sendPacket(new EternityPacket(packet.getUser(),
                                 EternityPacket.Command.MESSAGE, "Welcome " + packet.getUser().getLogin()));
                     }
+                    if (username != null && activePieces != null) {
+                        sendPacket(new EternityPacket(packet.getUser(), EternityPacket.Command.PUZZLE_DEFINITION, activePieces));
+                    }
                     break;
 
                 case REGISTER:
@@ -449,7 +456,9 @@ public class EternityServer {
                         if (packet.getPayload() instanceof BoardPrimitive) {
                             resultBoard = (BoardPrimitive) packet.getPayload();
                         }
-                        jobManager.markClientJobCompleted(packet.getUser().getLogin(), resultBoard);
+                        if (!"INTERMEDIATE".equals(packet.getStatus())) {
+                            jobManager.markClientJobCompleted(packet.getUser().getLogin(), resultBoard);
+                        }
                     }
 
                     if (packet.getPayload() instanceof BoardPrimitive) {
@@ -498,7 +507,7 @@ public class EternityServer {
                             statistics.getUptimeMs(),
                             statistics.getAverageComputeTimePerClient(),
                             statistics.getPiecesPerSecond(),
-                            masterBoard.computeScore(),
+                            masterBoard != null ? masterBoard.computeScore() : 0,
                             statistics.getPacketsSent(),
                             statistics.getPacketsReceived());
                     sendPacket(new EternityPacket(packet.getUser(),
@@ -524,8 +533,6 @@ public class EternityServer {
                         gui.log(timestamp() + " Unknown command: " + packet.getCommand());
                     }
             }
-
-            statistics.incrementPacketsSent();
         }
 
         public void sendPacket(EternityPacket packet) throws IOException {

@@ -41,8 +41,8 @@ import org.apache.logging.log4j.Logger;
  *
  * @author Silvere Martin-Michiellot
  * @version 2.0
-  * @author Antigravity
-  * @since 1.0
+ * @author Antigravity
+ * @since 1.0
  */
 public class ClientApp extends Application implements ClientUI {
     private static final Logger logger = LogManager.getLogger(ClientApp.class);
@@ -58,18 +58,20 @@ public class ClientApp extends Application implements ClientUI {
     private EternityClient client;
     private GridPane boardGrid;
     private ScrollPane boardScroll;
-    private javafx.scene.chart.LineChart<Number, Number> performanceChart;
+    private javafx.scene.chart.LineChart<Number, Number> throughputChart;
+    private javafx.scene.chart.LineChart<Number, Number> scoreChart;
     private javafx.scene.chart.XYChart.Series<Number, Number> throughputSeries;
     private javafx.scene.chart.XYChart.Series<Number, Number> bestScoreSeries;
     private long startTime;
     private double zoomFactor = 1.0;
     private ClientStatistics statistics;
+    private int lastRenderedScore = -1;
 
     @Override
     public void start(Stage primaryStage) {
         primaryStage.setTitle("Eternity Client - Solver");
         startTime = System.currentTimeMillis();
-        
+
         client = new EternityClient();
         client.setUi(this);
         statistics = client.getStatistics();
@@ -89,6 +91,7 @@ public class ClientApp extends Application implements ClientUI {
             throughputSeries.getData().clear();
             bestScoreSeries.getData().clear();
             startTime = System.currentTimeMillis();
+            lastRenderedScore = -1;
             client.connect();
         });
 
@@ -103,21 +106,73 @@ public class ClientApp extends Application implements ClientUI {
         controls.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
         controls.setPadding(new Insets(5));
 
-        // Chart
-        javafx.scene.chart.NumberAxis xAxis = new javafx.scene.chart.NumberAxis();
-        xAxis.setLabel("Time (s)");
-        javafx.scene.chart.NumberAxis yAxis = new javafx.scene.chart.NumberAxis();
-        yAxis.setLabel("Value");
-        performanceChart = new javafx.scene.chart.LineChart<>(xAxis, yAxis);
-        performanceChart.setTitle("Performance Over Time");
-        performanceChart.setCreateSymbols(false);
-        performanceChart.setPrefHeight(200);
+        // Dual Y-Axis performance chart overlay
+        javafx.scene.chart.NumberAxis xAxis1 = new javafx.scene.chart.NumberAxis();
+        xAxis1.setLabel("Time (s)");
+        javafx.scene.chart.NumberAxis yAxis1 = new javafx.scene.chart.NumberAxis();
+        yAxis1.setLabel("Throughput (PPS)");
+        yAxis1.setSide(javafx.geometry.Side.LEFT);
+        
+        throughputChart = new javafx.scene.chart.LineChart<>(xAxis1, yAxis1);
+        throughputChart.setTitle("Performance Over Time");
+        throughputChart.setCreateSymbols(false);
+        throughputChart.setLegendVisible(false);
+        throughputChart.setPrefHeight(200);
 
         throughputSeries = new javafx.scene.chart.XYChart.Series<>();
         throughputSeries.setName("Throughput (PPS)");
+        throughputChart.getData().add(throughputSeries);
+
+        javafx.scene.chart.NumberAxis xAxis2 = new javafx.scene.chart.NumberAxis();
+        xAxis2.setTickLabelsVisible(false);
+        xAxis2.setTickMarkVisible(false);
+        xAxis2.setMinorTickVisible(false);
+        xAxis2.setOpacity(0.0);
+
+        javafx.scene.chart.NumberAxis yAxis2 = new javafx.scene.chart.NumberAxis();
+        yAxis2.setLabel("Best Score");
+        yAxis2.setSide(javafx.geometry.Side.RIGHT);
+
+        scoreChart = new javafx.scene.chart.LineChart<>(xAxis2, yAxis2);
+        scoreChart.setCreateSymbols(false);
+        scoreChart.setLegendVisible(false);
+        scoreChart.setHorizontalGridLinesVisible(false);
+        scoreChart.setVerticalGridLinesVisible(false);
+        scoreChart.setAlternativeRowFillVisible(false);
+        scoreChart.setAlternativeColumnFillVisible(false);
+        scoreChart.getStyleClass().add("transparent-chart");
+        scoreChart.setPrefHeight(200);
+
         bestScoreSeries = new javafx.scene.chart.XYChart.Series<>();
         bestScoreSeries.setName("Best Score");
-        performanceChart.getData().addAll(throughputSeries, bestScoreSeries);
+        scoreChart.getData().add(bestScoreSeries);
+
+        // Bind X-axis bounds to align them
+        xAxis2.setAutoRanging(false);
+        xAxis2.lowerBoundProperty().bind(xAxis1.lowerBoundProperty());
+        xAxis2.upperBoundProperty().bind(xAxis1.upperBoundProperty());
+        xAxis2.tickUnitProperty().bind(xAxis1.tickUnitProperty());
+
+        // StackPane to overlay both charts
+        javafx.scene.layout.StackPane chartPane = new javafx.scene.layout.StackPane(throughputChart, scoreChart);
+        chartPane.setPrefHeight(200);
+
+        // Custom Colored Legend HBox
+        Label throughputDot = new Label("●");
+        throughputDot.setStyle("-fx-text-fill: #f39c12; -fx-font-size: 14px; -fx-padding: 0 4 0 0;");
+        Label throughputText = new Label("Throughput (PPS)   ");
+        throughputText.setStyle("-fx-font-weight: bold;");
+
+        Label scoreDot = new Label("●");
+        scoreDot.setStyle("-fx-text-fill: #2ecc71; -fx-font-size: 14px; -fx-padding: 0 4 0 0;");
+        Label scoreText = new Label("Best Score");
+        scoreText.setStyle("-fx-font-weight: bold;");
+
+        HBox customLegend = new HBox(throughputDot, throughputText, scoreDot, scoreText);
+        customLegend.setAlignment(javafx.geometry.Pos.CENTER);
+        customLegend.setPadding(new Insets(5, 0, 5, 0));
+
+        VBox chartContainer = new VBox(chartPane, customLegend);
 
         // Statistics panel
         statsLabel = new Label("Waiting for connection...");
@@ -137,7 +192,7 @@ public class ClientApp extends Application implements ClientUI {
         bestScoreLabel.setStyle("-fx-font-weight: bold;");
         boardGrid = new GridPane();
         boardGrid.setStyle("-fx-background-color: #eeeeee;");
-        
+
         javafx.scene.Group boardGroup = new javafx.scene.Group(boardGrid);
         boardScroll = new ScrollPane(boardGroup);
         boardScroll.setFitToWidth(true);
@@ -148,8 +203,10 @@ public class ClientApp extends Application implements ClientUI {
         boardScroll.setOnScroll(e -> {
             if (e.isControlDown()) {
                 double delta = e.getDeltaY();
-                if (delta > 0) zoomFactor *= 1.1;
-                else zoomFactor /= 1.1;
+                if (delta > 0)
+                    zoomFactor *= 1.1;
+                else
+                    zoomFactor /= 1.1;
                 boardGroup.setScaleX(zoomFactor);
                 boardGroup.setScaleY(zoomFactor);
                 e.consume();
@@ -167,7 +224,7 @@ public class ClientApp extends Application implements ClientUI {
         statusBar.setPadding(new Insets(5));
 
         // Layout
-        VBox leftPanel = new VBox(10, statsPanel, performanceChart, logArea);
+        VBox leftPanel = new VBox(10, statsPanel, chartContainer, logArea);
         HBox mainContent = new HBox(10, leftPanel, rightPanel);
         HBox.setHgrow(leftPanel, javafx.scene.layout.Priority.ALWAYS);
         HBox.setHgrow(rightPanel, javafx.scene.layout.Priority.ALWAYS);
@@ -178,13 +235,30 @@ public class ClientApp extends Application implements ClientUI {
         root.setBottom(new VBox(controls, statusBar));
 
         Scene scene = new Scene(root, 1000, 700);
-        primaryStage.setScene(scene);
-
         try {
-            primaryStage.getIcons().add(new javafx.scene.image.Image(getClass().getResource("/images/client_icon.png").toExternalForm()));
-        } catch (Exception e) {}
-
+            scene.getStylesheets().add(getClass().getResource("/styles/chart.css").toExternalForm());
+        } catch (Exception ex) {
+            logger.warn("Could not load chart.css style: {}", ex.getMessage());
+        }
+        primaryStage.setScene(scene);
+        try {
+            java.io.InputStream iconStream = getClass().getResourceAsStream("/images/client_icon.png");
+            if (iconStream != null) {
+                primaryStage.getIcons().add(new javafx.scene.image.Image(iconStream));
+            } else {
+                logger.warn("Client icon resource not found: /images/client_icon.png");
+            }
+        } catch (Exception e) {
+            logger.error("Failed to load client icon", e);
+        }
         primaryStage.show();
+        try {
+            org.game.eternity2.util.BoardRenderer.renderBoard(boardGrid, new org.game.eternity2.model.BoardPrimitive(
+                    statistics.getBoardWidth(), statistics.getBoardHeight()), 600, 600);
+            bestScoreLabel.setText("Best Score: " + org.game.eternity2.util.BoardRenderer
+                    .formatScore(statistics.getBestScore(), statistics.getBoardWidth(), statistics.getBoardHeight()));
+        } catch (Exception ignored) {
+        }
         startStatsPoller();
     }
 
@@ -193,15 +267,17 @@ public class ClientApp extends Application implements ClientUI {
         if (statistics != null) {
             statistics.save(new java.io.File("data/client_stats.properties"));
         }
-        if (client != null) client.disconnect();
+        if (client != null)
+            client.disconnect();
     }
 
     private void startStatsPoller() {
-        java.util.concurrent.ScheduledExecutorService scheduler = java.util.concurrent.Executors.newSingleThreadScheduledExecutor(r -> {
-            Thread t = new Thread(r);
-            t.setDaemon(true);
-            return t;
-        });
+        java.util.concurrent.ScheduledExecutorService scheduler = java.util.concurrent.Executors
+                .newSingleThreadScheduledExecutor(r -> {
+                    Thread t = new Thread(r);
+                    t.setDaemon(true);
+                    return t;
+                });
 
         scheduler.scheduleAtFixedRate(() -> {
             if (client != null && client.isConnected()) {
@@ -210,13 +286,30 @@ public class ClientApp extends Application implements ClientUI {
                     statsLabel.setText(String.format(
                             "SESSION:\nJobs: %d | Pieces: %d\nBacktracks: %d | Best: %s\n\nTOTAL:\nJobs: %d | Pieces: %d\nBacktracks: %d",
                             stats.getJobsCompleted(), stats.getPiecesPlaced(), stats.getBacktrackCount(),
-                            org.game.eternity2.util.BoardRenderer.formatScore(stats.getBestScore(), stats.getBoardWidth(), stats.getBoardHeight()),
-                            stats.getTotalJobsCompleted(), stats.getTotalPiecesPlaced(), stats.getTotalBacktrackCount()));
-                    
+                            org.game.eternity2.util.BoardRenderer.formatScore(stats.getBestScore(),
+                                    stats.getBoardWidth(), stats.getBoardHeight()),
+                            stats.getTotalJobsCompleted(), stats.getTotalPiecesPlaced(),
+                            stats.getTotalBacktrackCount()));
+
                     // Update throughput chart
                     double timeSec = (System.currentTimeMillis() - startTime) / 1000.0;
-                    throughputSeries.getData().add(new javafx.scene.chart.XYChart.Data<>(timeSec, stats.getPiecesPerSecond()));
-                    if (throughputSeries.getData().size() > 100) throughputSeries.getData().remove(0);
+                    throughputSeries.getData()
+                            .add(new javafx.scene.chart.XYChart.Data<>(timeSec, stats.getPiecesPerSecond()));
+                    if (throughputSeries.getData().size() > 100)
+                        throughputSeries.getData().remove(0);
+
+                    // Render intermediate local best board immediately on the grid
+                    org.game.eternity2.model.BoardPrimitive bestB = stats.getBestBoard();
+                    if (bestB != null && bestB.computeScore() > lastRenderedScore) {
+                        lastRenderedScore = bestB.computeScore();
+                        org.game.eternity2.util.BoardRenderer.renderBoard(boardGrid, bestB, 600, 600);
+                        bestScoreLabel.setText("Best Score: " + org.game.eternity2.util.BoardRenderer
+                                .formatScore(bestB.computeScore(), bestB.getWidth(), bestB.getHeight()));
+                        
+                        bestScoreSeries.getData().add(new javafx.scene.chart.XYChart.Data<>(timeSec, bestB.computeScore()));
+                        if (bestScoreSeries.getData().size() > 100)
+                            bestScoreSeries.getData().remove(0);
+                    }
                 });
             }
         }, 0, 1000, java.util.concurrent.TimeUnit.MILLISECONDS);
@@ -248,11 +341,15 @@ public class ClientApp extends Application implements ClientUI {
     @Override
     public void updateBestBoard(org.game.eternity2.model.BoardPrimitive board) {
         Platform.runLater(() -> {
+            lastRenderedScore = board.computeScore();
             org.game.eternity2.util.BoardRenderer.renderBoard(boardGrid, board, 600, 600);
-            bestScoreLabel.setText("Best Score: " + org.game.eternity2.util.BoardRenderer.formatScore(board.computeScore(), board.getWidth(), board.getHeight()));
-            
+            bestScoreLabel.setText("Best Score: " + org.game.eternity2.util.BoardRenderer
+                    .formatScore(board.computeScore(), board.getWidth(), board.getHeight()));
+
             double timeSec = (System.currentTimeMillis() - startTime) / 1000.0;
             bestScoreSeries.getData().add(new javafx.scene.chart.XYChart.Data<>(timeSec, board.computeScore()));
+            if (bestScoreSeries.getData().size() > 100)
+                bestScoreSeries.getData().remove(0);
         });
     }
 

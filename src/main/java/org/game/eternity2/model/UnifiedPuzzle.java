@@ -66,6 +66,14 @@ public class UnifiedPuzzle {
         public int x, y;
         public int pieceId;
         public int rotation;
+
+        public PlacementData() {}
+        public PlacementData(int x, int y, int pieceId, int rotation) {
+            this.x = x;
+            this.y = y;
+            this.pieceId = pieceId;
+            this.rotation = rotation;
+        }
     }
 
     public static class JobData {

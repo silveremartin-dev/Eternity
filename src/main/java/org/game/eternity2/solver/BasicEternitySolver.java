@@ -35,9 +35,10 @@ import java.util.Set;
 /**
  * A basic brute-force backtracking solver.
  * Optimized for primitive models.
-  * @author Silvere Martin-Michiellot
-  * @author Antigravity
-  * @since 1.0
+ * 
+ * @author Silvere Martin-Michiellot
+ * @author Antigravity
+ * @since 1.0
  */
 public class BasicEternitySolver implements EternitySolverInterface {
 

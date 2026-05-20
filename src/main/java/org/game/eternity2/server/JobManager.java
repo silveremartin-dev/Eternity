@@ -79,12 +79,14 @@ public class JobManager {
         pendingJobs.clear();
         jobStatuses.clear();
 
+        long currentSeed = 42L;
         for (Job job : jobs) {
-            pendingJobs.offer(job);
-            jobStatuses.put(job.getJobId(), new JobStatus(job));
+            Job seedJob = new Job(job.getJobId(), job.getInitialBoard(), job.getPositionsToFill(), job.getStrategyName(), currentSeed++);
+            pendingJobs.offer(seedJob);
+            jobStatuses.put(seedJob.getJobId(), new JobStatus(seedJob));
         }
 
-        logger.info("Initialized {} jobs using strategy: {}", jobs.size(), strategy.getName());
+        logger.info("Initialized {} jobs with deterministic seeds using strategy: {}", jobs.size(), strategy.getName());
     }
 
     /**

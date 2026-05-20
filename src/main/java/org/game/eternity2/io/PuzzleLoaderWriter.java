@@ -34,9 +34,46 @@ public class PuzzleLoaderWriter {
         }
     }
 
+    private static InputStream getInputStream(String resourcePath) throws IOException {
+        InputStream is = PuzzleLoaderWriter.class.getResourceAsStream(resourcePath);
+        if (is != null) {
+            return is;
+        }
+        
+        // Try without leading slash
+        String pathNoSlash = resourcePath.startsWith("/") ? resourcePath.substring(1) : resourcePath;
+        is = PuzzleLoaderWriter.class.getClassLoader().getResourceAsStream(pathNoSlash);
+        if (is != null) {
+            return is;
+        }
+        is = PuzzleLoaderWriter.class.getResourceAsStream(pathNoSlash);
+        if (is != null) {
+            return is;
+        }
+        
+        // Try direct file path
+        File file = new File(resourcePath);
+        if (file.exists() && file.isFile()) {
+            return new FileInputStream(file);
+        }
+        
+        // Try file in src/main/resources
+        File srcFile = new File("src/main/resources" + (resourcePath.startsWith("/") ? "" : "/") + resourcePath);
+        if (srcFile.exists() && srcFile.isFile()) {
+            return new FileInputStream(srcFile);
+        }
+        
+        // Try file in target/classes
+        File targetFile = new File("target/classes" + (resourcePath.startsWith("/") ? "" : "/") + resourcePath);
+        if (targetFile.exists() && targetFile.isFile()) {
+            return new FileInputStream(targetFile);
+        }
+        
+        throw new FileNotFoundException("Resource or file not found: " + resourcePath);
+    }
+
     public static UnifiedPuzzle loadUnifiedFromResource(String resourcePath) throws IOException {
-        try (InputStream is = PuzzleLoaderWriter.class.getResourceAsStream(resourcePath)) {
-            if (is == null) throw new FileNotFoundException("Resource not found: " + resourcePath);
+        try (InputStream is = getInputStream(resourcePath)) {
             try (Reader reader = new InputStreamReader(is)) {
                 UnifiedPuzzle up = GSON.fromJson(reader, UnifiedPuzzle.class);
                 if (up != null && up.patterns <= 0) {
@@ -57,8 +94,7 @@ public class PuzzleLoaderWriter {
     }
 
     public static long[] loadPiecesFromResource(String resourcePath) throws IOException {
-        try (InputStream is = PuzzleLoaderWriter.class.getResourceAsStream(resourcePath)) {
-            if (is == null) throw new FileNotFoundException("Resource not found: " + resourcePath);
+        try (InputStream is = getInputStream(resourcePath)) {
             try (Reader reader = new InputStreamReader(is)) {
                 List<Long> pieces = new ArrayList<>();
                 JsonObject root = JsonParser.parseReader(reader).getAsJsonObject();
@@ -79,12 +115,19 @@ public class PuzzleLoaderWriter {
     }
 
     public static long[] generateEternity2Pieces() {
-        try {
-            return loadPiecesFromResource("/puzzles/puzzle_16x16_eternity2.json");
-        } catch (Exception e) {
-            LOGGER.error("Failed to load Eternity II pieces", e);
-            return new long[0];
+        String[] paths = {
+            "/puzzles/unified_16x16_eternity2.json",
+            "/puzzles/unified_16x16.json"
+        };
+        for (String path : paths) {
+            try {
+                return loadPiecesFromResource(path);
+            } catch (Exception e) {
+                // Try next
+            }
         }
+        LOGGER.error("Failed to load Eternity II pieces from any fallback path");
+        return new long[0];
     }
 
     public static UnifiedPuzzle loadFromSeparateFiles(String puzzleName) throws IOException {
@@ -92,29 +135,25 @@ public class PuzzleLoaderWriter {
         String base = "/puzzles/";
         
         // Load pieces
-        try (InputStream is = PuzzleLoaderWriter.class.getResourceAsStream(base + "puzzle_" + puzzleName + ".json")) {
-            if (is != null) {
-                JsonObject root = JsonParser.parseReader(new InputStreamReader(is)).getAsJsonObject();
-                JsonArray pieces = root.getAsJsonArray("pieces");
-                for (JsonElement el : pieces) {
-                    JsonObject p = el.getAsJsonObject();
-                    up.pieces.add(new UnifiedPuzzle.PieceData(
-                        p.get("id").getAsInt(), p.get("top").getAsInt(), p.get("right").getAsInt(),
-                        p.get("bottom").getAsInt(), p.get("left").getAsInt()
-                    ));
-                }
-                int count = up.pieces.size();
-                up.width = (int)Math.sqrt(count);
-                up.height = up.width;
-                if (count == 72) { up.width = 12; up.height = 6; }
-            } else {
-                throw new FileNotFoundException("Base puzzle pieces not found: " + puzzleName);
+        try (InputStream is = getInputStream(base + "puzzle_" + puzzleName + ".json")) {
+            JsonObject root = JsonParser.parseReader(new InputStreamReader(is)).getAsJsonObject();
+            JsonArray pieces = root.getAsJsonArray("pieces");
+            for (JsonElement el : pieces) {
+                JsonObject p = el.getAsJsonObject();
+                up.pieces.add(new UnifiedPuzzle.PieceData(
+                    p.get("id").getAsInt(), p.get("top").getAsInt(), p.get("right").getAsInt(),
+                    p.get("bottom").getAsInt(), p.get("left").getAsInt()
+                ));
             }
+            int count = up.pieces.size();
+            up.width = (int)Math.sqrt(count);
+            up.height = up.width;
+            if (count == 72) { up.width = 12; up.height = 6; }
         }
 
         // Load hints
-        try (InputStream is = PuzzleLoaderWriter.class.getResourceAsStream(base + "hints_" + puzzleName + ".json")) {
-            if (is != null) {
+        try {
+            try (InputStream is = getInputStream(base + "hints_" + puzzleName + ".json")) {
                 JsonObject root = JsonParser.parseReader(new InputStreamReader(is)).getAsJsonObject();
                 JsonArray hintsArray = null;
                 if (root.has("hints")) {
@@ -134,11 +173,13 @@ public class PuzzleLoaderWriter {
                     }
                 }
             }
+        } catch (Exception e) {
+            // Hints are optional
         }
 
         // Load solution
-        try (InputStream is = PuzzleLoaderWriter.class.getResourceAsStream(base + "solved_" + puzzleName + ".json")) {
-            if (is != null) {
+        try {
+            try (InputStream is = getInputStream(base + "solved_" + puzzleName + ".json")) {
                 JsonObject root = JsonParser.parseReader(new InputStreamReader(is)).getAsJsonObject();
                 JsonArray placementsArray = null;
                 if (root.has("placements")) {
@@ -159,6 +200,8 @@ public class PuzzleLoaderWriter {
                     }
                 }
             }
+        } catch (Exception e) {
+            // Solution is optional
         }
         
         // Calculate patterns
@@ -167,17 +210,52 @@ public class PuzzleLoaderWriter {
     }
 
     public static UnifiedPuzzle loadSmart(String puzzleName) throws IOException {
-        // Try unified first
-        try {
-            UnifiedPuzzle up = loadUnifiedFromResource("/puzzles/unified_" + puzzleName + ".json");
-            if (up != null && up.patterns <= 0) {
-                up.patterns = up.getPatterns();
+        if (puzzleName == null) {
+            throw new IllegalArgumentException("Puzzle name cannot be null");
+        }
+        
+        // Trim any whitespace
+        puzzleName = puzzleName.trim();
+        
+        String baseName = puzzleName;
+        if (puzzleName.startsWith("unified_")) {
+            baseName = puzzleName.substring(8);
+        }
+        
+        List<String> pathsToTry = new ArrayList<>();
+        pathsToTry.add("/puzzles/" + puzzleName + ".json");
+        pathsToTry.add("/puzzles/unified_" + baseName + ".json");
+        pathsToTry.add("/puzzles/unified_" + puzzleName + ".json");
+        pathsToTry.add("/puzzles/" + baseName + ".json");
+        
+        Exception lastException = null;
+        for (String path : pathsToTry) {
+            try {
+                UnifiedPuzzle up = loadUnifiedFromResource(path);
+                if (up != null) {
+                    if (up.patterns <= 0) {
+                        up.patterns = up.getPatterns();
+                    }
+                    return up;
+                }
+            } catch (Exception e) {
+                lastException = e;
             }
-            return up;
+        }
+        
+        // If resource loading of unified fails, try loading from separate files
+        LOGGER.warn("Failed to load unified puzzle from resources for " + puzzleName + ", trying separate files", lastException);
+        try {
+            return loadFromSeparateFiles(baseName);
         } catch (Exception e) {
-            return loadFromSeparateFiles(puzzleName);
+            try {
+                return loadFromSeparateFiles(puzzleName);
+            } catch (Exception ex) {
+                throw new IOException("Failed to load puzzle: " + puzzleName + " (tried unified resources and separate files)", ex);
+            }
         }
     }
+
 
     public static void consolidateResources(Path resourceDir) throws IOException {
         File dir = resourceDir.toFile();

@@ -71,6 +71,9 @@ public class BoardRenderer {
         if (piece == 0) {
             gc.setFill(Color.web("#1a1a2e"));
             gc.fillRect(0, 0, s, s);
+            gc.setStroke(Color.web("#2a2a3e"));
+            gc.setLineWidth(0.5);
+            gc.strokeRect(0, 0, s, s);
         } else {
             gc.setFill(Color.web("#2d2d44"));
             gc.fillRect(0, 0, s, s);

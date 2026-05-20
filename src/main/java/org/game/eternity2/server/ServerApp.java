@@ -61,6 +61,9 @@ public class ServerApp extends Application {
     private javafx.scene.chart.XYChart.Series<Number, Number> throughputSeries;
     private javafx.scene.chart.XYChart.Series<Number, Number> bestScoreSeries;
     private long startTimeMillis;
+    private long accumulatedActiveTimeMs = 0;
+    private long accumulatedRelativeTimeMs = 0;
+    private long lastTickTimeMillis = 0;
     private double zoomFactor = 1.0;
 
     private Button browseBtn;
@@ -70,9 +73,11 @@ public class ServerApp extends Application {
     public void start(Stage primaryStage) {
         primaryStage.setTitle("Eternity Server - Distributed Solver");
         try {
-            primaryStage.getIcons().add(new javafx.scene.image.Image(getClass().getResource("/images/server_icon.png").toExternalForm()));
+            java.io.InputStream iconStream = getClass().getResourceAsStream("/images/server_icon.png");
+            if (iconStream != null) {
+                primaryStage.getIcons().add(new javafx.scene.image.Image(iconStream));
+            }
         } catch (Exception e) {}
-        
         server = new EternityServer(EternityServer.DEFAULT_PORT);
 
         // Menu
@@ -121,7 +126,7 @@ public class ServerApp extends Application {
         saveBestBtn.setStyle("-fx-base: #e8f5e9;");
         saveBestBtn.setOnAction(e -> {
             org.game.eternity2.model.BoardPrimitive best = server.getMasterBoard();
-            if (best == null || best.computeScore() == 0) {
+            if (best == null || best.getPlacedCount() == 0) {
                 new Alert(Alert.AlertType.WARNING, "No solution found yet to save.").show();
                 return;
             }
@@ -143,13 +148,17 @@ public class ServerApp extends Application {
             boolean isCustom = "Custom (.json)".equals(puzzleCombo.getValue());
             browseBtn.setDisable(!isCustom);
             selectedFileLabel.setText(isCustom ? "No file selected" : "Selected: " + puzzleCombo.getValue());
+            renderInitialEmptyBoard(puzzleCombo.getValue());
         });
 
         browseBtn.setOnAction(e -> {
             javafx.stage.FileChooser fileChooser = new javafx.stage.FileChooser();
             fileChooser.setInitialDirectory(new java.io.File("."));
             selectedPuzzleFile = fileChooser.showOpenDialog(primaryStage);
-            if (selectedPuzzleFile != null) selectedFileLabel.setText(selectedPuzzleFile.getName());
+            if (selectedPuzzleFile != null) {
+                selectedFileLabel.setText(selectedPuzzleFile.getName());
+                renderInitialEmptyBoard("Custom (.json)");
+            }
         });
 
         VBox configPanel = new VBox(8, configTitle, 
@@ -192,6 +201,9 @@ public class ServerApp extends Application {
             throughputSeries.getData().clear();
             bestScoreSeries.getData().clear();
             startTimeMillis = System.currentTimeMillis();
+            accumulatedActiveTimeMs = 0;
+            accumulatedRelativeTimeMs = 0;
+            lastTickTimeMillis = System.currentTimeMillis();
             String selectedPuzzle = puzzleCombo.getValue();
             
             try {
@@ -282,6 +294,7 @@ public class ServerApp extends Application {
 
         primaryStage.setScene(new Scene(root, 1100, 850));
         primaryStage.show();
+        renderInitialEmptyBoard(puzzleCombo.getValue());
 
         server.setGui(new ServerUI() {
             @Override
@@ -331,17 +344,36 @@ public class ServerApp extends Application {
         scheduler.scheduleAtFixedRate(() -> {
             if (server != null && server.isRunning()) {
                 Platform.runLater(() -> {
+                    long now = System.currentTimeMillis();
+                    long delta = now - lastTickTimeMillis;
+                    lastTickTimeMillis = now;
+                    
+                    int activeClients = server.getStatistics().getActiveClients();
+                    if (activeClients > 0) {
+                        accumulatedActiveTimeMs += delta;
+                        accumulatedRelativeTimeMs += (activeClients * delta);
+                    }
+                    
                     ServerStatistics stats = server.getStatistics();
                     JobManager.JobStatistics jobStats = server.getJobManager().getStatistics();
                     jobsLabel.setText(String.format("Jobs: %d/%d (%.1f%%)", jobStats.completed(), jobStats.total(), jobStats.getCompletionPercentage()));
                     packetsLabel.setText(String.format("Packets: %d sent, %d received", stats.getPacketsSent(), stats.getPacketsReceived()));
                     
-                    long elapsed = System.currentTimeMillis() - startTimeMillis;
-                    long s = (elapsed / 1000) % 60;
-                    long m = (elapsed / (1000 * 60)) % 60;
-                    long h = (elapsed / (1000 * 60 * 60));
-                    solvingTimeLabel.setText(String.format("Solving Time: %02d:%02d:%02d", h, m, s));
+                    long elapsedAbs = accumulatedActiveTimeMs;
+                    long sAbs = (elapsedAbs / 1000) % 60;
+                    long mAbs = (elapsedAbs / (1000 * 60)) % 60;
+                    long hAbs = (elapsedAbs / (1000 * 60 * 60));
+
+                    long elapsedRel = accumulatedRelativeTimeMs;
+                    long sRel = (elapsedRel / 1000) % 60;
+                    long mRel = (elapsedRel / (1000 * 60)) % 60;
+                    long hRel = (elapsedRel / (1000 * 60 * 60));
+
+                    solvingTimeLabel.setText(String.format("Solving Time: %02d:%02d:%02d (Abs) | %02d:%02d:%02d (Rel)",
+                            hAbs, mAbs, sAbs, hRel, mRel, sRel));
                 });
+            } else {
+                lastTickTimeMillis = System.currentTimeMillis();
             }
         }, 0, 1000, java.util.concurrent.TimeUnit.MILLISECONDS);
     }
@@ -379,5 +411,33 @@ public class ServerApp extends Application {
         if (combo.getItems().isEmpty()) {
             combo.getItems().addAll("16x16_eternity2", "4x4_demo", "6x6_training");
         }
+    }
+
+    private void renderInitialEmptyBoard(String selectedPuzzle) {
+        try {
+            int w = 16, h = 16;
+            if ("Custom (.json)".equals(selectedPuzzle)) {
+                if (selectedPuzzleFile != null) {
+                    try {
+                        org.game.eternity2.model.UnifiedPuzzle up = org.game.eternity2.io.PuzzleLoaderWriter.loadUnified(selectedPuzzleFile.toPath());
+                        w = up.width; h = up.height;
+                    } catch (Exception ex) {
+                        long[] pieces = org.game.eternity2.io.PuzzleLoaderWriter.loadPieces(selectedPuzzleFile.toPath());
+                        if (pieces.length == 16) { w = 4; h = 4; }
+                        else if (pieces.length == 256) { w = 16; h = 16; }
+                    }
+                } else {
+                    return;
+                }
+            } else {
+                org.game.eternity2.model.UnifiedPuzzle up = org.game.eternity2.io.PuzzleLoaderWriter.loadSmart(selectedPuzzle);
+                w = up.width; h = up.height;
+            }
+            final int finalW = w; final int finalH = h;
+            Platform.runLater(() -> {
+                org.game.eternity2.util.BoardRenderer.renderBoard(boardDisplay, new org.game.eternity2.model.BoardPrimitive(finalW, finalH), 600, 600);
+                bestScoreLabel.setText("Best Score: " + org.game.eternity2.util.BoardRenderer.formatScore(0, finalW, finalH));
+            });
+        } catch (Exception ignored) {}
     }
 }

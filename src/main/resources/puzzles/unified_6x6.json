@@ -297,7 +297,7 @@
       },
       {
         "x": 0,
-        "y": 5,
+        "y": 4,
         "pieceId": 7,
         "rotation": 1
       },
@@ -440,10 +440,10 @@
         "rotation": 1
       },
       {
-        "x": 2,
-        "y": 5,
+        "x": 3,
+        "y": 0,
         "pieceId": 31,
-        "rotation": 1
+        "rotation": 3
       },
       {
         "x": 1,
