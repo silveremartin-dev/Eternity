@@ -93,7 +93,8 @@ public class ServerStatsChart {
         // Add new data points
         packetsSeries.getData().add(new XYChart.Data<>(
                 timeCounter,
-                statistics.getPacketsSent() + statistics.getPacketsReceived()));
+                statistics.getDataPacketsSent() + statistics.getStatPacketsSent() + 
+                statistics.getDataPacketsReceived() + statistics.getStatPacketsReceived()));
 
         clientsSeries.getData().add(new XYChart.Data<>(
                 timeCounter,
