@@ -64,7 +64,12 @@ public class ConfigurationManager {
     }
 
     public boolean save() {
-        try (OutputStream output = new FileOutputStream(configFilePath)) {
+        File configFile = new File(configFilePath);
+        File parent = configFile.getParentFile();
+        if (parent != null && !parent.exists()) {
+            parent.mkdirs();
+        }
+        try (OutputStream output = new FileOutputStream(configFile)) {
             properties.store(output, "Eternity II Configuration");
             logger.info("Configuration saved to: {}", configFilePath);
             return true;

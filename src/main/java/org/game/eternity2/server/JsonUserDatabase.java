@@ -189,7 +189,14 @@ public class JsonUserDatabase {
             data.version = "2.0";
 
             String json = gson.toJson(data);
-            Files.writeString(Paths.get(DATABASE_FILE), json);
+            Path targetPath = Paths.get(DATABASE_FILE);
+            Path tmpPath = Paths.get(DATABASE_FILE + ".tmp");
+            Files.writeString(tmpPath, json);
+            try {
+                Files.move(tmpPath, targetPath, java.nio.file.StandardCopyOption.ATOMIC_MOVE, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+            } catch (java.nio.file.AtomicMoveNotSupportedException e) {
+                Files.move(tmpPath, targetPath, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+            }
         } catch (IOException e) {
             logger.error("Failed to save user database", e);
         }

@@ -76,29 +76,47 @@ public class StochasticRefinement {
                 statistics.incrementPiecesPlaced(10000);
             }
 
-            // Pick two random positions
-            int p1 = random.nextInt(board.length);
-            int p2 = random.nextInt(board.length);
+            // 50% swap two pieces, 50% rotate one piece
+            if (random.nextBoolean()) {
+                int p1 = random.nextInt(board.length);
+                int p2 = random.nextInt(board.length);
 
-            // Swap them
-            long t1 = board[p1];
-            long t2 = board[p2];
-            
-            board[p1] = t2;
-            board[p2] = t1;
-            
-            int newMismatches = countMismatches();
-            
-            if (newMismatches < currentMismatches) {
-                currentMismatches = newMismatches;
-                if (statistics != null) statistics.updateBestBoard(getBestBoard());
-                if (i % 1000 == 0) {
-                    System.out.println("Iteration " + i + ", Mismatches: " + currentMismatches);
+                long t1 = board[p1];
+                long t2 = board[p2];
+
+                board[p1] = t2;
+                board[p2] = t1;
+
+                int newMismatches = countMismatches();
+                if (newMismatches < currentMismatches) {
+                    currentMismatches = newMismatches;
+                    if (statistics != null) statistics.updateBestBoard(getBestBoard());
+                    if (i % 1000 == 0) {
+                        System.out.println("Iteration " + i + ", Mismatches: " + currentMismatches);
+                    }
+                    if (currentMismatches == 0) break;
+                } else {
+                    board[p1] = t1;
+                    board[p2] = t2;
                 }
             } else {
-                // Backtrack swap
-                board[p1] = t1;
-                board[p2] = t2;
+                int p = random.nextInt(board.length);
+                long orig = board[p];
+                if (orig != 0) {
+                    long rotated = PiecePrimitive.rotateCW(orig);
+                    board[p] = rotated;
+                    int newMismatches = countMismatches();
+                    if (newMismatches < currentMismatches) {
+                        currentMismatches = newMismatches;
+                        if (statistics != null) statistics.updateBestBoard(getBestBoard());
+                        if (i % 1000 == 0) {
+                            System.out.println("Iteration " + i + ", Mismatches: " + currentMismatches);
+                        }
+                        if (currentMismatches == 0) break;
+                    } else {
+                        board[p] = orig;
+                    }
+                }
             }
         }
     }
@@ -114,13 +132,27 @@ public class StochasticRefinement {
                 if (y > 0) {
                     long top = board[(y - 1) * width + x];
                     if (top != 0 && PiecePrimitive.getBottom(top) != PiecePrimitive.getTop(p)) mismatches++;
-                } else if (PiecePrimitive.getTop(p) != 0) mismatches++; // Border mismatch
+                } else if (PiecePrimitive.getTop(p) != 0) {
+                    mismatches++; // Top border mismatch
+                }
 
                 // Check Left
                 if (x > 0) {
                     long left = board[y * width + (x - 1)];
                     if (left != 0 && PiecePrimitive.getRight(left) != PiecePrimitive.getLeft(p)) mismatches++;
-                } else if (PiecePrimitive.getLeft(p) != 0) mismatches++;
+                } else if (PiecePrimitive.getLeft(p) != 0) {
+                    mismatches++; // Left border mismatch
+                }
+
+                // Check Bottom border
+                if (y == height - 1 && PiecePrimitive.getBottom(p) != 0) {
+                    mismatches++;
+                }
+
+                // Check Right border
+                if (x == width - 1 && PiecePrimitive.getRight(p) != 0) {
+                    mismatches++;
+                }
             }
         }
         return mismatches;

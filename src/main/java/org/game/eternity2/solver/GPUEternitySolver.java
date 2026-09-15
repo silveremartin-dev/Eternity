@@ -52,7 +52,8 @@ public class GPUEternitySolver implements EternitySolverInterface {
 
     private void initializePool() {
         long[] library = PuzzleLoaderWriter.generateEternity2Pieces();
-        for (int i = 0; i < library.length; i++) {
+        int max = Math.min(library.length, piecesPool.length / 4);
+        for (int i = 0; i < max; i++) {
             long tile = library[i];
             for (int r = 0; r < 4; r++) {
                 int packed = ((PiecePrimitive.getTop(tile) & 0xFF) << 24)
@@ -67,7 +68,7 @@ public class GPUEternitySolver implements EternitySolverInterface {
 
     @Override
     public BoardPrimitive computeTessellation(BoardPrimitive startingBoard) {
-        return null; 
+        return startingBoard != null ? startingBoard : new BoardPrimitive(16, 16);
     }
 
     /**

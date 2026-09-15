@@ -19,6 +19,7 @@ public class EternitySolverEngine {
     private final int totalCells;
 
     private long[] board;
+    private boolean[] isFixed;
     private boolean[] pieceUsed;
     private int[] iterDesde;
     private long[][] candidateList;
@@ -39,6 +40,7 @@ public class EternitySolverEngine {
         this.random = new Random();
 
         this.board = new long[totalCells];
+        this.isFixed = new boolean[totalCells];
         this.bestBoard = new long[totalCells];
 
         int maxId = 256;
@@ -72,6 +74,7 @@ public class EternitySolverEngine {
         for (int i = 0; i < totalCells; i++) {
             long piece = startingBoard.getPiece(i % width, i / width);
             board[i] = piece;
+            isFixed[i] = (piece != 0);
             if (piece != 0) {
                 int id = PiecePrimitive.getId(piece);
                 ensurePieceUsedCapacity(id);
@@ -125,6 +128,11 @@ public class EternitySolverEngine {
                 statistics.addBacktracks(10000);
             }
 
+            if (isFixed[cursor]) {
+                cursor++;
+                continue;
+            }
+
             // 1. Get current position (simple row-scan for border pruning)
             int x = cursor % width;
             int y = cursor / width;
@@ -175,6 +183,9 @@ public class EternitySolverEngine {
                 candidateList[cursor] = null;
                 iterDesde[cursor] = 0;
                 cursor--;
+                while (cursor >= initialCursor && isFixed[cursor]) {
+                    cursor--;
+                }
                 if (cursor < initialCursor)
                     break; // Exhausted search space (do not alter prefix tiles)
 
@@ -218,6 +229,21 @@ public class EternitySolverEngine {
             return false;
         if (y < height - 1 && bottom == 0)
             return false;
+
+        // Check against neighboring fixed piece to the right, if any
+        if (x < width - 1) {
+            long rightNeighbor = board[y * width + (x + 1)];
+            if (rightNeighbor != 0 && right != PiecePrimitive.getLeft(rightNeighbor)) {
+                return false;
+            }
+        }
+        // Check against neighboring fixed piece to the bottom, if any
+        if (y < height - 1) {
+            long bottomNeighbor = board[(y + 1) * width + x];
+            if (bottomNeighbor != 0 && bottom != PiecePrimitive.getTop(bottomNeighbor)) {
+                return false;
+            }
+        }
 
         return true;
     }

@@ -61,6 +61,9 @@ public class ConstraintCache {
      * @param pieces Array of piece primitives to index
      */
     public void indexPieces(long[] pieces) {
+        if (async == null || pieces == null) {
+            return;
+        }
         try {
             int count = 0;
             for (long piece : pieces) {
@@ -100,6 +103,7 @@ public class ConstraintCache {
     }
 
     private void indexRotation(int tileId, int rotation, int top, int right, int bottom, int left) {
+        if (async == null) return;
         String value = tileId + ":" + rotation;
         async.sadd(KEY_PREFIX + top + ":TOP", value);
         async.sadd(KEY_PREFIX + right + ":RIGHT", value);
@@ -111,6 +115,9 @@ public class ConstraintCache {
      * Find tiles that match the given edge constraints.
      */
     public List<String> findCandidates(int topPattern, int rightPattern, int bottomPattern, int leftPattern) {
+        if (async == null) {
+            return Collections.emptyList();
+        }
         List<String> keys = new ArrayList<>();
 
         if (topPattern != -1)

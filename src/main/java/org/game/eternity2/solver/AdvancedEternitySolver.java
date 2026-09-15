@@ -37,7 +37,7 @@ import java.util.Set;
 /**
  * An algorithm to solve the puzzle using "Parallel Candidate Evaluation".
  * This solver leverages the EternityKernel (CPU or GPU) to check multiple
- * candidates at once.
+ candidates at once.
  * Optimized for primitive models.
   * @author Silvere Martin-Michiellot
   * @author Antigravity
@@ -56,12 +56,10 @@ public class AdvancedEternitySolver implements EternitySolverInterface {
 
     @Override
     public BoardPrimitive computeTessellation(BoardPrimitive startingBoard) {
-        // For now, we start from scratch or from the startingBoard's partial state
-        // The current engine starts from scratch. We can enhance it to load a state.
+        if (startingBoard != null) {
+            engine.loadState(startingBoard);
+        }
         engine.solve();
-        
-        // Convert engine state back to BoardPrimitive
-        // (Placeholder: returning a new board with the best result found)
-        return null; 
+        return engine.getBestBoard();
     }
 }

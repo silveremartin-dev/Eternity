@@ -232,12 +232,16 @@ public class ClientApp extends Application implements ClientUI {
     }
 
     @Override
-    public void stop() {
+    public void stop() throws Exception {
+        if (client != null && client.isConnected()) {
+            client.disconnect();
+        }
         if (statistics != null) {
+            java.io.File statsDir = new java.io.File("data");
+            if (!statsDir.exists()) statsDir.mkdirs();
             statistics.save(new java.io.File("data/client_stats.properties"));
         }
-        if (client != null)
-            client.disconnect();
+        super.stop();
     }
 
     private void startStatsPoller() {

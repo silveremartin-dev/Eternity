@@ -130,6 +130,10 @@ public class EternityClient {
                 socket = new Socket(DEFAULT_SERVER_IP, DEFAULT_PORT);
                 out = new ObjectOutputStream(socket.getOutputStream());
                 in = new ObjectInputStream(socket.getInputStream());
+                java.io.ObjectInputFilter filter = java.io.ObjectInputFilter.Config.createFilter(
+                    "org.game.eternity2.**;java.lang.*;java.util.*;[J;[I;[Ljava.lang.String;;!*"
+                );
+                in.setObjectInputFilter(filter);
                 isConnected = true;
                 if (ui != null) {
                     ui.setConnected(true);
@@ -348,13 +352,15 @@ public class EternityClient {
     }
 
     public void sendPacket(EternityPacket packet) {
-        if (!isConnected)
+        if (!isConnected || out == null)
             return;
         try {
             boolean isStat = (packet.getCommand() == EternityPacket.Command.STATISTICS_UPDATE);
             statistics.incrementPacketsSent(isStat);
-            out.writeObject(packet);
-            out.flush();
+            synchronized (out) {
+                out.writeObject(packet);
+                out.flush();
+            }
             if (ui != null) {
                 String packetIdShort = packet.getPacketId().substring(0, 8);
                 logger.debug("Sent packet [{}] {}", packetIdShort, packet.getCommand());

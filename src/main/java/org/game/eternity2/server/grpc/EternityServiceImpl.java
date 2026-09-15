@@ -99,8 +99,13 @@ public class EternityServiceImpl extends EternityServiceGrpc.EternityServiceImpl
         try {
             LOGGER.info("Received getJob request via gRPC");
 
-            // Return empty job response for now - in production would fetch from JobManager
             byte[] responseBytes = new byte[0];
+            if (server != null && server.getJobManager() != null) {
+                org.game.eternity2.server.Job job = server.getJobManager().getNextJob("grpc-client");
+                if (job != null && job.getInitialBoard() != null) {
+                    responseBytes = org.game.eternity2.io.FlatBuffersSerializer.serialize(job.getInitialBoard());
+                }
+            }
 
             FlatBufferResponse response = FlatBufferResponse.newBuilder()
                     .setPayload(ByteString.copyFrom(responseBytes))
@@ -119,7 +124,17 @@ public class EternityServiceImpl extends EternityServiceGrpc.EternityServiceImpl
         try {
             LOGGER.info("Received submitSolution request via gRPC");
 
-            // Acknowledge receipt - in production would process and store solution
+            if (request.getPayload() != null && !request.getPayload().isEmpty()) {
+                try {
+                    org.game.eternity2.model.BoardPrimitive board = org.game.eternity2.io.FlatBuffersSerializer.deserialize(request.getPayload().toByteArray());
+                    if (server != null && board != null) {
+                        server.updateMasterBoard(board);
+                    }
+                } catch (Exception parseEx) {
+                    LOGGER.warning("Could not deserialize submitted solution board: " + parseEx.getMessage());
+                }
+            }
+
             byte[] responseBytes = new byte[0];
 
             FlatBufferResponse response = FlatBufferResponse.newBuilder()

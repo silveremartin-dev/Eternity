@@ -83,8 +83,13 @@ class EternityApp {
         const statusText = document.getElementById('serverStatusText');
 
         try {
-            const response = await fetch('http://localhost:9090/health');
-            if (response.ok) {
+            let response;
+            try {
+                response = await fetch('http://localhost:12348/health');
+            } catch (e) {
+                response = await fetch('http://localhost:9090/health');
+            }
+            if (response && response.ok) {
                 statusDot.className = 'status-dot connected';
                 statusText.textContent = 'Connected';
                 this.log('Connected to server');

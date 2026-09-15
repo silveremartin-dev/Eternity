@@ -68,6 +68,11 @@ public class AuthInterceptor implements ServerInterceptor {
             return next.startCall(call, headers);
         }
 
+        String fullMethodName = call.getMethodDescriptor().getFullMethodName();
+        if (fullMethodName != null && fullMethodName.toLowerCase().endsWith("login")) {
+            return next.startCall(call, headers);
+        }
+
         String authHeader = headers.get(AUTH_HEADER);
 
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {

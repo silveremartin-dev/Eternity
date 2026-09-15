@@ -99,6 +99,9 @@ public class RedisConnectionManager {
      * Test the connection with a PING command.
      */
     public boolean ping() {
+        if (!connected || asyncCommands == null) {
+            return false;
+        }
         try {
             String result = asyncCommands.ping().get();
             return "PONG".equals(result);

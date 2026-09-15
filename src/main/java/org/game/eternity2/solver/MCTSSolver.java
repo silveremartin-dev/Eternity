@@ -50,25 +50,39 @@ public class MCTSSolver implements EternitySolverInterface {
 
     @Override
     public BoardPrimitive computeTessellation(BoardPrimitive startingBoard) {
-        MCTSNode root = new MCTSNode(null, new BoardPrimitive(startingBoard));
-
-        long endTime = System.currentTimeMillis() + 5000; // Run for 5 seconds per move/step (demo)
+        if (startingBoard == null) {
+            startingBoard = new BoardPrimitive(16, 16);
+        }
+        BoardPrimitive currentBoard = new BoardPrimitive(startingBoard);
+        long endTime = System.currentTimeMillis() + 1000;
 
         while (System.currentTimeMillis() < endTime) {
-            MCTSNode selectedNode = select(root);
-            if (!selectedNode.isTerminal()) {
-                expand(selectedNode);
-                if (!selectedNode.children.isEmpty()) {
-                    selectedNode = selectedNode.children.get(random.nextInt(selectedNode.children.size()));
-                }
+            int[] nextEmpty = findNextEmpty(currentBoard);
+            if (nextEmpty == null) {
+                break;
             }
-            int score = simulate(selectedNode);
-            backpropagate(selectedNode, score);
+            MCTSNode root = new MCTSNode(null, new BoardPrimitive(currentBoard));
+            long stepEnd = Math.min(endTime, System.currentTimeMillis() + 150);
+            while (System.currentTimeMillis() < stepEnd) {
+                MCTSNode selectedNode = select(root);
+                if (!selectedNode.isTerminal()) {
+                    expand(selectedNode);
+                    if (!selectedNode.children.isEmpty()) {
+                        selectedNode = selectedNode.children.get(random.nextInt(selectedNode.children.size()));
+                    }
+                }
+                int score = simulate(selectedNode);
+                backpropagate(selectedNode, score);
+            }
+            MCTSNode bestChild = root.getBestChild();
+            if (bestChild != null && bestChild.state != null) {
+                currentBoard = bestChild.state;
+            } else {
+                break;
+            }
         }
 
-        // Return best child
-        MCTSNode bestChild = root.getBestChild();
-        return bestChild != null ? bestChild.state : startingBoard;
+        return currentBoard;
     }
 
     private MCTSNode select(MCTSNode node) {
@@ -112,22 +126,41 @@ public class MCTSSolver implements EternitySolverInterface {
                 tile = PiecePrimitive.rotateCW(tile);
             }
         }
+        if (node.children.isEmpty()) {
+            node.terminal = true;
+        }
     }
 
     private int simulate(MCTSNode node) {
         BoardPrimitive simulationState = new BoardPrimitive(node.state);
-        int addedScore = 0;
-        // Random rollout (simplified)
-        for (int i = 0; i < 50; i++) {
-            int[] nextPos = findNextEmpty(simulationState);
-            if (nextPos == null) {
-                addedScore += 100; // Bonus for full fill
+        List<Long> available = getUnusedTiles(simulationState);
+        Collections.shuffle(available, random);
+
+        int[] nextPos;
+        while ((nextPos = findNextEmpty(simulationState)) != null) {
+            int x = nextPos[0];
+            int y = nextPos[1];
+            int[] constraints = simulationState.getConstraints(x, y);
+            boolean placed = false;
+            for (int i = 0; i < available.size(); i++) {
+                long tile = available.get(i);
+                for (int r = 0; r < 4; r++) {
+                    if (PiecePrimitive.matches(tile, constraints[0], constraints[1], constraints[2], constraints[3])) {
+                        simulationState.placePiece(x, y, tile);
+                        available.remove(i);
+                        placed = true;
+                        break;
+                    }
+                    tile = PiecePrimitive.rotateCW(tile);
+                }
+                if (placed)
+                    break;
+            }
+            if (!placed) {
                 break;
             }
-            // In a real simulation, we'd try to place random valid pieces
-            addedScore++;
         }
-        return (int) (node.state.computeScore() + addedScore);
+        return simulationState.computeScore();
     }
 
     private void backpropagate(MCTSNode node, int score) {

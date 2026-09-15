@@ -111,8 +111,21 @@ public class EternityWebSocketServer extends WebSocketServer {
     }
 
     private void handleLogin(WebSocket conn, JsonObject json) {
+        if (!json.has("username")) {
+            sendError(conn, "Missing username");
+            return;
+        }
         String username = json.get("username").getAsString();
-        // Simplified login for now, just accept any username
+        String password = json.has("password") ? json.get("password").getAsString() : null;
+
+        if (password != null && gameServer.getUserDatabase() != null) {
+            if (!gameServer.getUserDatabase().authenticateUser(username, password)) {
+                if (!gameServer.getUserDatabase().registerUser(username, password)) {
+                    sendError(conn, "Authentication failed");
+                    return;
+                }
+            }
+        }
         authenticatedUsers.put(conn, username);
 
         JsonObject response = new JsonObject();

@@ -45,14 +45,19 @@ import java.util.Date;
 public class JwtProvider {
 
     private static final Logger LOGGER = LogManager.getLogger(JwtProvider.class);
-    private static final String DEFAULT_SECRET = "eternity2-secret-key-must-be-at-least-256-bits-long-for-hs256";
 
     private final SecretKey secretKey;
     private final long tokenValidityHours;
 
     public JwtProvider() {
-        this(System.getenv().getOrDefault("JWT_SECRET", DEFAULT_SECRET),
-                Long.parseLong(System.getenv().getOrDefault("JWT_VALIDITY_HOURS", "24")));
+        String secret = System.getenv("JWT_SECRET");
+        this.tokenValidityHours = Long.parseLong(System.getenv().getOrDefault("JWT_VALIDITY_HOURS", "24"));
+        if (secret != null && !secret.isBlank()) {
+            this.secretKey = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
+        } else {
+            LOGGER.warn("JWT_SECRET not set in environment. Generating an in-memory random 256-bit key for this session.");
+            this.secretKey = Jwts.SIG.HS256.key().build();
+        }
     }
 
     public JwtProvider(String secret, long tokenValidityHours) {

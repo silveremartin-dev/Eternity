@@ -35,15 +35,17 @@ import io.lettuce.core.api.sync.RedisCommands;
   * @author Antigravity
   * @since 1.0
  */
-public class RedisJobQueue implements JobQueue {
+public class RedisJobQueue implements JobQueue, AutoCloseable {
 
     private static final String QUEUE_KEY = "eternity:jobs:pending";
+    private final RedisClient client;
+    private final StatefulRedisConnection<String, String> connection;
     private final RedisCommands<String, String> syncCommands;
     private final Gson gson;
 
     public RedisJobQueue(String redisUri) {
-        RedisClient client = RedisClient.create(redisUri);
-        StatefulRedisConnection<String, String> connection = client.connect();
+        this.client = RedisClient.create(redisUri);
+        this.connection = client.connect();
         this.syncCommands = connection.sync();
         this.gson = new Gson();
     }
@@ -72,5 +74,15 @@ public class RedisJobQueue implements JobQueue {
     public int size() {
         Long len = syncCommands.llen(QUEUE_KEY);
         return len != null ? len.intValue() : 0;
+    }
+
+    @Override
+    public void close() {
+        if (connection != null && connection.isOpen()) {
+            connection.close();
+        }
+        if (client != null) {
+            client.shutdown();
+        }
     }
 }

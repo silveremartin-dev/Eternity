@@ -73,6 +73,7 @@ public class EternityServer {
     private ServerStatistics statistics;
     private EternityWebSocketServer webSocketServer;
     private Server grpcServer;
+    private com.sun.net.httpserver.HttpServer metricsServer;
 
     private RedisConnectionManager redisManager;
     private ConstraintCache constraintCache;
@@ -250,6 +251,7 @@ public class EternityServer {
             int grpcPort = port + 2;
             grpcServer = ServerBuilder.forPort(grpcPort)
                     .addService(new EternityServiceImpl(this))
+                    .intercept(new org.game.eternity2.server.security.AuthInterceptor())
                     .build()
                     .start();
             logger.info("gRPC Server started on port " + grpcPort);
@@ -263,12 +265,29 @@ public class EternityServer {
         // Start Prometheus metrics HTTP endpoint
         try {
             int metricsPort = port + 3;
-            com.sun.net.httpserver.HttpServer metricsServer =
-                com.sun.net.httpserver.HttpServer.create(new java.net.InetSocketAddress(metricsPort), 0);
+            metricsServer = com.sun.net.httpserver.HttpServer.create(new java.net.InetSocketAddress(metricsPort), 0);
             metricsServer.createContext("/metrics", exchange -> {
                 String body = org.game.eternity2.server.monitoring.MetricsProvider.getInstance().scrape();
                 byte[] bytes = body.getBytes(java.nio.charset.StandardCharsets.UTF_8);
                 exchange.getResponseHeaders().set("Content-Type", "text/plain; version=0.0.4; charset=utf-8");
+                exchange.sendResponseHeaders(200, bytes.length);
+                exchange.getResponseBody().write(bytes);
+                exchange.getResponseBody().close();
+            });
+            metricsServer.createContext("/health", exchange -> {
+                String body = "{\"status\":\"UP\"}";
+                byte[] bytes = body.getBytes(java.nio.charset.StandardCharsets.UTF_8);
+                exchange.getResponseHeaders().set("Content-Type", "application/json");
+                exchange.getResponseHeaders().set("Access-Control-Allow-Origin", "*");
+                exchange.sendResponseHeaders(200, bytes.length);
+                exchange.getResponseBody().write(bytes);
+                exchange.getResponseBody().close();
+            });
+            metricsServer.createContext("/ready", exchange -> {
+                String body = "{\"status\":\"READY\"}";
+                byte[] bytes = body.getBytes(java.nio.charset.StandardCharsets.UTF_8);
+                exchange.getResponseHeaders().set("Content-Type", "application/json");
+                exchange.getResponseHeaders().set("Access-Control-Allow-Origin", "*");
                 exchange.sendResponseHeaders(200, bytes.length);
                 exchange.getResponseBody().write(bytes);
                 exchange.getResponseBody().close();
@@ -293,8 +312,13 @@ public class EternityServer {
             if (serverSocket != null && !serverSocket.isClosed()) {
                 serverSocket.close();
             }
-            if (clientExecutor != null) clientExecutor.shutdown();
-            // Close Virtual Thread executor (graceful shutdown)
+            if (clientExecutor != null) {
+                clientExecutor.shutdown();
+            }
+            if (metricsServer != null) {
+                metricsServer.stop(1);
+                metricsServer = null;
+            }
             
             if (webSocketServer != null) {
                 try {
@@ -346,6 +370,10 @@ public class EternityServer {
         return jobManager;
     }
 
+    public JsonUserDatabase getUserDatabase() {
+        return userDatabase;
+    }
+
     public ServerStatistics getStatistics() {
         return statistics;
     }
@@ -355,6 +383,36 @@ public class EternityServer {
         if (board == null) return null;
         synchronized (board) {
             return board;
+        }
+    }
+
+    public synchronized void updateMasterBoard(BoardPrimitive resultBoard) {
+        if (resultBoard == null) return;
+        if (masterBoard == null || resultBoard.computeScore() > masterBoard.computeScore()) {
+            masterBoard = resultBoard;
+            statistics.updateBestBoard(masterBoard);
+            statistics.incrementPiecesSolved(resultBoard.getPlacedCount());
+            if (gui != null) {
+                String formatted = org.game.eternity2.util.BoardRenderer.formatScore(masterBoard.computeScore(), masterBoard.getWidth(), masterBoard.getHeight());
+                gui.log(timestamp() + " [NEW BEST] " + formatted);
+                gui.updateBestBoard(masterBoard);
+            }
+            broadcastPacket(new EternityPacket(
+                new EternityUser("SERVER", "SERVER"),
+                EternityPacket.Command.BEST_BOARD_UPDATE,
+                masterBoard
+            ));
+            final BoardPrimitive checkpointToSave = masterBoard.copy();
+            Thread.ofVirtual().start(() -> {
+                try {
+                    java.io.File dataDir = new java.io.File("data");
+                    if (!dataDir.exists()) dataDir.mkdirs();
+                    org.game.eternity2.io.PuzzleLoaderWriter.saveSolution(
+                        java.nio.file.Path.of("data/master_board_checkpoint.json"), checkpointToSave);
+                } catch (IOException e) {
+                    logger.error("Failed to save checkpoint", e);
+                }
+            });
         }
     }
 
@@ -395,6 +453,10 @@ public class EternityServer {
             try {
                 out = new ObjectOutputStream(socket.getOutputStream());
                 in = new ObjectInputStream(socket.getInputStream());
+                java.io.ObjectInputFilter filter = java.io.ObjectInputFilter.Config.createFilter(
+                    "org.game.eternity2.**;java.lang.*;java.util.*;[J;[I;[Ljava.lang.String;;!*"
+                );
+                in.setObjectInputFilter(filter);
                 while (connected && isRunning) {
                     try {
                         Object obj = in.readObject();
@@ -517,15 +579,18 @@ public class EternityServer {
                                     EternityPacket.Command.BEST_BOARD_UPDATE,
                                     masterBoard
                                 ));
-                                // Save checkpoint
-                                try {
-                                    java.io.File dataDir = new java.io.File("data");
-                                    if (!dataDir.exists()) dataDir.mkdirs();
-                                    org.game.eternity2.io.PuzzleLoaderWriter.saveSolution(
-                                        java.nio.file.Path.of("data/master_board_checkpoint.json"), masterBoard);
-                                } catch (IOException e) {
-                                    logger.error("Failed to save checkpoint", e);
-                                }
+                                // Save checkpoint asynchronously
+                                final BoardPrimitive checkpointToSave = masterBoard.copy();
+                                Thread.ofVirtual().start(() -> {
+                                    try {
+                                        java.io.File dataDir = new java.io.File("data");
+                                        if (!dataDir.exists()) dataDir.mkdirs();
+                                        org.game.eternity2.io.PuzzleLoaderWriter.saveSolution(
+                                            java.nio.file.Path.of("data/master_board_checkpoint.json"), checkpointToSave);
+                                    } catch (IOException e) {
+                                        logger.error("Failed to save checkpoint", e);
+                                    }
+                                });
                             }
                         }
                     }
@@ -582,8 +647,10 @@ public class EternityServer {
         public void sendPacket(EternityPacket packet) throws IOException {
             boolean isStat = (packet.getCommand() == EternityPacket.Command.STATISTICS_UPDATE);
             statistics.incrementPacketsSent(isStat);
-            out.writeObject(packet);
-            out.flush();
+            synchronized (out) {
+                out.writeObject(packet);
+                out.flush();
+            }
         }
 
         public void close() {
@@ -598,9 +665,11 @@ public class EternityServer {
                 }
             } catch (IOException ignored) {
             }
-            clients.remove(this);
-            if (gui != null) {
-                gui.updateClientCount(clients.size());
+            synchronized (clients) {
+                clients.remove(this);
+                if (gui != null) {
+                    gui.updateClientCount(clients.size());
+                }
             }
         }
     }

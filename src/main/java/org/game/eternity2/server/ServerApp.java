@@ -458,5 +458,13 @@ public class ServerApp extends Application {
         long h = ms / (1000 * 60 * 60);
         return String.format("%02d:%02d:%02d", h, m, s);
     }
+
+    @Override
+    public void stop() throws Exception {
+        if (server != null && server.isRunning()) {
+            server.stopServer();
+        }
+        super.stop();
+    }
 }
 

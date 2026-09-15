@@ -74,8 +74,9 @@ public class HybridSolver implements EternitySolverInterface {
         int backtrackingBest = backtracker.getBestScore();
         System.out.println("Backtracking finished. Best score: " + backtrackingBest);
 
-        // 2. Stochastic refinement
-        if (backtrackingBest < (startingBoard.getWidth() * startingBoard.getHeight())) {
+        // 2. Stochastic refinement if board is not 100% solved
+        int maxScore = (w - 1) * h + w * (h - 1) + 2 * w + 2 * h;
+        if (backtrackingBest < maxScore) {
             System.out.println("Switching to Stochastic Refinement...");
             stochastic.initializeFromBoard(bestBacktrack, allPieces);
             stochastic.refine(1000000);
