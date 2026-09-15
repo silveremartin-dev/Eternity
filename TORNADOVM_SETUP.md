@@ -1,152 +1,68 @@
-# TornadoVM Setup Guide
+# TornadoVM Hardware GPU Acceleration Guide
 
-**Authors:** Gemini AI Assistant, Silvère
+**Authors:** Silvère Martin-Michiellot, Antigravity (Google DeepMind)
 
-## Current Situation
+---
 
-TornadoVM dependencies are not available via public Maven repo. The code uses a **CPU fallback** in `EternityKernel.java`.
+## 1. Overview
 
-## 📱 Votre GPU Intel UHD Graphics
+The Eternity II solver includes native hardware acceleration through **TornadoVM** (`io.github.beehive-lab:tornado-api:4.0.0-jdk25`), enabling the engine to compile Java candidate validation code directly into OpenCL, CUDA, or SPIR-V kernels for execution on GPU hardware.
 
-**Bonne nouvelle** : Intel UHD Graphics supporte OpenCL ! Votre GPU (pilote 27.20.100.9079) peut fonctionner avec TornadoVM.
+If no compatible GPU driver is available at runtime, the engine gracefully and silently defaults to the high-speed scalar CPU solver.
 
-### Installer OpenCL pour Intel GPU (Windows)
+---
 
-#### Pré-vérification : Votre GPU est-il compatible ?
+## 2. Hardware & Driver Prerequisites
 
-```powershell
-# Dans PowerShell, vérifier les GPUs détectés
-Get-WmiObject Win32_VideoController | Select-Object Name, DriverVersion
+### OpenCL Drivers
+- **Intel GPUs (UHD / Iris / Arc):** Install [Intel OpenCL Graphics Driver](https://github.com/intel/compute-runtime/releases).
+- **NVIDIA GPUs (RTX / GTX / Tesla):** Install [NVIDIA CUDA Toolkit](https://developer.nvidia.com/cuda-downloads).
+- **AMD GPUs (Radeon / Instinct):** Install AMD ROCm or AMD OpenCL driver.
 
-# Vous devriez voir : Intel UHD Graphics
-```
-
-#### Option 1 : Intel OpenCL Runtime (Windows natif - RECOMMANDÉ)
-
-```powershell
-# 1. Télécharger Intel OpenCL Runtime
-# URL: https://www.intel.com/content/www/us/en/developer/articles/tool/opencl-drivers.html
-# Ou directement le package CPU Runtime
-# URL: https://github.com/intel/compute-runtime/releases
-
-# 2. Installer le runtime
-# Double-cliquer sur le fichier .exe téléchargé
-
-# 3. Vérifier l'installation OpenCL
-# Télécharger GPU Caps Viewer ou clinfo
-# URL GPU Caps Viewer: https://www.geeks3d.com/dl/getfile.php?id=394
-
-# Ou utiliser clinfo (via chocolatey):
-choco install opencl-intel-cpu-runtime
+To check driver readiness on your machine:
+```bash
+# Verify OpenCL platforms with clinfo
 clinfo
 ```
 
-#### Option 2 : Via WSL2 (Plus simple pour TornadoVM)
+---
 
-**Important**: TornadoVM est conçu pour **Linux/Mac uniquement**. Les scripts d'installation (`tornadovm-installer`, `source`) sont des scripts **bash**, incompatibles avec PowerShell Windows.
+## 3. Installation & Setup
 
-### Options pour Windows
-
-#### Option A: WSL2 (Windows Subsystem for Linux) - Recommandé
+### Linux / WSL2 (Recommended for Production)
 
 ```bash
-# 1. Installer WSL2 (si pas déjà fait)
-# Dans PowerShell Admin:
-wsl --install
-
-# 2. Redémarrer Windows
-
-# 3. Dans WSL Ubuntu:
-wsl
-
-# 4. Installer les prérequis dans WSL
+# 1. Install build tools and JDK 25
 sudo apt update
-sudo apt install build-essential cmake git openjdk-21-jdk
+sudo apt install build-essential cmake git openjdk-25-jdk
 
-# 5. Cloner et installer TornadoVM dans WSL
+# 2. Clone and install TornadoVM
 git clone https://github.com/beehive-lab/TornadoVM
 cd TornadoVM
-./bin/tornadovm-installer --jdk /usr/lib/jvm/java-21-openjdk-amd64 --backend opencl
+./bin/tornadovm-installer --jdk /usr/lib/jvm/java-25-openjdk --backend opencl
 
-# 6. Sourcer l'environnement (dans WSL)
+# 3. Source environment
 source setvars.sh
 
-# 7. Tester
-tornado --version
+# 4. Verify installation
+tornado --devices
 ```
 
-**Limitation**: Pas de support GPU dans WSL2 par défaut (sauf avec WSL2 GPU support pour CUDA).
+---
 
-#### Option B: Dual-boot Linux - Pour production
+## 4. Running the GPU Solver
 
-#### Option C: VM Linux avec GPU passthrough - Complexe
-
-### Solution Simple: Gardez le CPU Fallback
-
-**Recommandation forte**: Pour votre cas d'usage Windows, **gardez le CPU fallback actuel**. Il fonctionne parfaitement et évite toute la complexité TornadoVM sur Windows.
-
-### Activation dans le projet (Linux uniquement)
-
-**Si vous êtes sur Linux** ou avez réussi l'installation dans WSL2:
-
-1. **Décommenter dans pom.xml** (lignes 131-141):
-
-```xml
-<dependency>
-    <groupId>uk.ac.manchester.tornado</groupId>
-    <artifactId>tornado-api</artifactId>
-    <version>0.15</version>
-</dependency>
-```
-
-2. **Ajouter annotation dans EternityKernel.java**:
-
-```java
-import uk.ac.manchester.tornado.api.annotations.Parallel;
-
-public static void checkCandidates(...) {
-    @Parallel
-    for (int i = 0; i < candidates.length / 4; i++) {
-        // ...
-    }
-}
-```
-
-3. **Compiler et exécuter avec TornadoVM**:
+Once drivers are set up, run the project:
 
 ```bash
-# Dans l'environnement TornadoVM (après source setvars.sh)
-mvn clean package
-tornado --printKernel -jar target/eternity-1.0-SNAPSHOT.jar
+mvn clean package -DskipTests
+java --enable-preview -cp target/eternity-1.0-SNAPSHOT.jar org.game.eternity2.client.ClientApp
 ```
 
-## ✅ Recommandation pour Windows: CPU Fallback
+In the Client UI:
+1. Check the **Use GPU** option.
+2. Click **Connect** to dispatch search batches to the GPU compute grid.
 
-Le CPU fallback actuel est **totalement fonctionnel** et **suffisant** pour votre usage.
+---
 
-**Pourquoi ne PAS installer TornadoVM sur Windows:**
-
-1. ❌ Scripts incompatibles avec PowerShell
-2. ❌ WSL2 complexe et sans vrai support GPU
-3. ❌ Temps d'installation vs gain minimal
-4. ✅ Le CPU moderne (multi-core) est déjà très performant pour ce problème
-5. ✅ L'architecture est **prête** pour GPU si besoin futur
-
-**Si vraiment besoin de GPU:** Utilisez une machine Linux ou un serveur cloud (AWS/GCP avec GPU).
-
-## Benchmark (Optionnel)
-
-```bash
-# Tester les performances actuelles (CPU)
-java -jar target/eternity-1.0-SNAPSHOT.jar --benchmark
-
-# Comparer avec des metrics
-# (À implémenter si nécessaire)
-```
-
-## Statut Actuel
-
-- ✅ Architecture prête pour GPU
-- ✅ CPU fallback fonctionnel
-- ⏸️ TornadoVM en attente (dépendances non résolues)
-- 📋 To-do: Benchmarker quand TornadoVM sera disponible
+© 2026 Silvère Martin-Michiellot & Antigravity

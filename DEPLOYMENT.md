@@ -1,352 +1,147 @@
 # Eternity II - Deployment Guide
 
-**Authors:** Silvere Martin-Michiellot, Antigravity
-
-## Table of Contents
-
-- [Local Deployment](#local-deployment)
-- [Kubernetes Deployment](#kubernetes-deployment)
-- [Cloud Deployment](#cloud-deployment)
-- [Environment Configuration](#environment-configuration)
+**Authors:** Silvère Martin-Michiellot, Antigravity (Google DeepMind)
 
 ---
 
-## Local Deployment
+## Table of Contents
 
-### Local Prerequisites
+1. [Local Deployment](#local-deployment)
+2. [Docker Deployment](#docker-deployment)
+3. [Kubernetes Deployment](#kubernetes-deployment)
+4. [Monitoring & Observability](#monitoring--observability)
+5. [Environment Variables Reference](#environment-variables-reference)
 
-- Java 21+
-- Maven 3.9+
-- Docker (optional, for Redis)
+---
 
-### Local Scripts
+## 1. Local Deployment
 
-**Linux/Mac/WSL:**
+### Prerequisites
+- **Java 25+** (with `--enable-preview`)
+- **Maven 3.9+**
 
+### Automated Deployment Scripts
+
+**Linux / macOS / WSL:**
 ```bash
 chmod +x scripts/deploy-local.sh
 ./scripts/deploy-local.sh
 ```
 
-**Windows:**
-
+**Windows (PowerShell):**
 ```powershell
 .\scripts\deploy-local.ps1
 ```
 
-### Local Manual Setup
-
-**Sans Redis:**
-
+### Manual Build & Run
 ```bash
-mvn clean package
-java -jar target/eternity-1.0-SNAPSHOT.jar
+# Build JAR
+mvn clean package -DskipTests
+
+# Run Server Node
+java --enable-preview -cp target/eternity-1.0-SNAPSHOT.jar org.game.eternity2.server.ServerApp
+
+# Run Solver Client Node
+java --enable-preview -cp target/eternity-1.0-SNAPSHOT.jar org.game.eternity2.client.ClientApp
 ```
 
-**Avec Redis:**
+---
 
+## 2. Docker Deployment
+
+### Run Supporting Infrastructure (Redis + PostgreSQL)
 ```bash
 docker-compose up -d
-mvn clean package
-java -jar target/eternity-1.0-SNAPSHOT.jar
+```
+
+To verify container health:
+```bash
+docker-compose ps
+```
+
+### Build and Run Eternity Server in Docker
+```bash
+# Build image
+docker build -t eternity-server:latest .
+
+# Run container
+docker run -d \
+  --name eternity-server \
+  -p 12345:12345 \
+  -p 12346:12346 \
+  -p 12347:12347 \
+  -p 12348:12348 \
+  -e REDIS_HOST=host.docker.internal \
+  -e DB_URL=jdbc:postgresql://host.docker.internal:5432/eternity \
+  eternity-server:latest
 ```
 
 ---
 
-## Kubernetes Deployment
+## 3. Kubernetes Deployment
 
-### Kubernetes Prerequisites
+### Prerequisites
+- Kubernetes cluster (Minikube, K3s, Docker Desktop, or GKE/EKS/AKS)
+- `kubectl` configured
 
-- Docker Desktop avec Kubernetes activé
-- kubectl configuré
-
-### Kubernetes Scripts
-
-**Linux/Mac:**
-
+### Deployment Manifests
 ```bash
-chmod +x scripts/deploy-k8s-local.sh
-./scripts/deploy-k8s-local.sh
-```
-
-**Windows:**
-
-```powershell
-.\scripts\deploy-k8s-local.ps1
-```
-
-### Kubernetes Manual Setup
-
-```bash
-# 1. Build image
-docker build -t eternity-server:latest .
-
-# 2. Deploy
+# 1. Deploy Redis State
 kubectl apply -f k8s/redis.yaml
+
+# 2. Deploy Server Application & Service
 kubectl apply -f k8s/eternity.yaml
+
+# 3. Deploy Horizontal Pod Autoscaler
 kubectl apply -f k8s/hpa.yaml
-
-# 3. Access
-kubectl port-forward svc/eternity-server 8080:8080
 ```
 
-### Vérification
-
+### Verification & Scaling
 ```bash
-# Pods status
-kubectl get pods
+# Check pod status
+kubectl get pods -l app=eternity-server
 
-# HPA status
-kubectl get hpa
+# Check HPA scaling metrics
+kubectl get hpa eternity-server-hpa
 
-# Logs
-kubectl logs -f deployment/eternity-server
+# Forward ports for local access
+kubectl port-forward svc/eternity-server 12345:12345 12346:12346 12347:12347 12348:12348
 ```
 
 ---
 
-## Cloud Deployment
+## 4. Monitoring & Observability
 
-### Plateformes supportées
-
-| Provider | Registry | Kubernetes |
-| :--- | :--- | :--- |
-| **AWS** | ECR | EKS |
-| **GCP** | GCR | GKE |
-| **Azure** | ACR | AKS |
-
-### Template de déploiement
-
-**Étapes:**
-
-1. **Configurer le script `scripts/deploy-cloud.sh`:**
-
-   ```bash
-   # Modifier ces variables:
-   DOCKER_REGISTRY="your-registry.io"
-   CLOUD_PROVIDER="aws"  # ou gcp, azure
-   ```
-
-2. **Configurer l'authentification:**
-
-   **AWS (ECR + EKS):**
-
-   ```bash
-   # Login ECR
-   aws ecr get-login-password --region us-east-1 | \
-     docker login --username AWS --password-stdin <account>.dkr.ecr.us-east-1.amazonaws.com
-   
-   # Configure kubectl
-   aws eks update-kubeconfig --name eternity-cluster --region us-east-1
-   ```
-
-   **GCP (GCR + GKE):**
-
-   ```bash
-   # Login GCR
-   gcloud auth configure-docker
-   
-   # Configure kubectl
-   gcloud container clusters get-credentials eternity-cluster --zone us-central1-a
-   ```
-
-   **Azure (ACR + AKS):**
-
-   ```bash
-   # Login ACR
-   az acr login --name yourregistry
-   
-   # Configure kubectl
-   az aks get-credentials --resource-group eternity-rg --name eternity-cluster
-   ```
-
-3. **Déployer:**
-
-   ```bash
-   chmod +x scripts/deploy-cloud.sh
-   ./scripts/deploy-cloud.sh
-   ```
-
-### Avec GPU (NVIDIA)
-
-**Manifests avec GPU:**
-
-Créer `k8s/eternity-gpu.yaml`:
-
+### Prometheus Configuration
+Add the following scrape target to your `prometheus.yml`:
 ```yaml
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: eternity-server-gpu
-spec:
-  replicas: 2
-  selector:
-    matchLabels:
-      app: eternity-server
-      tier: gpu
-  template:
-    metadata:
-      labels:
-        app: eternity-server
-        tier: gpu
-    spec:
-      containers:
-      - name: eternity-server
-        image: your-registry/eternity-server:latest
-        resources:
-          limits:
-            nvidia.com/gpu: 1  # 1 GPU par pod
-            memory: 4Gi
-            cpu: 2000m
-          requests:
-            memory: 2Gi
-            cpu: 1000m
-        env:
-        - name: ENABLE_GPU
-          value: "true"
+scrape_configs:
+  - job_name: 'eternity-server'
+    metrics_path: '/metrics'
+    static_configs:
+      - targets: ['localhost:12348']
 ```
 
-**Déployer avec GPU:**
-
-```bash
-# Installer GPU operator (une fois par cluster)
-kubectl apply -f https://raw.githubusercontent.com/NVIDIA/gpu-operator/master/deployments/gpu-operator.yaml
-
-# Deploy
-kubectl apply -f k8s/eternity-gpu.yaml
-```
+### Health & Readiness Probes
+- **Liveness Probe:** `GET http://<host>:12348/health` (HTTP 200 OK)
+- **Readiness Probe:** `GET http://<host>:12348/ready` (HTTP 200 OK)
 
 ---
 
-## Environment Configuration
+## 5. Environment Variables Reference
 
-### Variables d'environnement
-
-**Fichier `.env` (local):**
-
-```bash
-SERVER_PORT=8080
-GRPC_PORT=50051
-REDIS_HOST=localhost
-REDIS_PORT=6379
-LOG_LEVEL=INFO
-```
-
-**Kubernetes ConfigMap:**
-
-```yaml
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: eternity-config
-data:
-  SERVER_PORT: "8080"
-  GRPC_PORT: "50051"
-  LOG_LEVEL: "INFO"
----
-apiVersion: v1
-kind: Secret
-metadata:
-  name: eternity-secret
-type: Opaque
-stringData:
-  REDIS_PASSWORD: "your-secure-password"
-```
-
-**Appliquer:**
-
-```bash
-kubectl apply -f k8s/config.yaml
-```
-
-**Référencer dans Deployment:**
-
-```yaml
-spec:
-  containers:
-  - name: eternity-server
-    envFrom:
-    - configMapRef:
-        name: eternity-config
-    - secretRef:
-        name: eternity-secret
-```
+| Variable | Type | Default | Description |
+| :--- | :--- | :--- | :--- |
+| `SERVER_PORT` | `int` | `12345` | Master server TCP listening port |
+| `REDIS_HOST` | `string` | `localhost` | Redis server hostname for distributed queues |
+| `REDIS_PORT` | `int` | `6379` | Redis server port |
+| `DB_ENABLED` | `boolean` | `true` | Enable/disable PostgreSQL storage |
+| `DB_URL` | `string` | `jdbc:postgresql://localhost:5432/eternity` | PostgreSQL connection string |
+| `DB_USER` | `string` | `postgres` | Database username |
+| `DB_PASSWORD` | `string` | `postgres` | Database password |
+| `JWT_SECRET` | `string` | *(Auto-generated 256-bit)* | Secret key for JWT token signing |
+| `ETERNITY_LANG` | `string` | `en` | Interface language (`en`, `fr`) |
 
 ---
 
-## CI/CD
-
-### GitHub Actions (déjà configuré)
-
-Le fichier `.github/workflows/ci-cd.yml` gère:
-
-- ✅ Build automatique sur push
-- ✅ Tests
-- ✅ Build Docker image
-- ⏸️ Push vers registry (à configurer)
-
-**Activer le push vers registry:**
-
-Ajouter des secrets GitHub:
-
-- `DOCKER_USERNAME`
-- `DOCKER_PASSWORD`
-- Ou `AWS_ACCESS_KEY_ID` + `AWS_SECRET_ACCESS_KEY` pour ECR
-
----
-
-## Troubleshooting
-
-### Problème: Image pull failed
-
-```bash
-# Vérifier que l'image existe
-docker images | grep eternity-server
-
-# Re-build
-docker build -t eternity-server:latest .
-```
-
-### Problème: Pods en CrashLoopBackOff
-
-```bash
-# Voir les logs
-kubectl logs deployment/eternity-server
-
-# Vérifier les events
-kubectl describe pod <pod-name>
-```
-
-### Problème: HPA ne scale pas
-
-```bash
-# Vérifier metrics-server
-kubectl get apiservice v1beta1.metrics.k8s.io -o yaml
-
-# Installer metrics-server si absent
-kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
-```
-
----
-
-## Monitoring
-
-### Prometheus + Grafana (optionnel)
-
-```bash
-# Installer Prometheus Operator
-helm install prometheus prometheus-community/kube-prometheus-stack
-
-# Expose Grafana
-kubectl port-forward svc/prometheus-grafana 3000:80
-# Login: admin / prom-operator
-```
-
----
-
-## References
-
-- [QUICKSTART.md](QUICKSTART.md) - Démarrage rapide
-- [README.md](README.md) - Vue d'ensemble
-- [k8s/](k8s/) - Manifests Kubernetes
-- [scripts/](scripts/) - Scripts de déploiement
+© 2026 Silvère Martin-Michiellot & Antigravity

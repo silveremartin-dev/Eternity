@@ -1,66 +1,64 @@
-# Eternity II - The Puzzle Challenge
+# Eternity II - The Mathematical Puzzle Challenge
 
-**Authors:** Gemini AI Assistant, Silvère
+**Authors:** Silvère Martin-Michiellot, Antigravity (Google DeepMind)
 
-## 🧩 The Game
+---
 
-**Eternity II** is an edge-matching puzzle released in 2007. It is the successor to the original Eternity puzzle. The challenge was to place 256 square pieces into a 16x16 grid, matching the patterns on their edges.
+## 🧩 The Game & Historical Context
 
-### The Prize
+**Eternity II** is an edge-matching combinatorial puzzle released commercially in 2007 as the successor to the original Eternity puzzle. The objective is to place 256 square pieces into a $16 \times 16$ grid such that all adjacent tile edges share matching patterns.
 
-A prize of **$2 million** was offered for the first complete solution. The deadline passed on December 31, 2010, without a winner. To this day, a complete solution remains one of the "holy grails" of computational puzzles.
+### The Unclaimed Prize
+A $2,000,000 prize was offered for the first verified complete solution before December 31, 2010. The prize expired unclaimed, and the puzzle remains one of the preeminent open benchmark problems in combinatorial optimization.
 
-## 📐 Mechanics & Rules
+---
+
+## 📐 Rules & Invariants
 
 ### 1. The Grid
-
-- **Size**: 16x16 grid (256 cells).
-- **Pieces**: 256 unique square tiles.
-- **Edges**: Each tile has 4 edges, each with a specific pattern/color.
+- **Grid Dimensions:** $16 \times 16$ (256 cells).
+- **Pieces:** 256 unique square tiles.
+- **Edges per Tile:** 4 edges (Top, Right, Bottom, Left), each with a specific pattern/color integer ID ($0 \le id \le 22$).
 
 ### 2. Matching Rules
+- **Inner Edges:** Adjacent edges of neighboring tiles must share identical pattern IDs.
+- **Border Edges:** The outer perimeter of the grid must match the neutral border pattern (Pattern ID = 0).
+- **Orientation:** Tiles can be rotated in 4 discrete orientations ($0^\circ, 90^\circ, 180^\circ, 270^\circ$). Tiles cannot be flipped (non-chiral).
+- **Max Theoretical Score:** For a board of size $W \times H$:
+  $$\text{Max Score} = (W - 1) \cdot H + W \cdot (H - 1) + 2W + 2H$$
+  For $16 \times 16$, the maximum score is $15 \cdot 16 + 16 \cdot 15 + 32 + 32 = 480 + 64 = 544$ matched edges.
 
-- **Inner Edges**: Adjacent edges of neighboring tiles must match perfectly (same pattern/color).
-- **Border Edges**: The outer edges of the grid (border) must match the specific "border pattern" (usually grey).
-- **Orientation**: Tiles can be rotated 0°, 90°, 180°, or 270°. They cannot be flipped.
+### 3. Piece Topology
+1. **Corner Pieces (4):** Two adjacent border edges (Pattern 0). Placed strictly in the 4 corners: $(0,0), (15,0), (0,15), (15,15)$.
+2. **Edge Pieces (56):** Exactly one border edge (Pattern 0). Placed strictly along the outer perimeter.
+3. **Inner Pieces (196):** Zero border edges. Placed in the $14 \times 14$ interior grid.
 
-### 3. The Pieces
+---
 
-There are three types of pieces:
+## 🔢 Combinatorial Complexity
 
-1. **Corner Pieces** (4): Two adjacent grey sides. Must be placed in the 4 corners.
-2. **Edge Pieces** (56): One grey side. Must be placed on the perimeter.
-3. **Inner Pieces** (196): No grey sides. Placed in the 14x14 inner square.
+- **Unconstrained Permutations:** $256! \approx 8.5 \times 10^{506}$
+- **Rotational Variations:** $4^{256} \approx 1.3 \times 10^{154}$
+- **Total Search Space:** $\approx 1.1 \times 10^{661}$ configurations.
 
-## 🔢 Complexity
+Unlike puzzles with fast local constraint propagation (such as Sudoku), Eternity II exhibits slow constraint decay: a candidate board may appear valid for 240+ pieces before hitting an irrecoverable deadlock, requiring deep backtracking.
 
-The combinatorial explosion of Eternity II is staggering, making brute-force impossible.
+---
 
-- **Total Permutations**: If we just shuffle 256 pieces: $256! \approx 8.5 \times 10^{506}$.
-- **Rotations**: Each piece has 4 orientations. $4^{256} \approx 1.3 \times 10^{154}$.
-- **Constraints**: The edge-matching constraints drastically reduce the search space, but it remains astronomically large.
+## 💻 Algorithmic Solutions Implemented
 
-### Why is it so hard?
+1. **Iterative MCV Backtracking (`EternitySolverEngine`):**
+   - Place pieces in spots with the fewest valid candidates.
+   - `NeighborIndex` and `GlobalPruner` achieve $O(1)$ constraint evaluation.
+   - Fixed clues locking (`isFixed[]`) ensures official hints are respected.
+2. **Monte Carlo Tree Search (`MCTSSolver`):**
+   - Balances exploration and exploitation via UCT.
+   - Stochastic rollout on remaining tile pools.
+3. **Hardware GPU Acceleration (`GPUEternitySolver` / TornadoVM):**
+   - Batch parallel verification on GPU compute cores.
+4. **Stochastic Refinement (`StochasticRefinement`):**
+   - Simulated annealing using unit rotations and pairwise tile swaps.
 
-Unlike Sudoku or N-Queens, local constraints propagate very slowly. You can fill 90% of the board and realize the last few pieces don't fit, requiring deep backtracking.
+---
 
-## 💻 Computational Approach
-
-Our project aims to solve (or approximate) this puzzle using a high-performance distributed architecture:
-
-1. **Backtracking with Pruning**: The core algorithm tries to place pieces one by one.
-2. **Heuristics**:
-    - **Most Constrained First**: Place pieces in spots with the fewest valid options.
-    - **Look-ahead**: Verify if placing a piece makes a future spot impossible.
-3. **Parallelism**:
-    - **Distributed Solving**: Splitting the search tree across multiple servers/workers.
-    - **GPU Acceleration**: Using `EternityKernel` to check thousands of candidates in parallel.
-4. **Data Structures**:
-    - **Constraint Cache**: O(1) lookup to find which pieces match a specific edge pattern.
-    - **Bitmasks**: Representing edge patterns as integers for fast comparison.
-
-## 🏆 Current Best Known Solutions
-
-While the full 256-piece puzzle is unsolved, the community tracks "best partial solutions" (maximum number of matching edges or placed pieces).
-
-*This project serves as a playground for advanced Java concurrency (Virtual Threads), distributed systems (Redis/K8s), and GPU computing (TornadoVM).*
+© 2026 Silvère Martin-Michiellot & Antigravity

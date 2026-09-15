@@ -1,101 +1,68 @@
-# Redis Setup for Eternity II
+# Redis Distributed Setup for Eternity II
 
-**Authors:** Gemini AI Assistant, Silvère
+**Authors:** Silvère Martin-Michiellot, Antigravity (Google DeepMind)
 
-## Quick Start
+---
+
+## 🚀 Quick Start
 
 ### Option 1: Docker Compose (Recommended)
 
-Start Redis with Redis Commander UI:
+Start Redis and Redis Commander:
 
 ```bash
 docker-compose up -d
 ```
 
-This will start:
+**Services Started:**
+- **Redis Server:** `localhost:6379`
+- **Redis Commander (Web GUI):** `http://localhost:8081`
 
-- **Redis** on port `6379` (with data persistence)
-- **Redis Commander** UI on port `8081` (<http://localhost:8081>)
-
-To stop:
-
+To stop services:
 ```bash
 docker-compose down
 ```
 
-To view logs:
+---
+
+### Option 2: Local / Native Installation
+
+- **Linux (Debian/Ubuntu):** `sudo apt update && sudo apt install redis-server`
+- **macOS:** `brew install redis && brew services start redis`
+- **Windows:** Run via WSL2 or Docker container.
+
+---
+
+## ⚙️ Redis Integration in Eternity II
+
+The system connects via Lettuce asynchronous client (`io.lettuce:lettuce-core`):
+
+### 1. Distributed Job Queue (`eternity:jobs:pending`)
+- **Enqueue (Master Node):** `LPUSH eternity:jobs:pending <job_json>`
+- **Dequeue (Worker Node):** `BRPOP eternity:jobs:pending <timeout>` (Atomic FIFO work stealing)
+- **Size:** `LLEN eternity:jobs:pending`
+
+### 2. Constraint Cache (`ConstraintCache`)
+- Caches partial candidate evaluations to avoid duplicate branch exploration across workers.
+
+---
+
+## 🛠️ CLI Operations & Monitoring
 
 ```bash
-docker-compose logs -f redis
-```
-
-### Option 2: Manual Redis Installation
-
-If you don't have Docker, install Redis manually:
-
-- **Windows**: Use WSL2 or download Redis for Windows
-- **macOS**: `brew install redis` then `redis-server`
-- **Linux**: `sudo apt install redis-server` or equivalent
-
-## Using Redis Job Queue
-
-The `RedisJobQueue` class provides distributed job management:
-
-### Configuration
-
-Jobs are stored in Redis list: `eternity:jobs:pending`
-
-### Operations
-
-- **Enqueue**: `LPUSH eternity:jobs:pending <job_json>`
-- **Dequeue**: `BRPOP eternity:jobs:pending <timeout>`
-- **Size**: `LLEN eternity:jobs:pending`
-
-### Redis CLI Commands
-
-Monitor the queue:
-
-```bash
-# Connect to Redis
-redis-cli
+# Connect to Redis CLI
+docker exec -it eternity-redis-1 redis-cli
 
 # Check queue size
 LLEN eternity:jobs:pending
 
-# View all jobs (non-destructive)
-LRANGE eternity:jobs:pending 0 -1
+# Inspect jobs
+LRANGE eternity:jobs:pending 0 10
 
-# Clear queue (CAUTION!)
+# Clear queue if necessary
 DEL eternity:jobs:pending
 ```
 
-## Architecture
+---
 
-```
-┌─────────────┐
-│   Server 1  │──┐
-└─────────────┘  │
-                 │    ┌──────────────┐
-┌─────────────┐  ├───▶│    Redis     │
-│   Server 2  │──┤    │  Job Queue   │
-└─────────────┘  │    └──────────────┘
-                 │            │
-┌─────────────┐  │            ▼
-│   Server N  │──┘    ┌──────────────┐
-└─────────────┘       │   Clients    │
-                      └──────────────┘
-```
-
-## Benefits
-
-✅ **Distributed**: Multiple servers can push/poll jobs
-✅ **Persistent**: Jobs survive server restarts
-✅ **Atomic**: BRPOP is atomic (no race conditions)
-✅ **Scalable**: Redis handles millions of ops/sec
-
-## Next Steps
-
-- [ ] Migrate `JobManager` to use `RedisJobQueue`
-- [ ] Implement result queue for completed jobs
-- [ ] Add distributed locking for job status updates
-- [ ] Setup Redis Cluster for high availability
+© 2026 Silvère Martin-Michiellot & Antigravity

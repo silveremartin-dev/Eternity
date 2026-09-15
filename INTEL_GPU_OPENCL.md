@@ -1,71 +1,49 @@
-# Intel OpenCL GPU Check - Windows
+# Intel GPU OpenCL Configuration & Diagnostics
 
-**Authors:** Gemini AI Assistant, Silvère
+**Authors:** Silvère Martin-Michiellot, Antigravity (Google DeepMind)
 
-## Check if OpenCL is installed
+---
 
+## 1. Verifying OpenCL on Windows
+
+### Option A: Using `clinfo` CLI
 ```powershell
-# Option 1: Avec GPU Caps Viewer (Interface graphique)
-# Télécharger et installer : https://www.geeks3d.com/gpucapsviewer/
-
-# Option 2: Avec clinfo (ligne de commande)
-# Installer via Chocolatey (gestionnaire de paquets Windows)
-# Si pas chocolatey : https://chocolatey.org/install
-
-# Une fois Chocolatey installé:
+# Install clinfo via Chocolatey
 choco install opencl-intel-cpu-runtime
 
-# Vérifier OpenCL:
+# Run diagnostics
 clinfo
-
-# Vous devriez voir quelque chose comme:
-# Platform Name: Intel(R) OpenCL HD Graphics
-# Device Name: Intel(R) UHD Graphics
 ```
 
-## Tester OpenCL avec un programme simple
+Expected output confirms:
+- **Platform Name:** Intel(R) OpenCL HD Graphics
+- **Device Name:** Intel(R) UHD / Iris / Arc Graphics
+- **OpenCL Version:** 3.0 or higher
+
+### Option B: Using GPU Caps Viewer
+Download and launch [GPU Caps Viewer](https://www.geeks3d.com/gpucapsviewer/) to visually confirm the OpenCL device status and compute unit availability.
+
+---
+
+## 2. Testing OpenCL with TornadoVM
+
+Within a Linux / WSL2 environment with TornadoVM installed:
 
 ```bash
-# Dans WSL2 Ubuntu (après installation TornadoVM):
 cd TornadoVM/examples
 tornado --printKernel uk.ac.manchester.tornado.benchmarks.BenchmarkRunner vectorAddition
-
-# Si ça fonctionne, vous verrez le kernel compilé pour votre GPU Intel
 ```
 
-## Résultat attendu
+---
 
-Si OpenCL est correctement installé, `clinfo` devrait montrer :
+## 3. Common Troubleshooting
 
-- **Platform**: Intel(R) OpenCL HD Graphics
-- **Device**: Intel(R) UHD Graphics
-- **OpenCL Version**: 3.0 ou supérieur
-- **Driver Version**: Votre version actuelle (27.20.100.9079)
+### Error: "No OpenCL devices found"
+**Solution:** Download and install the latest Intel Compute Runtime from [Intel Compute Runtime Releases](https://github.com/intel/compute-runtime/releases).
 
-## Problèmes courants
+### Dedicated vs Integrated GPUs (iGPU)
+For maximum throughput gains with TornadoVM, high-performance dedicated GPUs (NVIDIA RTX / Tesla or AMD Radeon / Instinct) are recommended. The built-in scalar CPU engine remains exceptionally fast (>21M candidates/sec) on modern multi-core processors.
 
-### "No OpenCL devices found"
+---
 
-**Solution** : Installer Intel OpenCL Runtime
-
-- URL : <https://www.intel.com/content/www/us/en/developer/articles/tool/opencl-drivers.html>
-- Ou via Windows Update (pilote Intel récent)
-
-### "clinfo: command not found"
-
-**Solution** : Installer via `choco install opencl-intel-cpu-runtime`
-
-### Performance GPU < CPU
-
-**Normal** : Intel UHD Graphics est un GPU intégré (iGPU). Pour un vrai gain, il faudrait un GPU dédié (NVIDIA/AMD).
-Avec Intel UHD, le gain sera **minime** voire négatif vs CPU multi-core.
-
-## Recommandation finale
-
-Votre Intel UHD Graphics **peut** techniquement faire tourner OpenCL, mais :
-
-❌ **Gain de performance faible** (iGPU vs CPU moderne)
-❌ **Complexité d'installation** (WSL2 + drivers + TornadoVM)
-✅ **CPU fallback déjà fonctionnel**
-
-**Verdict** : Sauf si c'est pour expérimenter, **restez sur le CPU** !
+© 2026 Silvère Martin-Michiellot & Antigravity

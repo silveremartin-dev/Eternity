@@ -1,271 +1,116 @@
 # Eternity II - System Architecture
 
-**Authors:** Gemini AI Assistant, Silvère  
-**Version:** 3.0 - High Performance Cloud-Native  
-**Stack:** Java 21 + Virtual Threads + gRPC + FlatBuffers + Kubernetes + GPU-Ready
+**Authors:** Silvère Martin-Michiellot, Antigravity (Google DeepMind)  
+**Version:** 4.0 - High Performance Cloud-Native & GPU-Accelerated  
+**Stack:** Java 25 (`--enable-preview`) + Virtual Threads + gRPC + FlatBuffers + TornadoVM GPU + Kubernetes
 
 ---
 
-## Overview
+## 1. Executive Summary
 
-Eternity II Distributed Solver is a high-performance client-server system for solving Eternity puzzles using distributed computing, GPU acceleration, and backtracking algorithms.
-
-**Performance Targets:**
-
-- **Throughput:** 80,000,000+ pieces/sec (Optimized Engine)
-- **Latency:** <1ms per evaluation
-- **GPU:** TornadoVM-accelerated batch evaluation
-- **Scalability:** Unlimited horizontal scaling via Kubernetes + Virtual Threads
+Eternity II is a high-performance distributed solver designed to tackle large-scale edge-matching combinatorics ($16 \times 16$ board with $256$ pieces). The system combines low-level bitwise primitive acceleration, multi-paradigm solving algorithms (MCV Backtracking, MCTS, Stochastic Simulated Annealing, GPU Offloading), zero-copy binary network serialization, and distributed job orchestration.
 
 ---
 
-## High-Level Architecture
+## 2. High-Level Architecture Diagram
 
 ```mermaid
 graph TB
-    subgraph "Client Tier"
-        WebClient[Web Client<br/>HTML/CSS/JS]
-        JavaClient[Java Client<br/>JavaFX + gRPC]
+    subgraph Clients ["Client Tier"]
+        WebClient["Web Dashboard<br/>HTML5 / CSS / WebSocket"]
+        JavaClient["Java Solver Node<br/>JavaFX + Sockets + gRPC"]
+        WorkerNode["Headless Worker<br/>CLI / GPU Acceleration"]
     end
-    
-    subgraph "Load Balancer"
-        Ingress[Kubernetes Ingress<br/>NGINX]
+
+    subgraph LoadBalancer ["Ingress / Load Balancer"]
+        Ingress["Kubernetes Ingress / Gateway<br/>Port Routing"]
     end
-    
-    subgraph "Compute Tier (Kubernetes)"
-        ServerPod1[Server Pod 1<br/>Virtual Threads + gRPC]
-        ServerPod2[Server Pod N<br/>Auto-scaled]
-        GPUPod1[GPU Solver Pod<br/>TornadoVM]
+
+    subgraph ServerCluster ["Server & Orchestration Tier"]
+        ServerCore["EternityServer<br/>Master Node & Synchronization"]
+        WSServer["WebSocket Server (12346)<br/>Live Cluster Telemetry"]
+        GRPCServer["gRPC Service (12347)<br/>FlatBuffers Zero-Copy"]
+        MetricsServer["Prometheus Exporter (12348)<br/>/metrics, /health, /ready"]
+        JobMgr["JobManager & Queue<br/>Work Stealing Dispatcher"]
     end
-    
-    subgraph "Data Tier"
-        Redis[(Redis Cluster<br/>Job Queue + Cache)]
-        PostgreSQL[(PostgreSQL<br/>Persistence)]
+
+    subgraph SolversTier ["Solver Engine Tier"]
+        Engine["EternitySolverEngine<br/>Iterative MCV Backtracking"]
+        MCTS["MCTSSolver<br/>UCT Arborescence Search"]
+        Stoch["StochasticRefinement<br/>Simulated Annealing"]
+        GPU["GPUEternitySolver<br/>TornadoVM OpenCL/PTX Kernels"]
     end
-    
-    subgraph "Monitoring"
-        Prometheus[Prometheus<br/>Metrics]
-        Grafana[Grafana<br/>Dashboards]
+
+    subgraph DataStorage ["Data & Cache Tier"]
+        RedisQueue[("Redis Cluster<br/>LPUSH / BRPOP Queues")]
+        RedisCache[("Redis ConstraintCache<br/>Pruning State Cache")]
+        Postgres[("PostgreSQL DB<br/>HikariCP + Flyway")]
+        AtomicJSON[("Atomic Storage<br/>Crash-Safe Solutions JSON")]
     end
-    
-    WebClient --> Ingress
-    JavaClient --> Ingress
-    Ingress --> ServerPod1
-    Ingress --> ServerPod2
-    ServerPod1 --> GPUPod1
-    ServerPod1 <--> Redis
-    ServerPod1 --> PostgreSQL
-    ServerPod1 --> Prometheus
-    Prometheus --> Grafana
+
+    Clients --> Ingress
+    Ingress --> ServerCore
+    ServerCore --> WSServer
+    ServerCore --> GRPCServer
+    ServerCore --> MetricsServer
+    ServerCore --> JobMgr
+
+    JobMgr --> SolversTier
+    JobMgr <--> RedisQueue
+    SolversTier <--> RedisCache
+    ServerCore --> Postgres
+    ServerCore --> AtomicJSON
 ```
 
 ---
 
-## Technology Stack
+## 3. Technology Stack & Component Details
 
-### 1. Core Runtime
+### 3.1 Zero-Allocation Domain Model (`org.game.eternity2.model`)
+- **`PiecePrimitive`:** 64-bit packed scalar (`long`) containing:
+  - `ID`: 16 bits (0 to 65,535)
+  - `Top Edge`: 8 bits (0 to 255)
+  - `Right Edge`: 8 bits (0 to 255)
+  - `Bottom Edge`: 8 bits (0 to 255)
+  - `Left Edge`: 8 bits (0 to 255)
+  - `Rotation`: 8 bits (0 to 3)
+- **`BoardPrimitive`:** Flat 1D `long[]` board representation allowing instant boundary constraint checking and mismatch calculations without allocating intermediate objects.
 
-**Java 21 with Virtual Threads**
+### 3.2 Solving Strategies (`org.game.eternity2.solver`)
+1. **Iterative MCV Backtracking (`EternitySolverEngine`):**
+   - Row-scanning with Most Constrained Variable heuristic.
+   - Bit-vector lookups with `NeighborIndex` and `GlobalPruner`.
+   - Immutable hint tile enforcement via `boolean[] isFixed`.
+2. **Monte Carlo Tree Search (`MCTSSolver`):**
+   - Upper Confidence Bound for Trees: $UCT = \frac{W_i}{N_i} + c \sqrt{\frac{\ln N_p}{N_i}}$ with $c = \sqrt{2}$.
+   - Stochastic rollout on remaining tile pools with terminal dead-end detection.
+3. **GPU Hardware Offloading (`GPUEternitySolver` & `TornadoEternityDriver`):**
+   - TornadoVM OpenCL/PTX kernels compiling candidate validation directly to parallel compute units.
+4. **Stochastic Refinement (`StochasticRefinement`):**
+   - Simulated annealing escaping local maxima via 1-tile rotations and 2-tile swaps.
 
-- Virtual Threads for millions of concurrent connections
-- Structured Concurrency for async operations
-- ZGC/Shenandoah for <10ms GC pauses
+### 3.3 Zero-Copy Network & Distributed Queues (`org.game.eternity2.io`, `server.grpc`)
+- **gRPC + FlatBuffers:** High-throughput streaming of binary board states directly out of raw buffers without heap allocation.
+- **WebSocket Gateway:** Real-time push notifications of score improvements, active client counts, and live board tessellations.
+- **Redis Work Queue:** Asynchronous work distribution with Lettuce client.
 
-### 2. Communication
-
-**gRPC + FlatBuffers**
-
-- Bidirectional streaming for real-time updates
-- Zero-copy serialization with FlatBuffers
-- 10-100x faster than JSON/Protobuf for large structures
-
-### 3. GPU Acceleration
-
-**TornadoVM**
-
-- Portable across OpenCL, CUDA, SPIR-V
-- JIT compilation to GPU kernels
-- Automatic CPU fallback
-
-### 4. Data Layer
-
-**Redis Cluster**
-
-- Job queue (LPUSH/BRPOP)
-- Constraint cache with TTL
-- Lettuce async client
-
-**PostgreSQL**
-
-- User management
-- Puzzle definitions
-- Solution history
-- Dynamic configuration
-
-### 5. Orchestration
-
-**Kubernetes**
-
-- Horizontal Pod Autoscaler
-- GPU Operator for NVIDIA
-- Health checks (liveness/readiness)
+### 3.4 Security & Hardening (`org.game.eternity2.server.security`)
+- **Anti-RCE Socket Filter:** `ObjectInputFilter` whitelist on native TCP sockets.
+- **BCrypt Password Hashing:** Salted hashing with `at.favre.lib:bcrypt`.
+- **JWT Authentication:** 256-bit HS256 tokens with in-memory secure random key fallback.
+- **Atomic File Persistence:** Crash-resilient file writes using temporary `.tmp` files and `StandardCopyOption.ATOMIC_MOVE`.
 
 ---
 
-## Component Overview
+## 4. Port Allocations (Default Base Port: 12345)
 
-### Server Components
-
-| Component | Package | Description |
-|-----------|---------|-------------|
-| `EternityServer` | `server` | Main orchestrator, gRPC server |
-| `EternityServiceImpl` | `server.grpc` | gRPC service implementation |
-| `DatabaseManager` | `server.db` | PostgreSQL + HikariCP |
-| `MetricsProvider` | `server.monitoring` | Prometheus metrics |
-| `JwtProvider` | `server.security` | JWT authentication |
-| `AuthInterceptor` | `server.security` | gRPC authentication |
-
-### Client Components
-
-| Component | Package | Description |
-|-----------|---------|-------------|
-| `EternityClient` | `client` | JavaFX client application |
-| `EternityGrpcClient` | `client.grpc` | gRPC client wrapper |
-| `JobExecutor` | `client` | Job orchestrator |
-| `HybridSolver` | `solver` | Hybrid backtracking + stochastic engine |
-| `EternitySolverEngine`| `solver` | High-performance iterative backtracker |
-| `NeighborIndex` | `solver` | O(1) candidate lookup table |
-| `GlobalPruner` | `solver` | Border + Parity pruning logic |
-
-### Domain Model
-
-**Optimized Data Structures** (`model`)
-
-| Class | Description |
-|-------|-------------|
-| `PiecePrimitive` | 64-bit packed piece (ID + 4 edges + rotation) |
-| `BoardPrimitive` | Primitive array board with constraint checking |
-| `PuzzleLoader` | TheSil format import/export |
+| Port | Protocol | Purpose |
+| :--- | :--- | :--- |
+| `12345` | TCP (Custom Sockets) | Native cluster solving channel with `ObjectInputFilter` |
+| `12346` | WebSocket (`ws://`) | Real-time web client telemetry and board rendering |
+| `12347` | gRPC (`HTTP/2`) | High-performance RPC with FlatBuffers serialization |
+| `12348` | HTTP | Prometheus metrics (`/metrics`), health (`/health`), readiness (`/ready`) |
 
 ---
 
-## Key Features
-
-### Security
-
-- JWT token authentication (`JwtProvider`)
-- bcrypt password hashing (`PasswordUtils` + `JsonUserDatabase`)
-- gRPC interceptor for auth validation (`AuthInterceptor`)
-- Environment-based configuration (no hardcoded credentials)
-
-### Monitoring
-
-- Prometheus metrics endpoint (`/metrics`)
-- JVM metrics (memory, GC, threads)
-- Custom counters (jobs, candidates, pieces)
-- Health/readiness probes
-
-### Internationalization
-
-- Resource bundles (EN, FR)
-- I18nProvider utility
-- Environment-based locale selection
-
----
-
-## Configuration
-
-### Environment Variables
-
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `DB_URL` | `jdbc:postgresql://localhost:5432/eternity` | Database URL |
-| `DB_USER` | `postgres` | Database user |
-| `DB_PASSWORD` | `postgres` | Database password |
-| `DB_ENABLED` | `true` | Toggle database |
-| `REDIS_HOST` | `localhost` | Redis host |
-| `REDIS_PORT` | `6379` | Redis port |
-| `JWT_SECRET` | (auto-generated) | JWT signing key |
-| `AUTH_ENABLED` | `true` | Toggle authentication |
-| `ETERNITY_LANG` | `en` | Language (en, fr) |
-
----
-
-## Project Structure
-
-```
-eternity/
-├── src/main/java/org/game/eternity2/
-│   ├── client/           # JavaFX client
-│   ├── server/           # Server application
-│   │   ├── db/          # Database layer
-│   │   ├── grpc/        # gRPC services
-│   │   ├── monitoring/  # Prometheus metrics
-│   │   ├── security/    # JWT + Auth
-│   │   └── benchmark/   # JMH benchmarks
-│   ├── model/           # Domain model
-│   │   └── optimized/   # Primitive-based structures
-│   ├── editor/          # Puzzle editor
-│   ├── i18n/            # Internationalization
-│   └── elements/        # Legacy board/tile hierarchy
-├── src/main/resources/
-│   ├── i18n/            # Language bundles
-│   ├── schema/          # Proto + FlatBuffers schemas
-│   └── xml/data/        # Puzzle data
-├── web-client/          # HTML/CSS/JS client
-├── k8s/                 # Kubernetes manifests
-├── .github/workflows/   # CI/CD pipeline
-└── pom.xml
-```
-
----
-
-## CI/CD Pipeline
-
-**GitHub Actions** (`.github/workflows/ci.yml`)
-
-1. **Build** - Maven compile + test
-2. **Docker** - Build and push image
-3. **Benchmark** - Run performance tests
-
----
-
-## Performance Baseline
-
-| Metric | Value |
-|--------|-------|
-| Solver Throughput | >84 M pieces/sec (CPU Optimized) |
-| Batch Latency | <0.01 ms (Neighbor Index) |
-| Target GPU | >200 M pieces/sec |
-
----
-
-## Quick Start
-
-```bash
-# Build
-mvn clean package -DskipTests
-
-# Run server
-java -cp target/eternity-1.0-SNAPSHOT.jar org.game.eternity2.server.ServerApp
-
-# Run client
-java -cp target/eternity-1.0-SNAPSHOT.jar org.game.eternity2.client.ClientApp
-
-# Run benchmark
-java -cp target/eternity-1.0-SNAPSHOT.jar org.game.eternity2.server.benchmark.SimpleBenchmark
-
-# Docker
-docker-compose up -d
-```
-
----
-
-## Version History
-
-| Version | Changes |
-|---------|---------|
-| 1.0 | Initial release with basic solver |
-| 2.0 | JavaFX UI, distributed architecture |
-| 3.0 | gRPC + Redis + PostgreSQL + GPU-ready + K8s |
-| 3.1 | Hybrid Solver Engine (84M PPS), Border Pruning, Stochastic Search |
+© 2026 Silvère Martin-Michiellot & Antigravity

@@ -1,237 +1,121 @@
 # Eternity II - Quick Start Guide
 
-**Authors:** Gemini AI Assistant, Silvère
+**Authors:** Silvère Martin-Michiellot, Antigravity (Google DeepMind)
 
-## 🚀 Get started in 3 minutes
+---
+
+## 🚀 Get Started in Under 3 Minutes
 
 ### Prerequisites
 
-- ✅ Java 21 installed
-- ✅ Maven installed
-- ✅ Docker installed (optional, for Redis)
+- ✅ **Java 25+** installed (with `--enable-preview`)
+- ✅ **Maven 3.9+** installed
+- ✅ **Docker** installed (optional, for Redis and PostgreSQL)
 
-### Option 1 : Mode Simple (Sans Redis)
+---
+
+### Step 1: Build the Project
 
 ```bash
-# 1. Compiler
 mvn clean package -DskipTests
-
-# 2. Lancer le serveur (GUI)
-java -cp target/eternity-1.0-SNAPSHOT.jar org.game.eternity2.server.ServerApp
-
-# 3. Le serveur démarre sur le port 12345
-# Mode in-memory - pas besoin de Redis
 ```
 
-### Option 2 : Mode Complet (Avec Redis)
+---
+
+### Step 2: Choose Your Execution Mode
+
+#### Mode A: Standalone In-Memory (No Redis Required)
+
+1. **Start the Master Server:**
+   ```bash
+   java --enable-preview -cp target/eternity-1.0-SNAPSHOT.jar org.game.eternity2.server.ServerApp
+   ```
+2. In the Server UI, select a puzzle (e.g., `16x16_eternity2`) and click **Start Server**.
+3. **Start One or More Client Solvers:**
+   ```bash
+   java --enable-preview -cp target/eternity-1.0-SNAPSHOT.jar org.game.eternity2.client.ClientApp
+   ```
+4. Click **Connect** in the Client UI to begin distributed computation.
+
+---
+
+#### Mode B: Distributed with Redis & Database
+
+1. **Start Infrastructure Services:**
+   ```bash
+   docker-compose up -d
+   ```
+2. **Verify Redis is Running:**
+   ```bash
+   docker exec -it eternity-redis-1 redis-cli PING
+   # Output should be: PONG
+   ```
+3. **Launch Server and Clients:**
+   ```bash
+   # Server
+   java --enable-preview -cp target/eternity-1.0-SNAPSHOT.jar org.game.eternity2.server.ServerApp
+
+   # Client
+   java --enable-preview -cp target/eternity-1.0-SNAPSHOT.jar org.game.eternity2.client.ClientApp
+   ```
+
+---
+
+#### Mode C: Kubernetes Cluster (Local / Minikube / Docker Desktop)
 
 ```bash
-# 1. Démarrer Redis
-docker-compose up -d
-
-# 2. Vérifier Redis
-docker ps  # Redis doit être "Up"
-
-# 3. Compiler et lancer
-mvn clean package -DskipTests
-java -cp target/eternity-1.0-SNAPSHOT.jar org.game.eternity2.server.ServerApp
-
-# 4. Le serveur utilise Redis automatiquement si REDIS_HOST est défini ou localhost
-```
-
-### Option 3 : Mode Kubernetes (Local)
-
-```bash
-# 1. Activer Kubernetes dans Docker Desktop
-# Settings → Kubernetes → Enable Kubernetes
-
-# 2. Builder l'image
+# 1. Build Docker Image
 docker build -t eternity-server:latest .
 
-# 3. Déployer
+# 2. Apply Kubernetes Manifests
 kubectl apply -f k8s/redis.yaml
 kubectl apply -f k8s/eternity.yaml
 kubectl apply -f k8s/hpa.yaml
 
-# 4. Vérifier
+# 3. Check Pod Status
 kubectl get pods
-kubectl get svc
 
-# 5. Accéder au service
-kubectl port-forward svc/eternity-server 12345:12345
+# 4. Port-Forward to the Server
+kubectl port-forward svc/eternity-server 12345:12345 12346:12346 12347:12347 12348:12348
 ```
 
 ---
 
-## 🧪 Vérifier que tout fonctionne
+## 🧪 Verifying the Deployment
 
-### Test 1 : Le serveur répond
-
+### Test 1: Health & Readiness Endpoints
 ```bash
-# Le serveur doit afficher au démarrage :
-# "Server started on port 12345 (Virtual Threads)"
+curl http://localhost:12348/health
+# Response: {"status":"UP"}
+
+curl http://localhost:12348/ready
+# Response: {"status":"READY"}
 ```
 
-### Test 2 : Redis (si activé)
-
+### Test 2: Prometheus Metrics Scrape
 ```bash
-# Se connecter à Redis
-docker exec -it eternity-redis-1 redis-cli
-
-# Tester
-127.0.0.1:6379> PING
-PONG
+curl http://localhost:12348/metrics
+# Prometheus text format containing eternity_active_clients, eternity_best_score, etc.
 ```
 
-### Test 3 : Client
-
-```bash
-# Lancer un client pour se connecter au serveur
-java -cp target/eternity-1.0-SNAPSHOT.jar org.game.eternity2.client.ClientApp
-```
+### Test 3: Web Dashboard
+Open `src/main/web-client/index.html` in any modern web browser to monitor live telemetry, board rendering, and solving throughput.
 
 ---
 
-## 🔧 Configuration Rapide
+## 🔧 Key Environment Variables
 
-### Variables d'environnement
-
-```bash
-# Modifier le port serveur (nécessite modif code ou config file)
-# Par défaut : 12345
-
-# Pointer vers un Redis distant
-export REDIS_HOST=redis.example.com
-export REDIS_PORT=6379
-
-# Lancer
-java -cp target/eternity-1.0-SNAPSHOT.jar org.game.eternity2.server.ServerApp
-```
-
-### Fichier de configuration (optionnel)
-
-Créer `application.properties` (si supporté par la version actuelle) :
-
-```properties
-server.port=12345
-redis.host=localhost
-redis.port=6379
-solver.threads=8
-```
+| Variable | Default Value | Description |
+| :--- | :--- | :--- |
+| `SERVER_PORT` | `12345` | Base TCP solver port |
+| `REDIS_HOST` | `localhost` | Redis server hostname |
+| `REDIS_PORT` | `6379` | Redis server port |
+| `DB_URL` | `jdbc:postgresql://localhost:5432/eternity` | PostgreSQL JDBC connection URL |
+| `DB_USER` | `postgres` | Database username |
+| `DB_PASSWORD` | `postgres` | Database password |
+| `JWT_SECRET` | *(Random 256-bit)* | Secret key for signing JWT tokens |
+| `ETERNITY_LANG` | `en` | Default UI language (`en`, `fr`) |
 
 ---
 
-## 📊 Monitoring Basique
-
-### Logs
-
-```bash
-# Logs du serveur (niveau INFO par défaut)
-tail -f logs/server.log
-
-# Changer le niveau de log dans log4j2.xml
-```
-
-### Métriques Docker
-
-```bash
-# Ressources utilisées
-docker stats eternity-server
-
-# Logs du container
-docker logs -f eternity-server
-```
-
-### Métriques Kubernetes
-
-```bash
-# CPU/Mémoire des pods
-kubectl top pods
-
-# Statut HPA
-kubectl get hpa
-
-# Logs
-kubectl logs -f deployment/eternity-server
-```
-
----
-
-## 🐛 Troubleshooting
-
-### Problème : "Port already in use"
-
-```bash
-# Trouver le processus sur le port 8080
-netstat -ano | findstr :8080
-
-# Tuer le processus (Windows)
-taskkill /PID <PID> /F
-
-# Ou changer le port
-java -Dserver.port=9000 -jar target/eternity-1.0-SNAPSHOT.jar
-```
-
-### Problème : "Cannot connect to Redis"
-
-```bash
-# Vérifier Redis
-docker ps | grep redis
-
-# Redémarrer Redis
-docker-compose restart
-
-# Vérifier les logs
-docker logs eternity-redis-1
-```
-
-### Problème : "Build failed"
-
-```bash
-# Nettoyer Maven
-mvn clean
-
-# Forcer re-téléchargement des dépendances
-mvn clean install -U
-
-# Vérifier Java version
-java -version  # Doit être 21
-```
-
----
-
-## 🎯 Prochaines Étapes
-
-### Pour tester localement
-
-1. ✅ Lancer le serveur (voir ci-dessus)
-2. ✅ Ouvrir l'interface JavaFX (si disponible)
-3. ✅ Lancer un solving job
-4. ✅ Observer les logs
-
-### Pour déployer en production
-
-1. 📖 Lire `PROJECT_SUMMARY.md`
-2. 🔧 Configurer les Secrets (Redis password, etc.)
-3. ☁️ Choisir un provider cloud (AWS/GCP/Azure)
-4. 🚀 Suivre le guide Kubernetes
-
-### Pour activer le GPU (futur)
-
-1. 📖 Lire `DEPLOYMENT.md`
-2. 🖥️ Provisionner une VM avec GPU (NVIDIA)
-3. 🔧 Installer CUDA + TornadoVM
-4. ⚙️ Décommenter les dépendances dans `pom.xml`
-
----
-
-## 📚 Documentation Complète
-
-- **[README.md](README.md)** - Vue d'ensemble
-- **[PROJECT_SUMMARY.md](PROJECT_SUMMARY.md)** - Résumé complet
-- **[TASK.md](TASK.md)** - Liste des tâches
-- **[REDIS_SETUP.md](REDIS_SETUP.md)** - Config Redis détaillée
-
----
-
-**Bon développement ! 🎮**
+© 2026 Silvère Martin-Michiellot & Antigravity
